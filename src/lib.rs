@@ -16,13 +16,6 @@ type Vector = cgmath::Vector3<Float>;
 type Vertices = Vec<Point>;
 type VerticesRef<'a> = Vec<&'a Point>;
 
-#[derive(Clone, Debug)]
-struct Mesh {
-    vertices: Vertices,
-    //face_arity: Vec<index>,
-    face_index: FaceIndex,
-}
-
 /// Returns a [`FaceIndex`] of faces
 /// containing `vertex_number`.
 #[inline]
@@ -97,7 +90,7 @@ fn index_of<T: PartialEq>(element: &T, list: &Vec<T>) -> Option<usize> {
     list.iter().position(|e| *e == *element)
 }
 
-/// Used internally by ordered_vertex_faces.
+/// Used internally by [`ordered_vertex_faces()`].
 #[inline]
 fn ordered_vertex_faces_recurse(
     v: Index,
@@ -136,10 +129,38 @@ fn ordered_vertex_faces(vertex_number: Index, face_index: &FaceIndex) -> FaceInd
 }
 
 #[inline]
+fn edge_length(edge: &Edge, vertices: &Vertices) -> Float {
+    let edge = vec![edge.0, edge.1];
+    let vertices = as_points(&edge, vertices);
+    (vertices[0] - vertices[1]).magnitude()
+}
+
+#[inline]
+fn edge_lengths(edges: &EdgeIndex, points: &Vertices) -> Vec<Float> {
+    edges.iter().map(|edge| edge_length(edge, points)).collect()
+}
+
+#[inline]
+fn face_edges(face: &Face, vertices: &Vertices) -> Vec<Float> {
+    ordered_face_edges(face)
+        .iter()
+        .map(|edge| edge_length(edge, vertices))
+        .collect()
+}
+
+#[inline]
+fn face_irregularity(face: &Face, points: &Vertices) -> Float {
+    let lengths = face_edges(face, points);
+    lengths.iter().cloned().fold(0. / 0., Float::max)
+        / lengths.iter().cloned().fold(0. / 0., Float::min)
+}
+
+#[inline]
 fn as_points<'a>(f: &'a Face, vertices: &'a Vertices) -> VerticesRef<'a> {
     f.iter().map(|index| &vertices[*index as usize]).collect()
 }
 
+#[inline]
 fn centroid_ref<'a>(vertices: &'a VerticesRef<'a>) -> Point {
     let total_displacement = vertices
         .into_iter()
@@ -157,16 +178,48 @@ fn orthogonal(v0: &Point, v1: &Point, v2: &Point) -> Vector {
 /// Assumes the face is planar.
 #[inline]
 fn face_normal(vertices: &VerticesRef) -> Vector {
-    // FIXME iterate over all points, calculate normal everywhere and average
+    // FIXME iterate over all points to make this work for
+    // non-planar faces.
     -orthogonal(&vertices[0], &vertices[1], &vertices[2]).normalize()
 }
 
-fn vertex_ids(entries: Vec<(&Face, Point)>, offset: usize) -> Vec<(&Face, usize)> {
+#[inline]
+fn vertex_ids<'a>(entries: &'a Vec<(&'a Face, Point)>, offset: usize) -> Vec<(&'a Face, usize)> {
     entries
         .iter()
         .enumerate()
-        .map(|i| (i.1.0, i.0 + offset))
+        // FIXME swap with next line once rustfmt is fixed.
+        //.map(|i| (i.1.0, i.0 + offset))
+        .map(|i| (entries[i.0].0, i.0 + offset))
         .collect()
+}
+
+#[inline]
+fn vertex(key: &Face, entries: &Vec<(&Face, usize)>) -> Option<usize> {
+    match entries.into_iter().find(|f| key == f.0) {
+        Some(entry) => Some(entry.1),
+        None => None,
+    }
+}
+
+#[inline]
+fn vertex_values<'a>(entries: &'a Vec<(&Face, Point)>) -> VerticesRef<'a> {
+    entries.iter().map(|e| &e.1).collect()
+}
+
+#[inline]
+fn selected_face(face: &Face, face_arity: Option<&Vec<usize>>) -> bool {
+    match face_arity {
+        None => true,
+        Some(arity) => arity.contains(&face.len()),
+    }
+}
+
+#[derive(Clone, Debug)]
+struct Mesh {
+    vertices: Vertices,
+    //face_arity: Vec<index>,
+    face_index: FaceIndex,
 }
 
 impl Mesh {
@@ -192,19 +245,6 @@ impl Mesh {
         fi
     }
 
-    /*
-    function dual(obj) =
-    poly(name=str("d",p_name(obj)),
-         vertices =
-              [for (f = p_faces(obj))
-               let(fp=as_points(f,p_vertices(obj)))
-                 centroid(fp)
-              ],
-         faces= p_vertices_to_faces(obj)
-        )
-    ;  // end dual
-    */
-
     fn dual(&mut self) {
         self.vertices = self
             .face_index
@@ -216,40 +256,42 @@ impl Mesh {
 
     /// kis each n-face is divided into n triangles which extend to the face centroid
     /// existimg vertices retained
-    fn kis(&mut self, height: Float, f_n: usize) {
-        let pf = &self.face_index;
-        let pv = &self.vertices;
-
-        let newv: Vec<(&Face, Point)> = pf
+    fn kis(&mut self, height: Float, face_arity: Option<&Vec<usize>>, regular: bool) {
+        let new_vertices: Vec<(&Face, Point)> = self
+            .face_index
             .iter()
-            .filter(|face| f_n == face.len()) // new centroid vertices
+            .filter(|face| {
+                selected_face(face, face_arity) && !regular
+                    || ((face_irregularity(face, &self.vertices) - 1.0).abs() < 0.1)
+            })
             .map(|face| {
-                let fp = as_points(face, pv);
+                let fp = as_points(face, &self.vertices);
                 (face, centroid_ref(&fp) + face_normal(&fp) * height)
             })
             .collect();
 
-        let newids = vertex_ids(newv, pv.len());
+        let newids = vertex_ids(&new_vertices, self.vertices.len());
 
-        /*let(newf=
-            flatten(
-              [for (face=pf)
-                 selected_face(face,fn)
-              //replace face with triangles
-                   ? let(centroid=vertex(face,newids))
-                     [for (j=[0:len(face)-1])
-                      let(a=face[j],
-                          b=face[(j+1)%len(face)])
-                       [a,b,centroid]
-                     ]
-                   : [face]                              // original face
-              ])
-             )
+        self.vertices.extend(
+            //new_vertices);
+            vertex_values(&new_vertices),
+        );
 
-        poly(name=str("k",p_name(obj)),
-            vertices= concat(pv, vertex_values(newv)) ,
-            faces=newf
-        )*/
+        self.face_index = self
+            .face_index
+            .iter()
+            .map(|f: &Face| match vertex(f, &newids) {
+                Some(centroid) => {
+                    let mut result = Vec::with_capacity(f.len() - 1);
+                    for j in 0..f.len() - 1 {
+                        result.push(vec![f[j], f[(j + 1) % f.len()], centroid as Index]);
+                    }
+                    result
+                }
+                None => vec![f.clone()],
+            })
+            .flatten()
+            .collect();
     } // end kis
 
     pub fn to_nsi(&self, ctx: nsi::Context, name: &str) {
@@ -326,6 +368,10 @@ mod tests {
         println!("{:?}", tetrahedron);
 
         tetrahedron.dual();
+        tetrahedron.kis(0., None, false);
+
+        let ctx = nsi::Context::new(&[string!("streamfilename", "stdout")]).unwrap();
+        tetrahedron.to_nsi();
 
         println!("{:?}", tetrahedron);
     }
