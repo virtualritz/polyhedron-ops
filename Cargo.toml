@@ -9,4 +9,4 @@ repository = "https://github.com/virtualritz/polyhedron-operators/"
 [dependencies]
 #itertools = "0.9.0"
 cgmath = "0.17.0"
-nsi = "0.5.1"
+#nsi = { path = "../nsi", version = "0.5.1" }

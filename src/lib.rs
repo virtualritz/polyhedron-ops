@@ -1,7 +1,12 @@
 use cgmath::prelude::*;
 //use itertools::Itertools;
-use nsi;
-use std::iter::{once, Iterator};
+//use nsi;
+use std::{
+    fs::File,
+    io::Write,
+    iter::{once, Iterator},
+    path::{Path, PathBuf},
+};
 
 type Float = f32;
 type Index = u32;
@@ -44,9 +49,11 @@ function ordered_face_edges(f) =
         .collect()
 }*/
 
+/// Returns a [`Vec`] of anticlockwise
+/// ordered edges.
 #[inline]
 fn ordered_face_edges(f: &Face) -> EdgeIndex {
-    let mut result = EdgeIndex::new();
+    let mut result = EdgeIndex::with_capacity(f.len());
     for v in 0..f.len() {
         result.push((f[v], f[(v + 1) % f.len()]));
     }
@@ -62,10 +69,10 @@ function face_with_edge(edge,faces) =
     ]);
 */
 #[inline]
-fn face_with_edge(edge: Edge, faces: &FaceIndex) -> Face {
+fn face_with_edge(edge: &Edge, faces: &FaceIndex) -> Face {
     let result = faces
         .iter()
-        .filter(|face| ordered_face_edges(face).contains(&edge))
+        .filter(|face| ordered_face_edges(face).contains(edge))
         .flatten()
         .cloned()
         .collect();
@@ -102,7 +109,7 @@ fn ordered_vertex_faces_recurse(
         let i = index_of(&v, &cface).unwrap() as i32;
         let j = ((i - 1 + cface.len() as i32) % cface.len() as i32) as usize;
         let edge = (v, cface[j]);
-        let mut nfaces = vec![face_with_edge(edge, face_index)];
+        let mut nfaces = vec![face_with_edge(&edge, face_index)];
         nfaces.extend(ordered_vertex_faces_recurse(
             v,
             face_index,
@@ -225,20 +232,20 @@ struct Mesh {
 impl Mesh {
     //[ for (f=faces) if(v!=[] && search(v,f)) f ];
 
+    #[inline]
     pub fn num_vertices(&self) -> usize {
         self.vertices.len()
     }
 
-    pub fn p_vertices_to_faces(&mut self) -> FaceIndex {
-        let mut fi = FaceIndex::new();
-        for vertex_number in 0..self.num_vertices() as u32 {
+    pub fn p_vertices_to_faces(mesh: &Mesh) -> FaceIndex {
+        let mut fi = FaceIndex::with_capacity(mesh.num_vertices());
+        for vertex_number in 0..mesh.num_vertices() as u32 {
             // each old vertex creates a new face, with
-            let vertex_faces = vertex_faces(vertex_number, &self.face_index);
+            let vertex_faces = vertex_faces(vertex_number, &mesh.face_index);
             // vertex faces in left-hand order
-
             let mut new_face = Face::new();
             for of in ordered_vertex_faces(vertex_number as u32, &vertex_faces) {
-                new_face.push(index_of(&of, &self.face_index).unwrap() as Index)
+                new_face.push(index_of(&of, &mesh.face_index).unwrap() as Index)
             }
             fi.push(new_face)
         }
@@ -246,12 +253,13 @@ impl Mesh {
     }
 
     fn dual(&mut self) {
-        self.vertices = self
+        let new_vertices = self
             .face_index
             .iter()
             .map(|face| centroid_ref(&as_points(face, &self.vertices)))
             .collect();
-        self.face_index = self.p_vertices_to_faces();
+        self.face_index = Self::p_vertices_to_faces(self);
+        self.vertices = new_vertices;
     }
 
     /// kis each n-face is divided into n triangles which extend to the face centroid
@@ -272,10 +280,7 @@ impl Mesh {
 
         let newids = vertex_ids(&new_vertices, self.vertices.len());
 
-        self.vertices.extend(
-            //new_vertices);
-            vertex_values(&new_vertices),
-        );
+        self.vertices.extend(vertex_values(&new_vertices));
 
         self.face_index = self
             .face_index
@@ -283,7 +288,7 @@ impl Mesh {
             .map(|f: &Face| match vertex(f, &newids) {
                 Some(centroid) => {
                     let mut result = Vec::with_capacity(f.len() - 1);
-                    for j in 0..f.len() - 1 {
+                    for j in 0..f.len() {
                         result.push(vec![f[j], f[(j + 1) % f.len()], centroid as Index]);
                     }
                     result
@@ -294,6 +299,7 @@ impl Mesh {
             .collect();
     } // end kis
 
+    /*
     pub fn to_nsi(&self, ctx: nsi::Context, name: &str) {
         // Create a new mesh node and call it 'dodecahedron'.
         ctx.create(name, nsi::NodeType::Mesh, &[]);
@@ -338,6 +344,185 @@ impl Mesh {
                 //nsi::floats!("subdivision.creasesharpness", &[10.; 30]),
             ],
         );
+    }*/
+
+    fn export_as_obj(&self, destination: &Path, reverse_winding: bool) -> std::io::Result<()> {
+        let mut file = File::create(destination)?;
+
+        self.vertices
+            .iter()
+            .for_each(|vertex| write!(file, "v {} {} {}\n", vertex.x, vertex.y, vertex.z).unwrap());
+
+        match reverse_winding {
+            true => self.face_index.iter().for_each(|face| {
+                write!(file, "f");
+                face.iter()
+                    .rev()
+                    .for_each(|vertex_index| write!(file, " {}", vertex_index + 1).unwrap());
+                write!(file, "\n");
+            }),
+            false => self.face_index.iter().for_each(|face| {
+                write!(file, "f");
+                face.iter()
+                    .for_each(|vertex_index| write!(file, " {}", vertex_index + 1).unwrap());
+                write!(file, "\n");
+            }),
+        };
+
+        file.flush()?;
+
+        Ok(())
+    }
+
+    fn tetrahedron() -> Self {
+        let c0 = 1.0;
+
+        Self {
+            vertices: vec![
+                Point::new(c0, c0, c0),
+                Point::new(c0, -c0, -c0),
+                Point::new(-c0, c0, -c0),
+                Point::new(-c0, -c0, c0),
+            ],
+            face_index: vec![vec![2, 1, 0], vec![3, 2, 0], vec![1, 3, 0], vec![2, 3, 1]],
+        }
+    }
+
+    fn hexahedron() -> Self {
+        let c0 = 1.0;
+
+        Self {
+            vertices: vec![
+                Point::new(c0, c0, c0),
+                Point::new(c0, c0, -c0),
+                Point::new(c0, -c0, c0),
+                Point::new(c0, -c0, -c0),
+                Point::new(-c0, c0, c0),
+                Point::new(-c0, c0, -c0),
+                Point::new(-c0, -c0, c0),
+                Point::new(-c0, -c0, -c0),
+            ],
+            face_index: vec![
+                vec![4, 5, 1, 0],
+                vec![2, 6, 4, 0],
+                vec![1, 3, 2, 0],
+                vec![6, 2, 3, 7],
+                vec![5, 4, 6, 7],
+                vec![3, 1, 5, 7],
+            ],
+        }
+    }
+
+    fn octahedron() -> Self {
+        let c0 = 0.7071067811865475244008443621048;
+
+        Self {
+            vertices: vec![
+                Point::new(0.0, 0.0, c0),
+                Point::new(0.0, 0.0, -c0),
+                Point::new(c0, 0.0, 0.0),
+                Point::new(-c0, 0.0, 0.0),
+                Point::new(0.0, c0, 0.0),
+                Point::new(0.0, -c0, 0.0),
+            ],
+            face_index: vec![
+                vec![4, 2, 0],
+                vec![3, 4, 0],
+                vec![5, 3, 0],
+                vec![2, 5, 0],
+                vec![5, 2, 1],
+                vec![3, 5, 1],
+                vec![4, 3, 1],
+                vec![2, 4, 1],
+            ],
+        }
+    }
+
+    fn dodecahedron() -> Self {
+        let c0 = 0.809016994374947424102293417183;
+        let c1 = 1.30901699437494742410229341718;
+
+        Self {
+            vertices: vec![
+                Point::new(0.0, 0.5, c1),
+                Point::new(0.0, 0.5, -c1),
+                Point::new(0.0, -0.5, c1),
+                Point::new(0.0, -0.5, -c1),
+                Point::new(c1, 0.0, 0.5),
+                Point::new(c1, 0.0, -0.5),
+                Point::new(-c1, 0.0, 0.5),
+                Point::new(-c1, 0.0, -0.5),
+                Point::new(0.5, c1, 0.0),
+                Point::new(0.5, -c1, 0.0),
+                Point::new(-0.5, c1, 0.0),
+                Point::new(-0.5, -c1, 0.0),
+                Point::new(c0, c0, c0),
+                Point::new(c0, c0, -c0),
+                Point::new(c0, -c0, c0),
+                Point::new(c0, -c0, -c0),
+                Point::new(-c0, c0, c0),
+                Point::new(-c0, c0, -c0),
+                Point::new(-c0, -c0, c0),
+                Point::new(-c0, -c0, -c0),
+            ],
+            face_index: vec![
+                vec![12, 4, 14, 2, 0],
+                vec![16, 10, 8, 12, 0],
+                vec![2, 18, 6, 16, 0],
+                vec![17, 10, 16, 6, 7],
+                vec![19, 3, 1, 17, 7],
+                vec![6, 18, 11, 19, 7],
+                vec![15, 3, 19, 11, 9],
+                vec![14, 4, 5, 15, 9],
+                vec![11, 18, 2, 14, 9],
+                vec![8, 10, 17, 1, 13],
+                vec![5, 4, 12, 8, 13],
+                vec![1, 3, 15, 5, 13],
+            ],
+        }
+    }
+
+    fn icosahedron() -> Self {
+        let c0 = 0.809016994374947424102293417183;
+
+        Self {
+            vertices: vec![
+                Point::new(0.5, 0.0, c0),
+                Point::new(0.5, 0.0, -c0),
+                Point::new(-0.5, 0.0, c0),
+                Point::new(-0.5, 0.0, -c0),
+                Point::new(c0, 0.5, 0.0),
+                Point::new(c0, -0.5, 0.0),
+                Point::new(-c0, 0.5, 0.0),
+                Point::new(-c0, -0.5, 0.0),
+                Point::new(0.0, c0, 0.5),
+                Point::new(0.0, c0, -0.5),
+                Point::new(0.0, -c0, 0.5),
+                Point::new(0.0, -c0, -0.5),
+            ],
+            face_index: vec![
+                vec![10, 2, 0],
+                vec![5, 10, 0],
+                vec![4, 5, 0],
+                vec![8, 4, 0],
+                vec![2, 8, 0],
+                vec![6, 8, 2],
+                vec![7, 6, 2],
+                vec![10, 7, 2],
+                vec![11, 7, 10],
+                vec![5, 11, 10],
+                vec![1, 11, 5],
+                vec![4, 1, 5],
+                vec![9, 1, 4],
+                vec![8, 9, 4],
+                vec![6, 9, 8],
+                vec![3, 9, 6],
+                vec![7, 3, 6],
+                vec![11, 3, 7],
+                vec![1, 3, 11],
+                vec![9, 3, 1],
+            ],
+        }
     }
 }
 
@@ -349,60 +534,32 @@ impl<T> From<(Vec<T>, Vec<Vec<Index>>)> for Mesh<T> {
 #[cfg(test)]
 mod tests {
 
+    use crate::*;
+    #[test]
     fn tetrahedron_to_terahedron() {
-        let c0 = 0.353553390593273762200422181052;
         // Tetrahedron
 
-        // 3 sided faces = 4
-        // Tetrahedron
-        let mut tetrahedron = crate::Mesh {
-            vertices: vec![
-                cgmath::Point3::new(c0, -c0, c0),
-                cgmath::Point3::new(c0, c0, -c0),
-                cgmath::Point3::new(-c0, c0, c0),
-                cgmath::Point3::new(-c0, -c0, -c0),
-            ],
-            face_index: vec![vec![2, 1, 0], vec![3, 0, 1], vec![0, 3, 2], vec![1, 2, 3]],
-        };
+        let mut tetrahedron = Mesh::tetrahedron();
 
-        println!("{:?}", tetrahedron);
+        //tetrahedron.dual();
+        tetrahedron.kis(0.3, None, false);
 
-        tetrahedron.dual();
-        tetrahedron.kis(0., None, false);
-
-        let ctx = nsi::Context::new(&[string!("streamfilename", "stdout")]).unwrap();
-        tetrahedron.to_nsi();
-
-        println!("{:?}", tetrahedron);
+        //let ctx = nsi::Context::new(&[nsi::string!("streamfilename", "stdout")]).unwrap();
+        //tetrahedron.to_nsi(ctx, "terahedron");
+        tetrahedron.export_as_obj(
+            &std::path::PathBuf::from("/Users/moritz/tetrahedron.obj"),
+            true,
+        );
     }
 
     #[test]
     fn cube_to_octahedron() {
-        let mut cube = crate::Mesh {
-            vertices: vec![
-                cgmath::Point3::new(0.5, 0.5, 0.5),
-                cgmath::Point3::new(0.5, 0.5, -0.5),
-                cgmath::Point3::new(0.5, -0.5, 0.5),
-                cgmath::Point3::new(0.5, -0.5, -0.5),
-                cgmath::Point3::new(-0.5, 0.5, 0.5),
-                cgmath::Point3::new(-0.5, 0.5, -0.5),
-                cgmath::Point3::new(-0.5, -0.5, 0.5),
-                cgmath::Point3::new(-0.5, -0.5, -0.5),
-            ],
-            face_index: vec![
-                vec![4, 5, 1, 0],
-                vec![2, 6, 4, 0],
-                vec![1, 3, 2, 0],
-                vec![6, 2, 3, 7],
-                vec![5, 4, 6, 7],
-                vec![3, 1, 5, 7],
-            ],
-        };
-
-        println!("{:?}", cube);
+        let mut cube = Mesh::hexahedron();
 
         cube.dual();
-
-        println!("{:?}", cube);
+        cube.export_as_obj(
+            &std::path::PathBuf::from("/Users/moritz/octahedron.obj"),
+            true,
+        );
     }
 }
