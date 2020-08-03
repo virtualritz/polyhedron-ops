@@ -3,7 +3,7 @@
 This crate implements the [Conway Polyhedral
 Operators](http://en.wikipedia.org/wiki/Conway_polyhedron_notation)
 and their extensions by [George W. Hart](http://www.georgehart.com/)
-and others. 
+and others.
 
 This is an experiment to imporve my understanding of iterators
 in Rust. It is based on Hart’s OpenSCAD code which, being
@@ -11,7 +11,7 @@ functional, leads itself well to being translated to functional Rust.
 
 ## Supported Operators
 
-- [ ] kN - kis on N-sided faces (if no N, then general kis)
+- [x] kN - kis on N-sided faces (if no N, then general kis)
 - [ ] a - ambo
 - [ ] g - gyro
 - [x] d - dual
