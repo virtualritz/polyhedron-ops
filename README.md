@@ -13,9 +13,9 @@ functional, leads itself well to being translated to functional Rust.
 
 - [x] kN - kis on N-sided faces (if no N, then general kis)
 - [ ] a - ambo
-- [ ] g - gyro
+- [x] g - gyro
 - [x] d - dual
-- [ ] r - reflect
+- [x] r - reflect
 - [ ] e - explode (a.k.a. expand, equiv. to aa)
 - [ ] b - bevel (equiv. to ta)
 - [ ] o - ortho (equiv. to jj)
