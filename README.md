@@ -30,18 +30,22 @@ functional, leads itself well to being translated to functional Rust.
 
 ## Playing
 
-While I work on this crate there it's a binary
+While I work on this crate there is a binary
 that allows me to test things.
 
 ```
 cargo run --release
 ```
 
-Use keys to matching the operator to apply.
+Use keys matching the operator name from above
+list to apply.
+
 Use `Up` and `Down` to adjust the parameter of the
-last operator. Combine with `Shift` for
-10× the change. Use `S` to save as
-`$HOME/polyhedron.obj`.
+the last operator.
+
+Combine with `Shift` for 10× the change.
+
+Use `S` to save as `$HOME/polyhedron.obj`.
 
 I use `kiss3d` for realtime preview which is
 close to the metal enough to limit meshes to
