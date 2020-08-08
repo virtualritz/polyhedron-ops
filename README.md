@@ -7,7 +7,7 @@ and others.
 
 This is an experiment to improve my understanding of iterators
 in Rust. It is based on Hart’s OpenSCAD code which, being
-functional, leads itself well to being translated to functional Rust.
+functional, lends itself well to translation into functional Rust.
 
 ## Supported Operators
 
