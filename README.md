@@ -39,15 +39,23 @@ that allows me to test things.
 cargo run --release
 ```
 
-Use keys matching the operator name from above
+### Keyboard Commands
+
+Use keys matching the operator name from the above
 list to apply.
 
 Use `Up` and `Down` to adjust the parameter of the
 the last operator.
-
 Combine with `Shift` for 10× the change.
 
-Use `S` to save as `$HOME/polyhedron.obj`.
+`Delete` undoes the last (and only the last)
+operation.
+
+Press `R` to render with 3Delight (requires a
+[3Delight|ɴsɪ installation](https://www.3delight.com/download)).
+Combine with `Shift` to render with 3Delight Cloud.
+
+Press `Space` to save as `$HOME/polyhedron.obj`.
 
 I use `kiss3d` for realtime preview which is
 close to the metal enough to limit meshes to
