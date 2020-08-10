@@ -37,9 +37,7 @@ mod tests {
 
         cube.triangulate(true);
         cube.export_as_obj(
-            &std::path::PathBuf::from(
-                "/Users/moritz/triangulated_cube.obj",
-            ),
+            &std::path::PathBuf::from("/Users/moritz/triangulated_cube.obj"),
             true,
         );
     }
