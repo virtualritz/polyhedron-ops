@@ -9,6 +9,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
+#[macro_use]
+extern crate slice_as_array;
 use dirs;
 
 use rayon::prelude::*;
@@ -375,6 +377,7 @@ struct Polyhedron {
     vertices: Vertices,
     //face_arity: Vec<index>,
     face_index: FaceIndex,
+    name: String,
 }
 
 impl Polyhedron {
@@ -384,6 +387,7 @@ impl Polyhedron {
         Self {
             vertices: Vec::new(),
             face_index: Vec::new(),
+            name: String::new(),
         }
     }
 
@@ -737,7 +741,7 @@ impl Polyhedron {
         }
     }
 
-    fn nsi_camera(c: &nsi::Context) {
+    fn nsi_camera(c: &nsi::Context, camera_xform: &[f64; 16]) {
         // Setup a camera transform.
         c.create("cam1_trs", nsi::NodeType::Transform, &[]);
         c.connect("cam1_trs", "", ".root", "objects", &[]);
@@ -746,6 +750,7 @@ impl Polyhedron {
             "cam1_trs",
             &[nsi::double_matrix!(
                 "transformationmatrix",
+                //camera_xform
                 &[1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 5., 1.,]
             )],
         );
@@ -772,7 +777,7 @@ impl Polyhedron {
             &[
                 nsi::integer!("renderatlowpriority", 1),
                 nsi::string!("bucketorder", "circle"),
-                nsi::unsigned!("quality.shadingsamples", 64),
+                nsi::unsigned!("quality.shadingsamples", 256),
                 nsi::integer!("maximumraydepth.reflection", 6),
             ],
         );
@@ -864,13 +869,24 @@ impl Polyhedron {
         );
     }
 
-    pub fn render_with_nsi(&self, name: &str) {
-        let ctx = nsi::Context::new(&[]).unwrap();
+    pub fn render_with_nsi(&self, camera_xform: &[f64; 16], name: &str, cloud_render: bool) {
+
+        let ctx = {
+            if cloud_render {
+                nsi::Context::new(&[
+                    nsi::integer!("cloud", 1),
+                    nsi::string!("software", "HOUDINI"),
+                ])
+            } else {
+                nsi::Context::new(&[])
+            }
+        }
+        .expect("Could not create NSI rendering context.");
 
         // Create a new mesh node and call it 'dodecahedron'.
         ctx.create(name, nsi::NodeType::Mesh, &[]);
 
-        Self::nsi_camera(&ctx);
+        Self::nsi_camera(&ctx, camera_xform);
 
         Self::nsi_environment(&ctx);
 
@@ -979,6 +995,7 @@ impl Polyhedron {
                 Point::new(-c0, -c0, c0),
             ],
             face_index: vec![vec![2, 1, 0], vec![3, 2, 0], vec![1, 3, 0], vec![2, 3, 1]],
+            name: String::from("T"),
         }
     }
 
@@ -1004,6 +1021,7 @@ impl Polyhedron {
                 vec![5, 4, 6, 7],
                 vec![3, 1, 5, 7],
             ],
+            name: String::from("C"),
         }
     }
 
@@ -1029,6 +1047,7 @@ impl Polyhedron {
                 vec![4, 3, 1],
                 vec![2, 4, 1],
             ],
+            name: String::from("O"),
         }
     }
 
@@ -1073,6 +1092,7 @@ impl Polyhedron {
                 vec![5, 4, 12, 8, 13],
                 vec![1, 3, 15, 5, 13],
             ],
+            name: String::from("D"),
         }
     }
 
@@ -1116,7 +1136,9 @@ impl Polyhedron {
                 vec![1, 3, 11],
                 vec![9, 3, 1],
             ],
+            name: String::from("I"),
         }
+
     }
 }
 
@@ -1225,7 +1247,7 @@ impl From<Polyhedron> for kiss3d::resource::Mesh {
 use nalgebra as na;
 
 use kiss3d::{
-    camera::{ArcBall, FirstPerson},
+    camera::{ArcBall, Camera, FirstPerson},
     event::{Action, Key, Modifiers, WindowEvent},
     light::Light,
     resource::Mesh,
@@ -1267,7 +1289,7 @@ fn main() {
     let path = dirs::home_dir().unwrap().join("polyhedron.obj");
 
     println!(
-        "Press one of\nA(mbo)\nD(ual)\nE(xplode)\nG(yro)\nJ(oin)\nK(iss)\nM(eta)\nO(rtho)\n(Shft) Up/Down – modify the last operation\nR(ender)\nSpace – save"
+        "Press one of\nA(mbo)\nD(ual)\nE(xplode)\nG(yro)\nJ(oin)\nK(iss)\nM(eta)\nO(rtho)\n(S)nub\n(Shft) Up/Down – modify the last operation\nR(ender)\nSpace – save"
     );
 
     while !window.should_close() {
@@ -1283,46 +1305,60 @@ fn main() {
                         Key::Numpad1 => use_arc_ball = true,
                         Key::Numpad2 => use_arc_ball = false,
                         Key::A => {
+                            alter_last_op = false;
                             last_poly = poly.clone();
                             poly.ambo();
                             poly.normalize();
+                            last_op = '_';
                         }
                         Key::D => {
+                            alter_last_op = false;
                             last_poly = poly.clone();
                             poly.dual();
                             poly.normalize();
+                            last_op = '_';
                         }
                         Key::E => {
+                            alter_last_op = false;
                             last_poly = poly.clone();
                             poly.explode();
                             poly.normalize();
+                            last_op = '_';
                         }
                         Key::G => {
+                            alter_last_op = false;
                             last_poly = poly.clone();
                             last_op_value = 0.;
                             poly.gyro(1. / 3., last_op_value);
                             last_op = 'g';
                         }
                         Key::J => {
+                            alter_last_op = false;
                             last_poly = poly.clone();
                             poly.join();
                             poly.normalize();
+                            last_op = '_';
                         }
                         Key::K => {
+                            alter_last_op = false;
                             last_poly = poly.clone();
                             last_op_value = 0.;
                             poly.kis(last_op_value, None, false);
                             last_op = 'k';
                         }
                         Key::M => {
+                            alter_last_op = false;
                             last_poly = poly.clone();
                             poly.meta();
                             poly.normalize();
+                            last_op = '_';
                         }
                         Key::O => {
+                            alter_last_op = false;
                             last_poly = poly.clone();
                             poly.ortho();
                             poly.normalize();
+                            last_op = '_';
                         }
                         /*Key::T => {
                             if Super == modifiers {
@@ -1330,9 +1366,11 @@ fn main() {
                             }
                         }*/
                         Key::S => {
+                            alter_last_op = false;
                             last_poly = poly.clone();
                             poly.snub();
                             poly.normalize();
+                            last_op = '_';
                         }
                         Key::Space => {
                             poly.export_as_obj(&path, true);
@@ -1358,7 +1396,17 @@ fn main() {
                             poly = last_poly.clone();
                         }
                         Key::R => {
-                            poly.render_with_nsi("polyhedron");
+                            let xform = arc_ball
+                                .inverse_transformation()
+                                .iter()
+                                .map(|e| *e as f64)
+                                .collect::<Vec<_>>();
+
+                            poly.render_with_nsi(
+                                slice_as_array!(xform.as_slice(), [f64; 16]).unwrap(),
+                                "polyhedron",
+                                modifiers.intersects(Modifiers::Shift),
+                            );
                         }
                         _ => {
                             break;
@@ -1370,10 +1418,12 @@ fn main() {
                             'g' => {
                                 poly = last_poly.clone();
                                 poly.gyro(1. / 3., last_op_value);
+                                poly.normalize();
                             }
                             'k' => {
                                 poly = last_poly.clone();
                                 poly.kis(last_op_value, None, false);
+                                poly.normalize();
                             }
                             _ => (),
                         }

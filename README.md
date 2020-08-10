@@ -9,6 +9,8 @@ This is an experiment to improve my understanding of iterators
 in Rust. It is based on Hart’s OpenSCAD code which, being
 functional, lends itself well to translation into functional Rust.
 
+![Some brutalist Polyhedron, rendered with 3Delight|ɴsɪ](polyhedron.jpg)
+
 ## Supported Operators
 
 - [x] kN - kis on N-sided faces (if no N, then general kis)
