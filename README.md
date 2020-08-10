@@ -62,6 +62,9 @@ close to the metal enough to limit meshes to
 65k vertices. This means the preview will be
 broken if your mesh hits this limit.
 
-Export will always yield a correct OBJ though.
+Export & render will always yield a correct OBJ though.
 Which you can view in Blender or another DCC
-app.
+app. 
+
+The app may crash though if your graphics driver
+doesn't handle such ill-defined meshes gracefully. :)
