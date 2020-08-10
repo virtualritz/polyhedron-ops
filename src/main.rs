@@ -1211,6 +1211,9 @@ fn main() {
                                 last_op_value -= 0.01;
                             }
                         }
+                        Key::Delete => {
+                            poly = last_poly.clone();
+                        }
                         _ => {
                             break;
                         }
