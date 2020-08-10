@@ -1,6 +1,7 @@
 use cgmath::prelude::*;
 use itertools::Itertools;
-//use nsi;
+use nsi;
+
 use std::{
     fs::File,
     io::Write,
@@ -736,10 +737,142 @@ impl Polyhedron {
         }
     }
 
-    /*
-    pub fn render_with_nsi(&self, ctx: nsi::Context, name: &str) {
+    fn nsi_camera(c: &nsi::Context) {
+        // Setup a camera transform.
+        c.create("cam1_trs", nsi::NodeType::Transform, &[]);
+        c.connect("cam1_trs", "", ".root", "objects", &[]);
+
+        c.set_attribute(
+            "cam1_trs",
+            &[nsi::double_matrix!(
+                "transformationmatrix",
+                &[1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 5., 1.,]
+            )],
+        );
+
+        // Setup a camera.
+        c.create("cam1", nsi::NodeType::PerspectiveCamera, &[]);
+
+        c.set_attribute("cam1", &[nsi::float!("fov", 35.)]);
+        c.connect("cam1", "", "cam1_trs", "objects", &[]);
+
+        // Setup a screen.
+        c.create("s1", nsi::NodeType::Screen, &[]);
+        c.connect("s1", "", "cam1", "screens", &[]);
+        c.set_attribute(
+            "s1",
+            &[
+                nsi::integers!("resolution", &[1536, 1536]).array_len(2),
+                nsi::integer!("oversampling", 16),
+            ],
+        );
+
+        c.set_attribute(
+            ".global",
+            &[
+                nsi::integer!("renderatlowpriority", 1),
+                nsi::string!("bucketorder", "circle"),
+                nsi::unsigned!("quality.shadingsamples", 64),
+                nsi::integer!("maximumraydepth.reflection", 6),
+            ],
+        );
+
+        // Setup an output layer.
+        c.create("beauty", nsi::NodeType::OutputLayer, &[]);
+        c.set_attribute(
+            "beauty",
+            &[
+                nsi::string!("variablename", "Ci"),
+                nsi::integer!("withalpha", 1),
+                nsi::string!("scalarformat", "half"),
+                nsi::color!("some_color", &[0.1f32, 0.2, 0.3]),
+            ],
+        );
+        c.connect("beauty", "", "s1", "outputlayers", &[]);
+
+        // Setup an output driver.
+        c.create("driver1", nsi::NodeType::OutputDriver, &[]);
+        c.connect("driver1", "", "beauty", "outputdrivers", &[]);
+        c.set_attribute("driver1", &[nsi::string!("drivername", "idisplay")]);
+    }
+
+    fn nsi_environment(c: &nsi::Context) {
+        // Set up an environment light.
+        c.create("env_xform", nsi::NodeType::Transform, &[]);
+        c.connect("env_xform", "", ".root", "objects", &[]);
+
+        c.create("environment", nsi::NodeType::Environment, &[]);
+        c.connect("environment", "", "env_xform", "objects", &[]);
+
+        c.create("env_attrib", nsi::NodeType::Attributes, &[]);
+        c.connect("env_attrib", "", "environment", "geometryattributes", &[]);
+
+        c.set_attribute("env_attrib", &[nsi::integer!("visibility.camera", 0)]);
+
+        c.create("env_shader", nsi::NodeType::Shader, &[]);
+        c.connect("env_shader", "", "env_attrib", "surfaceshader", &[]);
+
+        // Environment light attributes.
+        c.set_attribute(
+            "env_shader",
+            &[
+                nsi::string!("shaderfilename", "osl/environmentLight"),
+                nsi::float!("intensity", 1.),
+            ],
+        );
+
+        c.set_attribute(
+            "env_shader",
+            &[nsi::string!("image", "assets/wooden_lounge_2k.tdl")],
+        );
+    }
+
+    fn nsi_material(c: &nsi::Context, name: &str) {
+        // Particle attributes.
+        let attribute_name = format!("{}_attrib", name);
+        c.create(attribute_name.clone(), nsi::NodeType::Attributes, &[]);
+        c.connect(attribute_name.clone(), "", name, "geometryattributes", &[]);
+
+        // Particle shader.
+        let shader_name = format!("{}_shader", name);
+        c.create(shader_name.clone(), nsi::NodeType::Shader, &[]);
+        c.connect(
+            shader_name.clone(),
+            "",
+            attribute_name,
+            "surfaceshader",
+            &[],
+        );
+
+        c.set_attribute(
+            shader_name,
+            &[
+                nsi::string!("shaderfilename", "osl/dlPrincipled"),
+                nsi::color!("i_color", &[1.0f32, 0.6, 0.3]),
+                //nsi::arg!("coating_thickness", &0.1f32),
+                nsi::float!("roughness", 0.3f32),
+                nsi::float!("specular_level", 0.5f32),
+                nsi::float!("metallic", 1.0f32),
+                nsi::float!("anisotropy", 0.0f32),
+                nsi::float!("sss_weight", 0.0f32),
+                nsi::color!("sss_color", &[0.5f32, 0.5, 0.5]),
+                nsi::float!("sss_scale", 0.0f32),
+                nsi::color!("incandescence", &[0.0f32, 0.0, 0.0]),
+                nsi::float!("incandescence_intensity", 0.0f32),
+                //nsi::color!("incandescence_multiplier", &[1.0f32, 1.0, 1.0]),
+            ],
+        );
+    }
+
+    pub fn render_with_nsi(&self, name: &str) {
+        let ctx = nsi::Context::new(&[]).unwrap();
+
         // Create a new mesh node and call it 'dodecahedron'.
         ctx.create(name, nsi::NodeType::Mesh, &[]);
+
+        Self::nsi_camera(&ctx);
+
+        Self::nsi_environment(&ctx);
 
         // Connect the 'dodecahedron' node to the scene's root.
         ctx.connect(name, "", nsi::NodeType::Root, "objects", &[]);
@@ -765,6 +898,7 @@ impl Polyhedron {
             .map(|face| face.len() as u32)
             .collect::<Vec<u32>>();
 
+        let edges = self.edges().into_iter().flatten().collect::<Vec<_>>();
         let face_index = self.face_index.concat();
 
         ctx.set_attribute(
@@ -775,13 +909,22 @@ impl Polyhedron {
                 // 5 vertices per each face.
                 nsi::unsigneds!("nvertices", &face_arity),
                 // Render this as a subdivison surface.
-                // nsi::string!("subdivision.scheme", "catmull-clark"),
+                nsi::string!("subdivision.scheme", "catmull-clark"),
                 // Crease each of our 30 edges a bit.
-                //nsi::unsigneds!("subdivision.creasevertices", &face_index),
-                //nsi::floats!("subdivision.creasesharpness", &[10.; 30]),
+                nsi::unsigneds!("subdivision.creasevertices", &edges),
+                nsi::floats!("subdivision.creasesharpness", &vec![10.; edges.len()]),
+                nsi::unsigned!("subdivision.smoothcreasecorners", 0),
             ],
         );
-    }*/
+
+        Self::nsi_material(&ctx, name);
+
+        // And now, render it!
+        ctx.render_control(&[nsi::string!("action", "start")]);
+
+        // And now, render it!
+        ctx.render_control(&[nsi::string!("action", "wait")]);
+    }
 
     /*
     function average_normal(fp) =
@@ -1124,7 +1267,7 @@ fn main() {
     let path = dirs::home_dir().unwrap().join("polyhedron.obj");
 
     println!(
-        "Press one of\nA(mbo)\nD(ual)\nE(xplode)\nG(yro)\nJ(oin)\nK(iss)\nM(eta)\nO(rtho)\n(Shft) Up/Down – modify the last operation\nSpace – save"
+        "Press one of\nA(mbo)\nD(ual)\nE(xplode)\nG(yro)\nJ(oin)\nK(iss)\nM(eta)\nO(rtho)\n(Shft) Up/Down – modify the last operation\nR(ender)\nSpace – save"
     );
 
     while !window.should_close() {
@@ -1213,6 +1356,9 @@ fn main() {
                         }
                         Key::Delete => {
                             poly = last_poly.clone();
+                        }
+                        Key::R => {
+                            poly.render_with_nsi("polyhedron");
                         }
                         _ => {
                             break;

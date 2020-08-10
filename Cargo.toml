@@ -15,8 +15,8 @@ nalgebra = "0.21.1"
 kiss3d = "0.24.1"
 rayon = "1.3.1"
 dirs = "3.0.1"
+nsi = { path = "../nsi", version = "0.5.2" }
 
-#nsi = { path = "../nsi", version = "0.5.1" }
 [profile.release]
 lto = "on"
 opt-level = 3
