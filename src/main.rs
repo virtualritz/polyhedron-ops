@@ -929,8 +929,10 @@ impl Polyhedron {
     ) -> std::io::Result<()> {
         let mut file = File::create(destination)?;
 
+        writeln!(file, "o {}", self.name)?;
+
         self.vertices.iter().for_each(|vertex| {
-            write!(file, "v {} {} {}\n", vertex.x, vertex.y, vertex.z).unwrap()
+            writeln!(file, "v {} {} {}", vertex.x, vertex.y, vertex.z).unwrap()
         });
 
         match reverse_winding {
@@ -939,14 +941,14 @@ impl Polyhedron {
                 face.iter().rev().for_each(|vertex_index| {
                     write!(file, " {}", vertex_index + 1).unwrap()
                 });
-                write!(file, "\n");
+                writeln!(file, "");
             }),
             false => self.face_index.iter().for_each(|face| {
                 write!(file, "f");
                 face.iter().for_each(|vertex_index| {
                     write!(file, " {}", vertex_index + 1).unwrap()
                 });
-                write!(file, "\n");
+                writeln!(file, "");
             }),
         };
 
