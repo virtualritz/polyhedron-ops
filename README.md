@@ -19,10 +19,10 @@ functional, lends itself well to translation into functional Rust.
 - [x] d - dual
 - [x] r - reflect
 - [x] e - explode (a.k.a. expand, equiv. to aa)
-- [ ] b - bevel (equiv. to ta)
+- [x] b - bevel (equiv. to ta)
 - [x] o - ortho (equiv. to jj)
 - [x] m - meta (equiv. to k3j)
-- [ ] tN - truncate vertices of degree N (equiv. to dkNd; if no N, then truncate all vertices)
+- [x] tN - truncate vertices of degree N (equiv. to dkNd; if no N, then truncate all vertices)
 - [x] j - join (equiv. to dad)
 - [x] s - snub (equiv. to dgd)
 - [ ] p - propellor
@@ -64,7 +64,7 @@ broken if your mesh hits this limit.
 
 Export & render will always yield a correct OBJ though.
 Which you can view in Blender or another DCC
-app. 
+app.
 
 The app may crash though if your graphics driver
 doesn't handle such ill-defined meshes gracefully. :)

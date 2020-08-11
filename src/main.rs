@@ -4,7 +4,7 @@ use nsi;
 
 use std::{
     fs::File,
-    io::Write,
+    io::{self, Write},
     iter::{once, Iterator},
     path::{Path, PathBuf},
 };
@@ -15,7 +15,7 @@ use dirs;
 
 use rayon::prelude::*;
 
-mod tests;
+mod nsi_render;
 
 type Float = f32;
 type Index = u32;
@@ -34,12 +34,11 @@ type Vertices = Vec<Point>;
 type VerticesRef<'a> = Vec<&'a Point>;
 type Normals = Vec<Normal>;
 
-enum NormalType {
+pub enum NormalType {
     Smooth(Float),
     Flat,
 }
 
-//impl Vertices {
 #[inline]
 fn to_vadd(vertices: &Vertices, v: &Vector) -> Vertices {
     vertices.par_iter().map(|p| p.clone() + v).collect()
@@ -62,7 +61,12 @@ fn centroid(vertices: &Vertices) -> Point {
 }
 
 #[inline]
-fn ordered_vertex_edges_recurse(v: u32, vfaces: &FaceIndex, face: &Face, k: usize) -> EdgeIndex {
+fn ordered_vertex_edges_recurse(
+    v: u32,
+    vfaces: &FaceIndex,
+    face: &Face,
+    k: usize,
+) -> EdgeIndex {
     if k < vfaces.len() {
         let i = index_of(&v, face).unwrap();
         let j = (i + face.len() - 1) % face.len();
@@ -230,7 +234,10 @@ fn ordered_vertex_faces_recurse(
 }
 
 #[inline]
-fn ordered_vertex_faces(vertex_number: Index, face_index: &FaceIndex) -> FaceIndex {
+fn ordered_vertex_faces(
+    vertex_number: Index,
+    face_index: &FaceIndex,
+) -> FaceIndex {
     let mut result = vec![face_index[0].clone()];
     result.extend(ordered_vertex_faces_recurse(
         vertex_number,
@@ -305,7 +312,10 @@ fn face_normal(vertices: &VerticesRef) -> Vector {
 }
 
 #[inline]
-fn vertex_ids_ref<'a>(entries: &Vec<(&'a Face, Point)>, offset: Index) -> Vec<(&'a Face, Index)> {
+fn vertex_ids_ref<'a>(
+    entries: &Vec<(&'a Face, Point)>,
+    offset: Index,
+) -> Vec<(&'a Face, Index)> {
     entries
         .par_iter()
         .enumerate()
@@ -316,7 +326,10 @@ fn vertex_ids_ref<'a>(entries: &Vec<(&'a Face, Point)>, offset: Index) -> Vec<(&
 }
 
 #[inline]
-fn vertex_ids(entries: &Vec<(Face, Point)>, offset: usize) -> Vec<(Face, usize)> {
+fn vertex_ids(
+    entries: &Vec<(Face, Point)>,
+    offset: usize,
+) -> Vec<(Face, usize)> {
     entries
         .par_iter()
         .enumerate()
@@ -335,7 +348,9 @@ fn vertex(key: &Face, entries: &Vec<(&Face, Index)>) -> Option<Index> {
 }
 
 #[inline]
-fn vertex_values_as_ref<'a>(entries: &'a Vec<(&Face, Point)>) -> VerticesRef<'a> {
+fn vertex_values_as_ref<'a>(
+    entries: &'a Vec<(&Face, Point)>,
+) -> VerticesRef<'a> {
     entries.par_iter().map(|e| &e.1).collect()
 }
 
@@ -373,7 +388,7 @@ fn distinct_edges(faces: &FaceIndex) -> EdgeIndex {
 }
 
 #[derive(Clone, Debug)]
-struct Polyhedron {
+pub struct Polyhedron {
     vertices: Vertices,
     //face_arity: Vec<index>,
     face_index: FaceIndex,
@@ -392,22 +407,35 @@ impl Polyhedron {
     }
 
     #[inline]
+    pub fn name(&self) -> &String {
+        &self.name
+    }
+
+    #[inline]
     pub fn num_vertices(&self) -> usize {
         self.vertices.len()
     }
 
+    #[inline]
     pub fn normalize(&mut self) {
         circumscribed_resize(&mut self.vertices, 1.);
     }
 
-    pub fn vertices_to_faces(mesh: &Self) -> FaceIndex {
+    #[inline]
+    pub fn edges(&self) -> EdgeIndex {
+        distinct_edges(&self.face_index)
+    }
+
+    #[inline]
+    fn vertices_to_faces(mesh: &Self) -> FaceIndex {
         let mut fi = FaceIndex::with_capacity(mesh.num_vertices());
         for vertex_number in 0..mesh.num_vertices() as u32 {
             // each old vertex creates a new face, with
             let vertex_faces = vertex_faces(vertex_number, &mesh.face_index);
             // vertex faces in left-hand order
             let mut new_face = Face::new();
-            for of in ordered_vertex_faces(vertex_number as u32, &vertex_faces) {
+            for of in ordered_vertex_faces(vertex_number as u32, &vertex_faces)
+            {
                 new_face.push(index_of(&of, &mesh.face_index).unwrap() as Index)
             }
             fi.push(new_face)
@@ -415,6 +443,7 @@ impl Polyhedron {
         fi
     }
 
+    #[inline]
     fn triangulate(&mut self, shortest: bool) {
         self.face_index = self
             .face_index
@@ -426,7 +455,10 @@ impl Polyhedron {
                 4 => {
                     let p = as_points(face, &self.vertices);
 
-                    if shortest == ((p[0] - p[2]).magnitude2() < (p[1] - p[3]).magnitude2()) {
+                    if shortest
+                        == ((p[0] - p[2]).magnitude2()
+                            < (p[1] - p[3]).magnitude2())
+                    {
                         vec![
                             vec![face[0], face[1], face[2]],
                             vec![face[0], face[2], face[3]],
@@ -461,7 +493,8 @@ impl Polyhedron {
             .collect();
     }
 
-    fn ambo(&mut self) {
+    #[inline]
+    fn ambo(&mut self, change_name: bool) {
         let edges = distinct_edges(&self.face_index);
 
         let vertices = edges
@@ -502,7 +535,9 @@ impl Polyhedron {
                 let vf = vertex_faces(vi, &self.face_index);
                 ordered_vertex_edges(vi, &vf)
                     .iter()
-                    .map(|ve| vertex(&distinct_edge(ve), &newids).unwrap() as Index)
+                    .map(|ve| {
+                        vertex(&distinct_edge(ve), &newids).unwrap() as Index
+                    })
                     .collect::<Vec<_>>()
             })
             .collect();
@@ -511,56 +546,21 @@ impl Polyhedron {
 
         self.face_index = face_index;
         self.vertices = vertex_values(&vertices);
+
+        if change_name {
+            self.name = format!("a{}", self.name);
+        }
     }
 
-    pub fn ortho(&mut self) {
-        self.join();
+    pub fn bevel(&mut self, change_name: bool) {
+        self.truncate(None, false);
+        self.ambo(false);
+        if change_name {
+            self.name = format!("b{}", self.name);
+        }
     }
 
-    pub fn meta(&mut self) {
-        self.kis(0., Some(&vec![3]), false);
-        self.join();
-    }
-
-    pub fn join(&mut self) {
-        self.dual();
-        self.ambo();
-        self.dual();
-    }
-
-    pub fn snub(&mut self) {
-        self.dual();
-        self.gyro(1. / 3., 0.);
-        self.dual();
-    }
-
-    pub fn explode(&mut self) {
-        self.ambo();
-        self.ambo();
-    }
-
-    pub fn reflect(&mut self) {
-        self.vertices = self
-            .vertices
-            .par_iter()
-            .map(|v| Point::new(v.x, -v.y, v.z))
-            .collect();
-        self.reverse();
-    }
-
-    pub fn reverse(&mut self) {
-        self.face_index = self
-            .face_index
-            .par_iter()
-            .map(|f| {
-                let mut new_face = f.clone();
-                new_face.reverse();
-                new_face
-            })
-            .collect();
-    }
-
-    fn dual(&mut self) {
+    fn dual(&mut self, change_name: bool) {
         let new_vertices = self
             .face_index
             .par_iter()
@@ -568,51 +568,25 @@ impl Polyhedron {
             .collect();
         self.face_index = Self::vertices_to_faces(self);
         self.vertices = new_vertices;
+        if change_name {
+            self.name = format!("d{}", self.name);
+        }
     }
 
-    /// kis – each face with a specified arity n is divided into n
-    /// triangles which extend to the face centroid existimg vertices
-    /// retained.
-    fn kis(&mut self, height: Float, face_arity: Option<&Vec<usize>>, regular: bool) {
-        let new_vertices: Vec<(&Face, Point)> = self
-            .face_index
-            .par_iter()
-            .filter(|face| {
-                selected_face(face, face_arity) && !regular
-                    || ((face_irregularity(face, &self.vertices) - 1.0).abs() < 0.1)
-            })
-            .map(|face| {
-                let fp = as_points(face, &self.vertices);
-                (face, centroid_ref(&fp) + face_normal(&fp) * height)
-            })
-            .collect();
-
-        let newids = vertex_ids_ref(&new_vertices, self.vertices.len() as Index);
-
-        self.vertices.extend(vertex_values_as_ref(&new_vertices));
-
-        self.face_index = self
-            .face_index
-            .par_iter()
-            .map(|f: &Face| match vertex(f, &newids) {
-                Some(centroid) => {
-                    let mut result = Vec::with_capacity(f.len());
-                    for j in 0..f.len() {
-                        result.push(vec![f[j], f[(j + 1) % f.len()], centroid as Index]);
-                    }
-                    result
-                }
-                None => vec![f.clone()],
-            })
-            .flatten()
-            .collect();
-    } // end kis
-
-    fn edges(&self) -> EdgeIndex {
-        distinct_edges(&self.face_index)
+    pub fn explode(&mut self, change_name: bool) {
+        self.ambo(false);
+        self.ambo(false);
+        if change_name {
+            self.name = format!("e{}", self.name);
+        }
     }
 
-    fn gyro(&mut self, r: f32 /* 0.3333 */, h: f32) {
+    fn gyro(
+        &mut self,
+        ratio: f32, /* 0.3333 */
+        height: f32,
+        change_name: bool,
+    ) {
         // retain original vertices, add face centroids and directed
         // edge points each N-face becomes N pentagons
 
@@ -621,7 +595,7 @@ impl Polyhedron {
             .par_iter()
             .map(|face| {
                 let fp = as_points(face, &self.vertices);
-                (face, centroid_ref(&fp) + face_normal(&fp) * h)
+                (face, centroid_ref(&fp) + face_normal(&fp) * height)
             })
             .collect::<Vec<_>>();
 
@@ -639,8 +613,8 @@ impl Polyhedron {
                 let ep = as_points(edge.1, &self.vertices);
                 // println!("{:?}", ep);
                 vec![
-                    (edge.1, ep[0] + r * (ep[1] - ep[0])),
-                    (&rev_edges[edge.0], ep[1] + r * (ep[0] - ep[1])),
+                    (edge.1, ep[0] + ratio * (ep[1] - ep[0])),
+                    (&rev_edges[edge.0], ep[1] + ratio * (ep[0] - ep[1])),
                 ]
             })
             .flatten()
@@ -649,7 +623,8 @@ impl Polyhedron {
         new_vertices.extend(new_vertices2);
         //  2 points per edge
 
-        let newids = vertex_ids_ref(&new_vertices, self.num_vertices() as Index);
+        let newids =
+            vertex_ids_ref(&new_vertices, self.num_vertices() as Index);
 
         self.vertices.extend(vertex_values_as_ref(&new_vertices));
 
@@ -676,6 +651,146 @@ impl Polyhedron {
         //n!("{:?}", new_face_index);
 
         self.face_index = new_face_index;
+
+        if change_name {
+            self.name = format!("g{}", self.name);
+        }
+    }
+
+    pub fn join(&mut self, change_name: bool) {
+        self.dual(false);
+        self.ambo(false);
+        self.dual(false);
+        if change_name {
+            self.name = format!("j{}", self.name);
+        }
+    }
+
+    /// kis – each face with a specified arity n is divided into n
+    /// triangles which extend to the face centroid existimg vertices
+    /// retained.
+    fn kis(
+        &mut self,
+        height: Float,
+        face_arity: Option<&Vec<usize>>,
+        regular: bool,
+        change_name: bool,
+    ) {
+        let new_vertices: Vec<(&Face, Point)> = self
+            .face_index
+            .par_iter()
+            .filter(|face| {
+                selected_face(face, face_arity) && !regular
+                    || ((face_irregularity(face, &self.vertices) - 1.0).abs()
+                        < 0.1)
+            })
+            .map(|face| {
+                let fp = as_points(face, &self.vertices);
+                (face, centroid_ref(&fp) + face_normal(&fp) * height)
+            })
+            .collect();
+
+        let newids =
+            vertex_ids_ref(&new_vertices, self.vertices.len() as Index);
+
+        self.vertices.extend(vertex_values_as_ref(&new_vertices));
+
+        self.face_index = self
+            .face_index
+            .par_iter()
+            .map(|f: &Face| match vertex(f, &newids) {
+                Some(centroid) => {
+                    let mut result = Vec::with_capacity(f.len());
+                    for j in 0..f.len() {
+                        result.push(vec![
+                            f[j],
+                            f[(j + 1) % f.len()],
+                            centroid as Index,
+                        ]);
+                    }
+                    result
+                }
+                None => vec![f.clone()],
+            })
+            .flatten()
+            .collect();
+
+        if change_name {
+            match face_arity {
+                Some(face_arity) => {
+                    self.name = format!("k{:?}{}", face_arity, self.name)
+                }
+                None => self.name = format!("k{}", self.name),
+            }
+        }
+    } // end kis
+
+    pub fn meta(&mut self, change_name: bool) {
+        self.kis(0., Some(&vec![3]), false, false);
+        self.join(false);
+        if change_name {
+            self.name = format!("m{}", self.name);
+        }
+    }
+
+    pub fn ortho(&mut self, change_name: bool) {
+        self.join(false);
+        self.join(false);
+        if change_name {
+            self.name = format!("o{}", self.name);
+        }
+    }
+
+    pub fn reflect(&mut self, change_name: bool) {
+        self.vertices = self
+            .vertices
+            .par_iter()
+            .map(|v| Point::new(v.x, -v.y, v.z))
+            .collect();
+        self.reverse();
+        if change_name {
+            self.name = format!("r{}", self.name);
+        }
+    }
+
+    pub fn snub(&mut self, change_name: bool) {
+        self.dual(false);
+        self.gyro(1. / 3., 0., false);
+        self.dual(false);
+        if change_name {
+            self.name = format!("s{}", self.name);
+        }
+    }
+
+    pub fn truncate(
+        &mut self,
+        vertex_valence: Option<&Vec<usize>>,
+        change_name: bool,
+    ) {
+        self.dual(false);
+        self.kis(0., vertex_valence, false, false);
+        self.dual(false);
+
+        if change_name {
+            match vertex_valence {
+                Some(vertex_valence) => {
+                    self.name = format!("t{:?}{}", vertex_valence, self.name)
+                }
+                None => self.name = format!("t{}", self.name),
+            }
+        }
+    }
+
+    pub fn reverse(&mut self) {
+        self.face_index = self
+            .face_index
+            .par_iter()
+            .map(|f| {
+                let mut new_face = f.clone();
+                new_face.reverse();
+                new_face
+            })
+            .collect();
     }
 
     pub fn normals(&self, normal_type: NormalType) -> Normals {
@@ -741,157 +856,12 @@ impl Polyhedron {
         }
     }
 
-    fn nsi_camera(c: &nsi::Context, camera_xform: &[f64; 16]) {
-        // Setup a camera transform.
-        c.create("cam1_trs", nsi::NodeType::Transform, &[]);
-        c.connect("cam1_trs", "", ".root", "objects", &[]);
-
-        c.set_attribute(
-            "cam1_trs",
-            &[nsi::double_matrix!(
-                "transformationmatrix",
-                //camera_xform
-                &[1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 5., 1.,]
-            )],
-        );
-
-        // Setup a camera.
-        c.create("cam1", nsi::NodeType::PerspectiveCamera, &[]);
-
-        c.set_attribute("cam1", &[nsi::float!("fov", 35.)]);
-        c.connect("cam1", "", "cam1_trs", "objects", &[]);
-
-        // Setup a screen.
-        c.create("s1", nsi::NodeType::Screen, &[]);
-        c.connect("s1", "", "cam1", "screens", &[]);
-        c.set_attribute(
-            "s1",
-            &[
-                nsi::integers!("resolution", &[1536, 1536]).array_len(2),
-                nsi::integer!("oversampling", 16),
-            ],
-        );
-
-        c.set_attribute(
-            ".global",
-            &[
-                nsi::integer!("renderatlowpriority", 1),
-                nsi::string!("bucketorder", "circle"),
-                nsi::unsigned!("quality.shadingsamples", 256),
-                nsi::integer!("maximumraydepth.reflection", 6),
-            ],
-        );
-
-        // Setup an output layer.
-        c.create("beauty", nsi::NodeType::OutputLayer, &[]);
-        c.set_attribute(
-            "beauty",
-            &[
-                nsi::string!("variablename", "Ci"),
-                nsi::integer!("withalpha", 1),
-                nsi::string!("scalarformat", "half"),
-                nsi::color!("some_color", &[0.1f32, 0.2, 0.3]),
-            ],
-        );
-        c.connect("beauty", "", "s1", "outputlayers", &[]);
-
-        // Setup an output driver.
-        c.create("driver1", nsi::NodeType::OutputDriver, &[]);
-        c.connect("driver1", "", "beauty", "outputdrivers", &[]);
-        c.set_attribute("driver1", &[nsi::string!("drivername", "idisplay")]);
-    }
-
-    fn nsi_environment(c: &nsi::Context) {
-        // Set up an environment light.
-        c.create("env_xform", nsi::NodeType::Transform, &[]);
-        c.connect("env_xform", "", ".root", "objects", &[]);
-
-        c.create("environment", nsi::NodeType::Environment, &[]);
-        c.connect("environment", "", "env_xform", "objects", &[]);
-
-        c.create("env_attrib", nsi::NodeType::Attributes, &[]);
-        c.connect("env_attrib", "", "environment", "geometryattributes", &[]);
-
-        c.set_attribute("env_attrib", &[nsi::integer!("visibility.camera", 0)]);
-
-        c.create("env_shader", nsi::NodeType::Shader, &[]);
-        c.connect("env_shader", "", "env_attrib", "surfaceshader", &[]);
-
-        // Environment light attributes.
-        c.set_attribute(
-            "env_shader",
-            &[
-                nsi::string!("shaderfilename", "osl/environmentLight"),
-                nsi::float!("intensity", 1.),
-            ],
-        );
-
-        c.set_attribute(
-            "env_shader",
-            &[nsi::string!("image", "assets/wooden_lounge_2k.tdl")],
-        );
-    }
-
-    fn nsi_material(c: &nsi::Context, name: &str) {
-        // Particle attributes.
-        let attribute_name = format!("{}_attrib", name);
-        c.create(attribute_name.clone(), nsi::NodeType::Attributes, &[]);
-        c.connect(attribute_name.clone(), "", name, "geometryattributes", &[]);
-
-        // Particle shader.
-        let shader_name = format!("{}_shader", name);
-        c.create(shader_name.clone(), nsi::NodeType::Shader, &[]);
-        c.connect(
-            shader_name.clone(),
-            "",
-            attribute_name,
-            "surfaceshader",
-            &[],
-        );
-
-        c.set_attribute(
-            shader_name,
-            &[
-                nsi::string!("shaderfilename", "osl/dlPrincipled"),
-                nsi::color!("i_color", &[1.0f32, 0.6, 0.3]),
-                //nsi::arg!("coating_thickness", &0.1f32),
-                nsi::float!("roughness", 0.3f32),
-                nsi::float!("specular_level", 0.5f32),
-                nsi::float!("metallic", 1.0f32),
-                nsi::float!("anisotropy", 0.0f32),
-                nsi::float!("sss_weight", 0.0f32),
-                nsi::color!("sss_color", &[0.5f32, 0.5, 0.5]),
-                nsi::float!("sss_scale", 0.0f32),
-                nsi::color!("incandescence", &[0.0f32, 0.0, 0.0]),
-                nsi::float!("incandescence_intensity", 0.0f32),
-                //nsi::color!("incandescence_multiplier", &[1.0f32, 1.0, 1.0]),
-            ],
-        );
-    }
-
-    pub fn render_with_nsi(&self, camera_xform: &[f64; 16], name: &str, cloud_render: bool) {
-
-        let ctx = {
-            if cloud_render {
-                nsi::Context::new(&[
-                    nsi::integer!("cloud", 1),
-                    nsi::string!("software", "HOUDINI"),
-                ])
-            } else {
-                nsi::Context::new(&[])
-            }
-        }
-        .expect("Could not create NSI rendering context.");
-
+    pub fn to_nsi(&self, ctx: &nsi::Context) -> String {
         // Create a new mesh node and call it 'dodecahedron'.
-        ctx.create(name, nsi::NodeType::Mesh, &[]);
-
-        Self::nsi_camera(&ctx, camera_xform);
-
-        Self::nsi_environment(&ctx);
+        ctx.create(self.name.clone(), nsi::NodeType::Mesh, &[]);
 
         // Connect the 'dodecahedron' node to the scene's root.
-        ctx.connect(name, "", nsi::NodeType::Root, "objects", &[]);
+        ctx.connect(self.name.clone(), "", nsi::NodeType::Root, "objects", &[]);
 
         /*
         let positions: FlatVertices = self
@@ -918,7 +888,7 @@ impl Polyhedron {
         let face_index = self.face_index.concat();
 
         ctx.set_attribute(
-            name,
+            self.name.clone(),
             &[
                 nsi::points!("P", positions),
                 nsi::unsigneds!("P.indices", &face_index),
@@ -928,20 +898,16 @@ impl Polyhedron {
                 nsi::string!("subdivision.scheme", "catmull-clark"),
                 // Crease each of our 30 edges a bit.
                 nsi::unsigneds!("subdivision.creasevertices", &edges),
-                nsi::floats!("subdivision.creasesharpness", &vec![10.; edges.len()]),
+                nsi::floats!(
+                    "subdivision.creasesharpness",
+                    &vec![10.; edges.len()]
+                ),
                 nsi::unsigned!("subdivision.smoothcreasecorners", 0),
             ],
         );
 
-        Self::nsi_material(&ctx, name);
-
-        // And now, render it!
-        ctx.render_control(&[nsi::string!("action", "start")]);
-
-        // And now, render it!
-        ctx.render_control(&[nsi::string!("action", "wait")]);
+        self.name.clone()
     }
-
     /*
     function average_normal(fp) =
         let(fl=len(fp))
@@ -956,25 +922,30 @@ impl Polyhedron {
          )
     vsum(unitns)/len(unitns);*/
 
-    pub fn export_as_obj(&self, destination: &Path, reverse_winding: bool) -> std::io::Result<()> {
+    pub fn export_as_obj(
+        &self,
+        destination: &Path,
+        reverse_winding: bool,
+    ) -> std::io::Result<()> {
         let mut file = File::create(destination)?;
 
-        self.vertices
-            .iter()
-            .for_each(|vertex| write!(file, "v {} {} {}\n", vertex.x, vertex.y, vertex.z).unwrap());
+        self.vertices.iter().for_each(|vertex| {
+            write!(file, "v {} {} {}\n", vertex.x, vertex.y, vertex.z).unwrap()
+        });
 
         match reverse_winding {
             true => self.face_index.iter().for_each(|face| {
                 write!(file, "f");
-                face.iter()
-                    .rev()
-                    .for_each(|vertex_index| write!(file, " {}", vertex_index + 1).unwrap());
+                face.iter().rev().for_each(|vertex_index| {
+                    write!(file, " {}", vertex_index + 1).unwrap()
+                });
                 write!(file, "\n");
             }),
             false => self.face_index.iter().for_each(|face| {
                 write!(file, "f");
-                face.iter()
-                    .for_each(|vertex_index| write!(file, " {}", vertex_index + 1).unwrap());
+                face.iter().for_each(|vertex_index| {
+                    write!(file, " {}", vertex_index + 1).unwrap()
+                });
                 write!(file, "\n");
             }),
         };
@@ -994,7 +965,12 @@ impl Polyhedron {
                 Point::new(-c0, c0, -c0),
                 Point::new(-c0, -c0, c0),
             ],
-            face_index: vec![vec![2, 1, 0], vec![3, 2, 0], vec![1, 3, 0], vec![2, 3, 1]],
+            face_index: vec![
+                vec![2, 1, 0],
+                vec![3, 2, 0],
+                vec![1, 3, 0],
+                vec![2, 3, 1],
+            ],
             name: String::from("T"),
         }
     }
@@ -1138,7 +1114,6 @@ impl Polyhedron {
             ],
             name: String::from("I"),
         }
-
     }
 }
 
@@ -1289,7 +1264,22 @@ fn main() {
     let path = dirs::home_dir().unwrap().join("polyhedron.obj");
 
     println!(
-        "Press one of\nA(mbo)\nD(ual)\nE(xplode)\nG(yro)\nJ(oin)\nK(iss)\nM(eta)\nO(rtho)\n(S)nub\n(Shft) Up/Down – modify the last operation\nR(ender)\nSpace – save"
+        "Press one of\n\
+        A(mbo)\n\
+        B(evel)\n\
+        D(ual)\n\
+        E(xplode)\n\
+        G(yro)↑↓\n\
+        J(oin)\n\
+        K(iss)↑↓\n\
+        M(eta)\n\
+        O(rtho)\n\
+        R(eflect)\n\
+        S(nub)\n\
+        T(runcate)\n\
+        (Shift)+⬆/⬇︎ – modify the last ↑↓ operation\n\
+        (Shift)+R(ender) – in the cloud w. Shift\n\
+        Space – save"
     );
 
     while !window.should_close() {
@@ -1307,21 +1297,21 @@ fn main() {
                         Key::A => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            poly.ambo();
+                            poly.ambo(true);
                             poly.normalize();
                             last_op = '_';
                         }
                         Key::D => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            poly.dual();
+                            poly.dual(true);
                             poly.normalize();
                             last_op = '_';
                         }
                         Key::E => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            poly.explode();
+                            poly.explode(true);
                             poly.normalize();
                             last_op = '_';
                         }
@@ -1329,13 +1319,13 @@ fn main() {
                             alter_last_op = false;
                             last_poly = poly.clone();
                             last_op_value = 0.;
-                            poly.gyro(1. / 3., last_op_value);
+                            poly.gyro(1. / 3., last_op_value, true);
                             last_op = 'g';
                         }
                         Key::J => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            poly.join();
+                            poly.join(true);
                             poly.normalize();
                             last_op = '_';
                         }
@@ -1343,20 +1333,20 @@ fn main() {
                             alter_last_op = false;
                             last_poly = poly.clone();
                             last_op_value = 0.;
-                            poly.kis(last_op_value, None, false);
+                            poly.kis(last_op_value, None, false, true);
                             last_op = 'k';
                         }
                         Key::M => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            poly.meta();
+                            poly.meta(true);
                             poly.normalize();
                             last_op = '_';
                         }
                         Key::O => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            poly.ortho();
+                            poly.ortho(true);
                             poly.normalize();
                             last_op = '_';
                         }
@@ -1368,10 +1358,19 @@ fn main() {
                         Key::S => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            poly.snub();
+                            poly.snub(true);
                             poly.normalize();
                             last_op = '_';
                         }
+
+                        Key::T => {
+                            alter_last_op = false;
+                            last_poly = poly.clone();
+                            poly.truncate(None, true);
+                            poly.normalize();
+                            last_op = '_';
+                        }
+
                         Key::Space => {
                             poly.export_as_obj(&path, true);
                             println!("Exported to {}", path.display());
@@ -1402,8 +1401,10 @@ fn main() {
                                 .map(|e| *e as f64)
                                 .collect::<Vec<_>>();
 
-                            poly.render_with_nsi(
-                                slice_as_array!(xform.as_slice(), [f64; 16]).unwrap(),
+                            nsi_render::nsi_render(
+                                &poly,
+                                slice_as_array!(xform.as_slice(), [f64; 16])
+                                    .unwrap(),
                                 "polyhedron",
                                 modifiers.intersects(Modifiers::Shift),
                             );
@@ -1417,12 +1418,12 @@ fn main() {
                         match last_op {
                             'g' => {
                                 poly = last_poly.clone();
-                                poly.gyro(1. / 3., last_op_value);
+                                poly.gyro(1. / 3., last_op_value, true);
                                 poly.normalize();
                             }
                             'k' => {
                                 poly = last_poly.clone();
-                                poly.kis(last_op_value, None, false);
+                                poly.kis(last_op_value, None, false, true);
                                 poly.normalize();
                             }
                             _ => (),
@@ -1434,6 +1435,9 @@ fn main() {
                     c.set_color(0.9, 0.8, 0.7);
                     c.enable_backface_culling(false);
                     c.set_points_size(10.);
+
+                    print!("{}\r", poly.name());
+                    io::stdout().flush().unwrap();
                 }
                 _ => {}
             }
