@@ -15,7 +15,7 @@ nalgebra = "0.21.1"
 kiss3d = "0.24.1"
 rayon = "1.3.1"
 dirs = "3.0.1"
-nsi = { path = "../nsi", version = "0.5.2" }
+nsi = "0.5.3"
 slice_as_array = "1.1.0"
 
 [profile.release]

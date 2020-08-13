@@ -1,4 +1,4 @@
-fn nsi_camera(c: &nsi::Context, camera_xform: &[f64; 16]) {
+fn nsi_camera(c: &nsi::Context, name: &str, camera_xform: &[f64; 16]) {
     // Setup a camera transform.
     c.create("cam1_trs", nsi::NodeType::Transform, &[]);
     c.connect("cam1_trs", "", ".root", "objects", &[]);
@@ -40,21 +40,20 @@ fn nsi_camera(c: &nsi::Context, camera_xform: &[f64; 16]) {
     );
 
     // Setup an output layer.
-    c.create("beauty", nsi::NodeType::OutputLayer, &[]);
+    c.create(name, nsi::NodeType::OutputLayer, &[]);
     c.set_attribute(
-        "beauty",
+        name,
         &[
             nsi::string!("variablename", "Ci"),
             nsi::integer!("withalpha", 1),
             nsi::string!("scalarformat", "half"),
-            nsi::color!("some_color", &[0.1f32, 0.2, 0.3]),
         ],
     );
-    c.connect("beauty", "", "s1", "outputlayers", &[]);
+    c.connect(name, "", "s1", "outputlayers", &[]);
 
     // Setup an output driver.
     c.create("driver1", nsi::NodeType::OutputDriver, &[]);
-    c.connect("driver1", "", "beauty", "outputdrivers", &[]);
+    c.connect("driver1", "", name, "outputdrivers", &[]);
     c.set_attribute("driver1", &[nsi::string!("drivername", "idisplay")]);
 }
 
@@ -144,7 +143,7 @@ pub fn nsi_render(
     }
     .expect("Could not create NSI rendering context.");
 
-    nsi_camera(&ctx, camera_xform);
+    nsi_camera(&ctx, name, camera_xform);
 
     nsi_environment(&ctx);
 
