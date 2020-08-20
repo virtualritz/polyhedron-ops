@@ -4,18 +4,14 @@ use nsi;
 
 use std::{
     fs::File,
-    io::{self, Write},
-    iter::{once, Iterator},
+    io::Write,
+    iter::Iterator,
     path::{Path, PathBuf},
 };
 
-#[macro_use]
-extern crate slice_as_array;
-use dirs;
+use kiss3d::resource::Mesh;
 
 use rayon::prelude::*;
-
-mod nsi_render;
 
 type Float = f32;
 type Index = u32;
@@ -39,6 +35,16 @@ pub enum NormalType {
     Flat,
 }
 
+pub mod prelude {
+    //! Re-exports commonly used types and traits.
+    //!
+    //! Importing the contents of this module is recommended.
+
+    //pub use crate::NormalType;
+
+    pub use crate::*;
+}
+
 #[inline]
 fn to_vadd(points: &Points, v: &Vector) -> Points {
     points.par_iter().map(|p| p.clone() + v).collect()
@@ -51,7 +57,6 @@ fn vadd(points: &mut Points, v: &Vector) {
 
 #[inline]
 fn centroid(points: &Points) -> Point {
-    let identity = Point::new(0., 0., 0.);
     let total_displacement = points
         .into_par_iter()
         .cloned()
@@ -160,7 +165,9 @@ fn average_magnitude(points: &Points) -> Float {
 
 #[inline]
 fn max_magnitude(points: &Points) -> Float {
-    vnorm(points).into_par_iter().reduce(|| Float::NAN, Float::max)
+    vnorm(points)
+        .into_par_iter()
+        .reduce(|| Float::NAN, Float::max)
 }
 
 /// Returns a [`FaceIndex`] of faces
@@ -298,7 +305,9 @@ fn max_resize(points: &mut Points, radius: Float) {
 
 #[inline]
 fn project_on_sphere(points: &mut Points, radius: Float) {
-    points.par_iter_mut().for_each(|v| *v = normalize(v));
+    points
+        .par_iter_mut()
+        .for_each(|v| *v = radius * normalize(v));
 }
 
 #[inline]
@@ -399,7 +408,7 @@ fn selected_face(face: &Face, face_arity: Option<&Vec<usize>>) -> bool {
 
 #[inline]
 fn distinct_edges(faces: &FaceIndex) -> EdgeIndex {
-    let mut edge_index: EdgeIndex = faces
+    let edge_index: EdgeIndex = faces
         .par_iter()
         .map(|face| {
             face.iter()
@@ -478,7 +487,7 @@ impl Polyhedron {
     }
 
     #[inline]
-    fn triangulate(&mut self, shortest: bool) {
+    pub fn triangulate(&mut self, shortest: bool) {
         self.face_index = self
             .face_index
             .iter()
@@ -520,15 +529,14 @@ impl Polyhedron {
                             vec![a, b, *c]
                         })
                         .collect()
-                }
-                _ => vec![face.clone()],
+                } //_ => vec![face.clone()],
             })
             .flatten()
             .collect();
     }
 
     #[inline]
-    fn ambo(&mut self, change_name: bool) {
+    pub fn ambo(&mut self, change_name: bool) {
         let edges = distinct_edges(&self.face_index);
 
         let points = edges
@@ -589,7 +597,98 @@ impl Polyhedron {
         }
     }
 
-    fn dual(&mut self, change_name: bool) {
+    /*
+    fn add_key_to_face(face: &Face, key: Index) {
+
+    }*/
+
+    pub fn chamfer(&mut self, ratio: Float) {
+        let new_points = self
+            .face_index
+            .par_iter()
+            .map(|face| {
+                let face_points = as_points(face, &self.points);
+                let centroid = centroid_ref(&face_points);
+                // println!("{:?}", ep);
+                let mut result = Vec::new();
+                face.iter().enumerate().for_each(|face_point| {
+                    let j = face_point.0;
+                    let mut new_face = face.clone();
+                    new_face.push(face[j]);
+                    result.push((
+                        new_face,
+                        face_points[j] + ratio * (centroid - face_points[j]),
+                    ))
+                });
+                result
+            })
+            .flatten()
+            .collect::<Vec<_>>();
+
+        let new_ids = vertex_ids_ref(&new_points, self.num_points() as Index);
+
+        let new_faces = self
+            .face_index
+            .iter()
+            .map(|face| {
+                let mut new_face = Vec::with_capacity(face.len());
+                face.iter().for_each(|vertex_key| {
+                    let mut face_key = face.clone();
+                    face_key.push(*vertex_key);
+                    new_face.push(vertex(&face_key, &new_ids).unwrap());
+                });
+                new_face
+            })
+            .collect::<Vec<_>>();
+
+        /*
+        let new_faces2 = self.face_index
+            .par_iter()
+            .map(|face|{
+                let a = face
+
+            })
+            .flatten()
+            .collect::<Vec<_>>();*/
+    }
+    /*
+       let(newf =
+             concat(
+                [for (face=pf)      // rotated faces
+                  [ for (v=face)
+                      vertex([face,v],newids)
+                  ]
+                ] ,
+                flatten(         // chamfered pentagons
+                 [for (face=pf)
+                   [
+                     for (j=[0:len(face)-1])
+                     let (
+                          a=face[j],
+                          b=face[(j+1)%len(face)])
+                     if(a<b)     // dont duplicate
+                     let (edge= [a,b],
+                          oppface=face_with_edge([b,a],pf),
+                          oppa=vertex([oppface,a],newids),
+                          oppb=vertex([oppface,b],newids),
+                          thisa=vertex([face,a],newids),
+                          thisb=vertex([face,b],newids))
+                          [a,oppa,oppb, b,thisb,thisa]
+                   ]
+                 ])
+               ))
+        poly(name=str("c",p_name(obj)),
+          vertices=
+            concat(
+              [for (v = pv)  (1.0 - r)*v],             // original
+               vertex_values(newv)
+             ),
+          faces=newf
+        );
+    // end chamfer
+    */
+
+    pub fn dual(&mut self, change_name: bool) {
         let new_points = self
             .face_index
             .par_iter()
@@ -610,7 +709,7 @@ impl Polyhedron {
         }
     }
 
-    fn gyro(
+    pub fn gyro(
         &mut self,
         ratio: f32, /* 0.3333 */
         height: f32,
@@ -627,8 +726,7 @@ impl Polyhedron {
                 //let p = normalize(centroid_ref(&fp)).to_vec().normalize();
                 (
                     face,
-                    normalize(
-                    &centroid_ref(&fp)) + face_normal(&fp) * height,
+                    normalize(&centroid_ref(&fp)) + face_normal(&fp) * height,
                 )
             })
             .collect::<Vec<_>>();
@@ -651,11 +749,19 @@ impl Polyhedron {
             .par_iter()
             .enumerate()
             .map(|edge| {
-                let ep = as_points(edge.1, &self.points);
+                let edge_points = as_points(edge.1, &self.points);
                 // println!("{:?}", ep);
                 vec![
-                    (edge.1, ep[0] + ratio * (ep[1] - ep[0])),
-                    (&reversed_edges[edge.0], ep[1] + ratio * (ep[0] - ep[1])),
+                    (
+                        edge.1,
+                        edge_points[0]
+                            + ratio * (edge_points[1] - edge_points[0]),
+                    ),
+                    (
+                        &reversed_edges[edge.0],
+                        edge_points[1]
+                            + ratio * (edge_points[0] - edge_points[1]),
+                    ),
                 ]
             })
             .flatten()
@@ -712,7 +818,7 @@ impl Polyhedron {
     /// kis – each face with a specified arity n is divided into n
     /// triangles which extend to the face centroid existimg points
     /// retained.
-    fn kis(
+    pub fn kis(
         &mut self,
         height: Float,
         face_arity: Option<&Vec<usize>>,
@@ -784,7 +890,7 @@ impl Polyhedron {
         }
     }
 
-    fn propellor(&mut self, ratio: Float, change_name: bool) {
+    pub fn propellor(&mut self, ratio: Float, change_name: bool) {
         let edges = self.edges();
 
         let reversed_edges: EdgeIndex = edges
@@ -1252,15 +1358,7 @@ impl Polyhedron {
     }
 }
 
-/// Struct storing indices corresponding to the vertex
-/// Some points may not have texcoords or normals, 0 is used to
-/// indicate this as OBJ indices begin at 1
-#[derive(Hash, Eq, PartialEq, PartialOrd, Ord, Debug, Copy, Clone)]
-struct VertexIndex {
-    pub position: Index,
-    pub texture: Index,
-    pub normal: Index,
-}
+use nalgebra as na;
 
 impl From<Polyhedron> for kiss3d::resource::Mesh {
     fn from(mut polyhedron: Polyhedron) -> kiss3d::resource::Mesh {
@@ -1309,7 +1407,7 @@ impl From<Polyhedron> for kiss3d::resource::Mesh {
         let normals = polyhedron
             .normals(NormalType::Flat)
             .par_iter()
-            .map(|n| Vector3::new(-n.x, -n.y, -n.z))
+            .map(|n| na::Vector3::new(-n.x, -n.y, -n.z))
             .collect::<Vec<_>>();
 
         let face_index = (0..normals.len() as u16)
@@ -1351,273 +1449,5 @@ impl From<Polyhedron> for kiss3d::resource::Mesh {
             None,
             false,
         )*/
-    }
-}
-
-use nalgebra as na;
-
-use kiss3d::{
-    camera::{ArcBall, Camera, FirstPerson},
-    event::{Action, Key, Modifiers, WindowEvent},
-    light::Light,
-    resource::Mesh,
-    window::Window,
-};
-
-use na::{Point3, UnitQuaternion, Vector3};
-use std::{cell::RefCell, rc::Rc};
-
-fn main() {
-    let distance = 2.0f32;
-    let eye = Point3::new(distance, distance, distance);
-    let at = Point3::origin();
-    let mut first_person = FirstPerson::new(eye, at);
-    let mut arc_ball = ArcBall::new(eye, at);
-    let mut use_arc_ball = true;
-
-    let mut window = Window::new("Polyhedron Operations");
-    window.set_light(Light::StickToCamera);
-
-    let mut poly = Polyhedron::tetrahedron();
-    poly.normalize();
-
-    let mesh = Rc::new(RefCell::new(Mesh::from(poly.clone())));
-    let mut c = window.add_mesh(mesh, Vector3::new(1.0, 1.0, 1.0));
-
-    c.set_color(0.9, 0.8, 0.7);
-    c.enable_backface_culling(false);
-    c.set_points_size(10.);
-
-    window.set_light(Light::StickToCamera);
-    window.set_framerate_limit(Some(60));
-
-    let mut last_op = 'n';
-    let mut last_op_value = 0.;
-    let mut alter_last_op = false;
-    let mut last_poly = poly.clone();
-
-    let path = dirs::home_dir().unwrap();
-
-    println!(
-        "Press one of\n\
-        A(mbo)\n\
-        B(evel)\n\
-        D(ual)\n\
-        E(xplode)\n\
-        G(yro)↑↓\n\
-        J(oin)\n\
-        K(iss)↑↓\n\
-        M(eta)\n\
-        O(rtho)\n\
-        R(eflect)\n\
-        S(nub)\n\
-        T(runcate)\n\
-        (Shift)+⬆/⬇︎ – modify the last ↑↓ operation\n\
-        (Shift)+R(ender) – in the cloud w. Shift\n\
-        Space – save"
-    );
-
-    while !window.should_close() {
-        // rotate the arc-ball camera.
-        let curr_yaw = arc_ball.yaw();
-        arc_ball.set_yaw(curr_yaw + 0.01);
-
-        // update the current camera.
-        for event in window.events().iter() {
-            match event.value {
-                WindowEvent::Key(key, Action::Release, modifiers) => {
-                    match key {
-                        Key::Numpad1 => use_arc_ball = true,
-                        Key::Numpad2 => use_arc_ball = false,
-                        Key::A => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            poly.ambo(true);
-                            poly.normalize();
-                            last_op = '_';
-                        }
-                        Key::B => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            poly.bevel(true);
-                            poly.normalize();
-                            last_op = '_';
-                        }
-                        Key::D => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            poly.dual(true);
-                            poly.normalize();
-                            last_op = '_';
-                        }
-                        Key::E => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            poly.explode(true);
-                            poly.normalize();
-                            last_op = '_';
-                        }
-                        Key::G => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            last_op_value = 0.;
-                            poly.gyro(1. / 3., last_op_value, true);
-                            poly.normalize();
-                            last_op = 'g';
-                        }
-                        Key::J => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            poly.join(true);
-                            poly.normalize();
-                            last_op = '_';
-                        }
-                        Key::K => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            last_op_value = 0.;
-                            poly.kis(last_op_value, None, false, true);
-                            poly.normalize();
-                            last_op = 'k';
-                        }
-                        Key::M => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            poly.meta(true);
-                            poly.normalize();
-                            last_op = '_';
-                        }
-                        Key::O => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            poly.ortho(true);
-                            poly.normalize();
-                            last_op = '_';
-                        }
-                        Key::P => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            poly.propellor(1. / 3., true);
-                            poly.normalize();
-                            last_op = '_';
-                        }
-                        /*Key::T => {
-                            if Super == modifiers {
-                                return;
-                            }
-                        }*/
-                        Key::S => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            poly.snub(true);
-                            poly.normalize();
-                            last_op = '_';
-                        }
-
-                        Key::T => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            poly.truncate(None, true);
-                            poly.normalize();
-                            last_op = '_';
-                        }
-                        Key::Space => {
-                            println!(
-                                "Exported to {}",
-                                poly.export_as_obj(&path, true)
-                                    .unwrap()
-                                    .display()
-                            );
-                        }
-                        Key::Up => {
-                            alter_last_op = true;
-                            if modifiers.intersects(Modifiers::Shift) {
-                                last_op_value += 0.1;
-                            } else {
-                                last_op_value += 0.01;
-                            }
-                        }
-                        Key::Down => {
-                            alter_last_op = true;
-                            if modifiers.intersects(Modifiers::Shift) {
-                                last_op_value -= 0.1;
-                            } else {
-                                last_op_value -= 0.01;
-                            }
-                        }
-                        Key::Delete => {
-                            poly = last_poly.clone();
-                        }
-                        Key::R => {
-                            let xform = arc_ball
-                                .inverse_transformation()
-                                .iter()
-                                .map(|e| *e as f64)
-                                .collect::<Vec<_>>();
-
-                            nsi_render::nsi_render(
-                                &poly,
-                                slice_as_array!(xform.as_slice(), [f64; 16])
-                                    .unwrap(),
-                                "polyhedron",
-                                modifiers.intersects(Modifiers::Shift),
-                            );
-                        }
-                        _ => {
-                            break;
-                        }
-                    };
-                    if alter_last_op {
-                        alter_last_op = false;
-                        match last_op {
-                            'g' => {
-                                poly = last_poly.clone();
-                                poly.gyro(1. / 3., last_op_value, true);
-                                poly.normalize();
-                            }
-                            'k' => {
-                                poly = last_poly.clone();
-                                poly.kis(last_op_value, None, false, true);
-                                poly.normalize();
-                            }
-                            _ => (),
-                        }
-                    }
-                    c.unlink();
-                    let mesh = Rc::new(RefCell::new(Mesh::from(poly.clone())));
-                    c = window.add_mesh(mesh, Vector3::new(1.0, 1.0, 1.0));
-                    c.set_color(0.9, 0.8, 0.7);
-                    c.enable_backface_culling(false);
-                    c.set_points_size(10.);
-
-                    print!("{}\r", poly.name());
-                    io::stdout().flush().unwrap();
-                }
-                _ => {}
-            }
-        }
-
-        /*
-        window.draw_line(
-            &Point3::origin(),
-            &Point3::new(10.0, 0.0, 0.0),
-            &Point3::new(10.0, 0.0, 0.0),
-        );
-        window.draw_line(
-            &Point3::origin(),
-            &Point3::new(0.0, 10.0, 0.0),
-            &Point3::new(0.0, 10.0, 0.0),
-        );
-        window.draw_line(
-            &Point3::origin(),
-            &Point3::new(0.0, 0.0, 10.0),
-            &Point3::new(0.0, 0.0, 10.0),
-        );*/
-
-        if use_arc_ball {
-            window.render_with_camera(&mut arc_ball);
-        } else {
-            window.render_with_camera(&mut first_person);
-        }
     }
 }
