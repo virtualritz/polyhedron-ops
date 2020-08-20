@@ -13,30 +13,30 @@ functional, lends itself well to translation into functional Rust.
 
 ## Supported Operators
 
-- [x] kN - kis on N-sided faces (if no N, then general kis)
 - [x] a - ambo
-- [x] g - gyro
-- [x] d - dual
-- [x] r - reflect
-- [x] e - explode (a.k.a. expand, equiv. to aa)
 - [x] b - bevel (equiv. to ta)
-- [x] o - ortho (equiv. to jj)
-- [x] m - meta (equiv. to k3j)
-- [x] tN - truncate vertices of degree N (equiv. to dkNd; if no N, then truncate all vertices)
-- [x] j - join (equiv. to dad)
-- [x] s - snub (equiv. to dgd)
-- [ ] p - propellor
 - [ ] c - chamfer
-- [ ] w - whirl
+- [x] d - dual
+- [x] e - explode (a.k.a. expand, equiv. to aa)
+- [x] g - gyro
+- [x] j - join (equiv. to dad)
+- [x] m - meta (equiv. to k3j)
+- [x] o - ortho (equiv. to jj)
+- [ ] p - propellor
+- [x] kN - kis on N-sided faces (if no N, then general kis)
 - [ ] q - quinto
+- [x] r - reflect
+- [x] s - snub (equiv. to dgd)
+- [x] tN - truncate vertices of degree N (equiv. to dkNd; if no N, then truncate all vertices)
+- [ ] w - whirl
+
 
 ## Playing
 
-While I work on this crate there is a binary
-that allows me to test things.
+There is a playground example app to test things & have fun:
 
 ```
-cargo run --release
+cargo run --release --example playground
 ```
 
 ### Keyboard Commands
