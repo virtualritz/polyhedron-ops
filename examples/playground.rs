@@ -1,6 +1,6 @@
 //use cgmath::prelude::*;
 //use itertools::Itertools;
-extern crate nsi;
+a
 
 #[macro_use]
 extern crate slice_as_array;
@@ -22,8 +22,8 @@ use kiss3d::{
 use na::{Point3, UnitQuaternion, Vector3};
 use std::{cell::RefCell, io, io::Write, rc::Rc};
 
-extern crate polyhedron_operators;
-use polyhedron_operators::prelude::*;
+extern crate polyhedron_ops;
+use polyhedron_ops::prelude::*;
 
 /// Struct storing indices corresponding to the vertex
 /// Some points may not have texcoords or normals, 0 is used to

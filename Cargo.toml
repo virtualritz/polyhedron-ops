@@ -1,12 +1,12 @@
 cargo-features = ["strip"]
 
 [package]
-name = "polyhedron-operators"
+name = "polyhedron-ops"
 version = "0.1.0"
 license = "BSD-3-Clause"
 authors = ["Moritz Moeller <virtualritz@gmail.com>"]
 edition = "2018"
-repository = "https://github.com/virtualritz/polyhedron-operators/"
+repository = "https://github.com/virtualritz/polyhedron-ops/"
 
 [dependencies]
 cgmath = "0.17.0"
