@@ -410,7 +410,7 @@ fn selected_face(face: &Face, face_arity: Option<&Vec<usize>>) -> bool {
 fn distinct_edges(faces: &FaceIndex) -> EdgeIndex {
     let edge_index: EdgeIndex = faces
         .par_iter()
-        .map(|face| {
+        .flat_map(|face| {
             face.iter()
                 .cycle()
                 // Grab two index entries.
@@ -421,7 +421,6 @@ fn distinct_edges(faces: &FaceIndex) -> EdgeIndex {
                 .take(face.len())
                 .collect::<Vec<_>>()
         })
-        .flatten()
         .collect();
 
     edge_index.into_iter().unique().collect()
@@ -491,7 +490,7 @@ impl Polyhedron {
         self.face_index = self
             .face_index
             .iter()
-            .map(|face| match face.len() {
+            .flat_map(|face| match face.len() {
                 // Bitriangulate quadrilateral faces
                 // use shortest diagonal so triangles are
                 // most nearly equilateral.
@@ -531,7 +530,6 @@ impl Polyhedron {
                         .collect()
                 } //_ => vec![face.clone()],
             })
-            .flatten()
             .collect();
     }
 
@@ -606,7 +604,7 @@ impl Polyhedron {
         let new_points = self
             .face_index
             .par_iter()
-            .map(|face| {
+            .flat_map(|face| {
                 let face_points = as_points(face, &self.points);
                 let centroid = centroid_ref(&face_points);
                 // println!("{:?}", ep);
@@ -622,7 +620,6 @@ impl Polyhedron {
                 });
                 result
             })
-            .flatten()
             .collect::<Vec<_>>();
 
         let new_ids = vertex_ids_ref(&new_points, self.num_points() as Index);
@@ -644,11 +641,10 @@ impl Polyhedron {
         /*
         let new_faces2 = self.face_index
             .par_iter()
-            .map(|face|{
+            .flat_map(|face|{
                 let a = face
 
             })
-            .flatten()
             .collect::<Vec<_>>();*/
     }
     /*
@@ -748,7 +744,7 @@ impl Polyhedron {
         let new_points2 = edges
             .par_iter()
             .enumerate()
-            .map(|edge| {
+            .flat_map(|edge| {
                 let edge_points = as_points(edge.1, &self.points);
                 // println!("{:?}", ep);
                 vec![
@@ -764,7 +760,6 @@ impl Polyhedron {
                     ),
                 ]
             })
-            .flatten()
             .collect::<Vec<_>>();
 
         new_points.extend(new_points2);
@@ -780,7 +775,7 @@ impl Polyhedron {
         self.face_index = self
             .face_index
             .par_iter()
-            .map(|face| {
+            .flat_map(|face| {
                 let mut new_faces = Vec::with_capacity(face.len());
                 for j in 0..face.len() {
                     let a = face[j];
@@ -794,7 +789,6 @@ impl Polyhedron {
                 }
                 new_faces
             })
-            .flatten()
             .collect();
 
         //n!("{:?}", new_face_index);
@@ -847,7 +841,7 @@ impl Polyhedron {
         self.face_index = self
             .face_index
             .par_iter()
-            .map(|f: &Face| match vertex(f, &newids) {
+            .flat_map(|f: &Face| match vertex(f, &newids) {
                 Some(centroid) => {
                     let mut result = Vec::with_capacity(f.len());
                     for j in 0..f.len() {
@@ -861,7 +855,6 @@ impl Polyhedron {
                 }
                 None => vec![f.clone()],
             })
-            .flatten()
             .collect();
 
         if change_name {
@@ -901,7 +894,7 @@ impl Polyhedron {
         let new_points = edges
             .par_iter()
             .enumerate()
-            .map(|edge| {
+            .flat_map(|edge| {
                 let egdge_points = as_points(edge.1, &self.points);
                 vec![
                     (
@@ -916,7 +909,6 @@ impl Polyhedron {
                     ),
                 ]
             })
-            .flatten()
             .collect::<Vec<_>>();
 
         let new_ids =
@@ -955,7 +947,7 @@ impl Polyhedron {
         face_index.extend(
             self.face_index
                 .iter()
-                .map(|face| {
+                .flat_map(|face| {
                     let mut new_faces = Vec::with_capacity(face.len());
                     for j in 0..face.len() {
                         let a = face[j];
@@ -968,7 +960,6 @@ impl Polyhedron {
                     }
                     new_faces
                 })
-                .flatten()
                 .collect::<FaceIndex>(),
         );
 
@@ -1037,7 +1028,7 @@ impl Polyhedron {
             NormalType::Flat => self
                 .face_index
                 .par_iter()
-                .map(|f| {
+                .flat_map(|f| {
                     f.iter()
                         // Cycle forever.
                         .cycle()
@@ -1059,7 +1050,6 @@ impl Polyhedron {
                         .take(f.len())
                         .collect::<Normals>()
                 })
-                .flatten()
                 .collect(),
             /*NormalType::Flat => self
             .face_index
@@ -1421,13 +1411,12 @@ impl From<Polyhedron> for kiss3d::resource::Mesh {
             polyhedron
                 .face_index
                 .par_iter()
-                .map(|f| {
+                .flat_map(|f| {
                     as_points(f, &polyhedron.points)
                         .par_iter()
                         .map(|v| na::Point3::<f32>::new(v.x, v.y, v.z))
                         .collect::<Vec<_>>()
                 })
-                .flatten()
                 .collect::<Vec<_>>(),
             face_index,
             Some(normals),

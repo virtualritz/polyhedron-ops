@@ -1,6 +1,5 @@
 //use cgmath::prelude::*;
 //use itertools::Itertools;
-a
 
 #[macro_use]
 extern crate slice_as_array;
