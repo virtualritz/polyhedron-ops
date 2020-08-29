@@ -15,7 +15,7 @@ functional, lends itself well to translation into functional Rust.
 
 - [x] a - ambo
 - [x] b - bevel (equiv. to ta)
-- [ ] c - chamfer
+- [x] c - chamfer
 - [x] d - dual
 - [x] e - explode (a.k.a. expand, equiv. to aa)
 - [x] g - gyro

@@ -426,6 +426,13 @@ fn distinct_edges(faces: &FaceIndex) -> EdgeIndex {
     edge_index.into_iter().unique().collect()
 }
 
+fn push_in_place(face: &Face, index: Index) -> Face {
+    face.clone()
+        .into_iter()
+        .chain(vec![index].into_iter())
+        .collect::<Vec<u32>>()
+}
+
 #[derive(Clone, Debug)]
 pub struct Polyhedron {
     points: Points,
@@ -600,7 +607,7 @@ impl Polyhedron {
 
     }*/
 
-    pub fn chamfer(&mut self, ratio: Float) {
+    pub fn chamfer(&mut self, ratio: Float, change_name: bool) {
         let new_points = self
             .face_index
             .par_iter()
@@ -624,7 +631,7 @@ impl Polyhedron {
 
         let new_ids = vertex_ids_ref(&new_points, self.num_points() as Index);
 
-        let new_faces = self
+        let mut face_index = self
             .face_index
             .iter()
             .map(|face| {
@@ -636,17 +643,56 @@ impl Polyhedron {
                 });
                 new_face
             })
-            .collect::<Vec<_>>();
+            .collect::<FaceIndex>();
 
-        /*
-        let new_faces2 = self.face_index
-            .par_iter()
-            .flat_map(|face|{
-                let a = face
+        face_index.extend(
+            self.face_index
+                .par_iter()
+                .flat_map(|face| {
+                    let mut result = Vec::with_capacity(face.len());
+                    for j in 0..face.len() {
+                        let a: u32 = face[j];
+                        let b: u32 = face[(j + 1) % face.len()];
+                        if a < b {
+                            let opposite_face: Vec<u32> =
+                                face_with_edge(&vec![b, a], &self.face_index);
 
-            })
-            .collect::<Vec<_>>();*/
+                            result.push(vec![
+                                a,
+                                vertex(
+                                    &push_in_place(&opposite_face, a),
+                                    &new_ids,
+                                )
+                                .unwrap(),
+                                vertex(
+                                    &push_in_place(&opposite_face, b),
+                                    &new_ids,
+                                )
+                                .unwrap(),
+                                b,
+                                vertex(&push_in_place(&face, b), &new_ids)
+                                    .unwrap(),
+                                vertex(&push_in_place(&face, a), &new_ids)
+                                    .unwrap(),
+                            ]);
+                        }
+                    }
+                    result
+                })
+                .collect::<FaceIndex>(),
+        );
+
+        self.face_index = face_index;
+        self.points.par_iter_mut().for_each(|point| {
+            *point = Point::from_vec((0.75) * point.to_vec())
+        });
+        self.points.extend(vertex_values(&new_points));
+
+        if change_name {
+            self.name = format!("g{}", self.name);
+        }
     }
+
     /*
        let(newf =
              concat(

@@ -69,6 +69,7 @@ fn main() {
         "Press one of\n\
         A(mbo)\n\
         B(evel)\n\
+        C(chamfer)\n
         D(ual)\n\
         E(xplode)\n\
         G(yro)↑↓\n\
@@ -106,7 +107,7 @@ fn main() {
                         Key::C => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            poly.chamfer(1. / 3.);
+                            poly.chamfer(1. / 2., true);
                             poly.normalize();
                             last_op = '_';
                         }
