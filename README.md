@@ -22,9 +22,9 @@ functional, lends itself well to translation into functional Rust.
 - [x] j - join (equiv. to dad)
 - [x] m - meta (equiv. to k3j)
 - [x] o - ortho (equiv. to jj)
-- [ ] p - propellor
+- [x] p - propellor (BROKEN)
 - [x] kN - kis on N-sided faces (if no N, then general kis)
-- [ ] q - quinto
+- [x] q - quinto (BROKEN)
 - [x] r - reflect
 - [x] s - snub (equiv. to dgd)
 - [x] tN - truncate vertices of degree N (equiv. to dkNd; if no N, then truncate all vertices)

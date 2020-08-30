@@ -1,6 +1,6 @@
-use cgmath::prelude::*;
 use itertools::Itertools;
 use nsi;
+use ultraviolet::vec;
 
 use std::{
     fs::File,
@@ -23,8 +23,8 @@ type Edge = Face;
 type EdgeIndex = Vec<Edge>;
 
 type FlatPoints = Vec<Float>;
-type Point = cgmath::Point3<Float>;
-type Vector = cgmath::Vector3<Float>;
+type Point = ultraviolet::vec::Vec3; //  cgmath::Point3<Float>;
+type Vector = ultraviolet::vec::Vec3;
 type Normal = Vector;
 type Points = Vec<Point>;
 type PointsRef<'a> = Vec<&'a Point>;
@@ -47,7 +47,7 @@ pub mod prelude {
 
 #[inline]
 fn to_vadd(points: &Points, v: &Vector) -> Points {
-    points.par_iter().map(|p| p.clone() + v).collect()
+    points.par_iter().map(|p| p.clone() + *v).collect()
 }
 
 #[inline]
@@ -60,7 +60,7 @@ fn centroid(points: &Points) -> Point {
     let total_displacement = points
         .into_par_iter()
         .cloned()
-        .reduce(|| Point::new(0., 0., 0.), |acc, p| acc + p.to_vec());
+        .reduce(|| Point::zero(), |accumulate, point| accumulate + point);
 
     total_displacement / points.len() as Float
 }
@@ -130,14 +130,12 @@ fn distinct_face_edges(face: &Face) -> EdgeIndex {
 
 #[inline]
 fn to_centroid_points(points: &Points) -> Points {
-    let c = centroid(points);
-    to_vadd(points, &cgmath::Vector3::new(-c.x, -c.y, -c.z))
+    to_vadd(points, &-centroid(points))
 }
 
 #[inline]
 fn center_on_centroid(points: &mut Points) {
-    let c = centroid(points);
-    vadd(points, &cgmath::Vector3::new(-c.x, -c.y, -c.z));
+    vadd(points, &-centroid(points));
 }
 
 #[inline]
@@ -145,7 +143,7 @@ fn centroid_ref<'a>(points: &'a PointsRef) -> Point {
     let total_displacement = points
         .into_iter()
         //.cloned()
-        .fold(Point::new(0., 0., 0.), |acc, p| acc + (*p).to_vec());
+        .fold(Point::zero(), |accumulate, point| accumulate + **point);
 
     total_displacement / points.len() as Float
 }
@@ -154,7 +152,7 @@ fn centroid_ref<'a>(points: &'a PointsRef) -> Point {
 fn vnorm(points: &Points) -> Vec<Float> {
     points
         .par_iter()
-        .map(|v| Normal::new(v.x, v.y, v.z).magnitude())
+        .map(|v| Normal::new(v.x, v.y, v.z).mag())
         .collect()
 }
 // Was: average_norm
@@ -196,12 +194,9 @@ fn ordered_face_edges_(face: &Face) -> EdgeIndex {
 /// ordered edges.
 #[inline]
 fn ordered_face_edges(face: &Face) -> EdgeIndex {
-    // FIXME: make functional
-    let mut result = EdgeIndex::with_capacity(face.len());
-    for i in 0..face.len() {
-        result.push(vec![face[i], face[(i + 1) % face.len()]]);
-    }
-    result
+    (0..face.len())
+        .map(|i| vec![face[i], face[(i + 1) % face.len()]])
+        .collect()
 }
 
 #[inline]
@@ -218,10 +213,6 @@ fn face_with_edge(edge: &Edge, faces: &FaceIndex) -> Face {
 #[inline]
 fn index_of<T: PartialEq>(element: &T, list: &Vec<T>) -> Option<usize> {
     list.iter().position(|e| *e == *element)
-}
-
-fn normalize(point: &Point) -> Point {
-    Point::from_vec(point.to_vec().normalize())
 }
 
 /// Used internally by [`ordered_vertex_faces()`].
@@ -269,7 +260,7 @@ fn ordered_vertex_faces(
 fn edge_length(edge: &Edge, points: &Points) -> Float {
     let edge = vec![edge[0], edge[1]];
     let points = as_points(&edge, points);
-    (points[0] - points[1]).magnitude()
+    (*points[0] - *points[1]).mag()
 }
 
 #[inline]
@@ -307,7 +298,7 @@ fn max_resize(points: &mut Points, radius: Float) {
 fn project_on_sphere(points: &mut Points, radius: Float) {
     points
         .par_iter_mut()
-        .for_each(|v| *v = radius * normalize(v));
+        .for_each(|point| *point = radius * point.normalized());
 }
 
 #[inline]
@@ -327,7 +318,7 @@ fn as_points<'a>(f: &[Index], points: &'a Points) -> PointsRef<'a> {
 
 #[inline]
 fn orthogonal(v0: &Point, v1: &Point, v2: &Point) -> Vector {
-    (v1 - v0).cross(v2 - v1)
+    (*v1 - *v0).cross(*v2 - *v1)
 }
 
 /// Computes the normal of a face.
@@ -336,7 +327,7 @@ fn orthogonal(v0: &Point, v1: &Point, v2: &Point) -> Vector {
 fn face_normal(points: &PointsRef) -> Vector {
     // FIXME iterate over all points to make this work for
     // non-planar faces.
-    -orthogonal(&points[0], &points[1], &points[2]).normalize()
+    -orthogonal(&points[0], &points[1], &points[2]).normalized()
 }
 
 #[inline]
@@ -426,11 +417,18 @@ fn distinct_edges(faces: &FaceIndex) -> EdgeIndex {
     edge_index.into_iter().unique().collect()
 }
 
-fn push_in_place(face: &Face, index: Index) -> Face {
-    face.clone()
-        .into_iter()
-        .chain(vec![index].into_iter())
-        .collect::<Vec<u32>>()
+/// Extend a vector with some element(s)
+/// ```
+/// extend![..foo, 4, 5, 6]
+/// ```
+macro_rules! extend {
+    (..$v:expr, $($new:expr),*) => {{
+        let mut tmp = $v.clone();
+        $(
+        tmp.push($new);
+        )*
+        tmp
+    }}
 }
 
 #[derive(Clone, Debug)]
@@ -505,8 +503,7 @@ impl Polyhedron {
                     let p = as_points(face, &self.points);
 
                     if shortest
-                        == ((p[0] - p[2]).magnitude2()
-                            < (p[1] - p[3]).magnitude2())
+                        == ((*p[0] - *p[2]).mag_sq() < (*p[1] - *p[3]).mag_sq())
                     {
                         vec![
                             vec![face[0], face[1], face[2]],
@@ -544,15 +541,15 @@ impl Polyhedron {
     pub fn ambo(&mut self, change_name: bool) {
         let edges = distinct_edges(&self.face_index);
 
-        let points = edges
+        let points: Vec<(&Vec<u32>, Point)> = edges
             .par_iter()
             .map(|edge| {
                 let edge_points = as_points(edge, &self.points);
-                (edge, 0.5 * (edge_points[0] + edge_points[1].to_vec()))
+                (edge, 0.5 * (*edge_points[0] + *edge_points[1]))
             })
-            .collect::<Vec<_>>();
+            .collect();
 
-        let newids = vertex_ids_ref_ref(&points, 0);
+        let new_ids = vertex_ids_ref_ref(&points, 0);
 
         let mut face_index: FaceIndex = self
             .face_index
@@ -561,7 +558,7 @@ impl Polyhedron {
                 let edges = distinct_face_edges(face);
                 let result = edges
                     .iter()
-                    .filter_map(|edge| vertex(edge, &newids))
+                    .filter_map(|edge| vertex(edge, &new_ids))
                     .collect::<Vec<_>>();
                 result
             })
@@ -579,7 +576,9 @@ impl Polyhedron {
                     &vertex_faces(vertex_number, &self.face_index),
                 )
                 .iter()
-                .map(|ve| vertex(&distinct_edge(ve), &newids).unwrap() as Index)
+                .map(|ve| {
+                    vertex(&distinct_edge(ve), &new_ids).unwrap() as Index
+                })
                 .collect::<Vec<_>>()
             })
             .collect();
@@ -602,11 +601,6 @@ impl Polyhedron {
         }
     }
 
-    /*
-    fn add_key_to_face(face: &Face, key: Index) {
-
-    }*/
-
     pub fn chamfer(&mut self, ratio: Float, change_name: bool) {
         let new_points = self
             .face_index
@@ -622,7 +616,7 @@ impl Polyhedron {
                     new_face.push(face[j]);
                     result.push((
                         new_face,
-                        face_points[j] + ratio * (centroid - face_points[j]),
+                        *face_points[j] + ratio * (centroid - *face_points[j]),
                     ))
                 });
                 result
@@ -631,7 +625,7 @@ impl Polyhedron {
 
         let new_ids = vertex_ids_ref(&new_points, self.num_points() as Index);
 
-        let mut face_index = self
+        let mut face_index: FaceIndex = self
             .face_index
             .iter()
             .map(|face| {
@@ -643,48 +637,39 @@ impl Polyhedron {
                 });
                 new_face
             })
-            .collect::<FaceIndex>();
+            .collect();
 
         face_index.extend(
             self.face_index
                 .par_iter()
                 .flat_map(|face| {
-                    let mut result = Vec::with_capacity(face.len());
-                    for j in 0..face.len() {
-                        let a: u32 = face[j];
-                        let b: u32 = face[(j + 1) % face.len()];
-                        if a < b {
-                            let opposite_face: Vec<u32> =
+                    (0..face.len())
+                        .filter(|j| face[*j] < face[(*j + 1) % face.len()])
+                        .map(|j| {
+                            let a: u32 = face[j];
+                            let b: u32 = face[(j + 1) % face.len()];
+                            let opposite_face =
                                 face_with_edge(&vec![b, a], &self.face_index);
 
-                            result.push(vec![
+                            vec![
                                 a,
-                                vertex(
-                                    &push_in_place(&opposite_face, a),
-                                    &new_ids,
-                                )
-                                .unwrap(),
-                                vertex(
-                                    &push_in_place(&opposite_face, b),
-                                    &new_ids,
-                                )
-                                .unwrap(),
+                                vertex(&extend![..opposite_face, a], &new_ids)
+                                    .unwrap(),
+                                vertex(&extend![..opposite_face, b], &new_ids)
+                                    .unwrap(),
                                 b,
-                                vertex(&push_in_place(&face, b), &new_ids)
-                                    .unwrap(),
-                                vertex(&push_in_place(&face, a), &new_ids)
-                                    .unwrap(),
-                            ]);
-                        }
-                    }
-                    result
+                                vertex(&extend![..face, b], &new_ids).unwrap(),
+                                vertex(&extend![..face, a], &new_ids).unwrap(),
+                            ]
+                        })
+                        .collect::<FaceIndex>()
                 })
                 .collect::<FaceIndex>(),
         );
 
         self.face_index = face_index;
         self.points.par_iter_mut().for_each(|point| {
-            *point = Point::from_vec((0.75) * point.to_vec())
+            *point = (1.5 * ratio) * *point;
         });
         self.points.extend(vertex_values(&new_points));
 
@@ -692,43 +677,6 @@ impl Polyhedron {
             self.name = format!("g{}", self.name);
         }
     }
-
-    /*
-       let(newf =
-             concat(
-                [for (face=pf)      // rotated faces
-                  [ for (v=face)
-                      vertex([face,v],newids)
-                  ]
-                ] ,
-                flatten(         // chamfered pentagons
-                 [for (face=pf)
-                   [
-                     for (j=[0:len(face)-1])
-                     let (
-                          a=face[j],
-                          b=face[(j+1)%len(face)])
-                     if(a<b)     // dont duplicate
-                     let (edge= [a,b],
-                          oppface=face_with_edge([b,a],pf),
-                          oppa=vertex([oppface,a],newids),
-                          oppb=vertex([oppface,b],newids),
-                          thisa=vertex([face,a],newids),
-                          thisb=vertex([face,b],newids))
-                          [a,oppa,oppb, b,thisb,thisa]
-                   ]
-                 ])
-               ))
-        poly(name=str("c",p_name(obj)),
-          vertices=
-            concat(
-              [for (v = pv)  (1.0 - r)*v],             // original
-               vertex_values(newv)
-             ),
-          faces=newf
-        );
-    // end chamfer
-    */
 
     pub fn dual(&mut self, change_name: bool) {
         let new_points = self
@@ -743,7 +691,7 @@ impl Polyhedron {
         }
     }
 
-    pub fn explode(&mut self, change_name: bool) {
+    pub fn expand(&mut self, change_name: bool) {
         self.ambo(false);
         self.ambo(false);
         if change_name {
@@ -759,26 +707,17 @@ impl Polyhedron {
     ) {
         // retain original points, add face centroids and directed
         // edge points each N-face becomes N pentagons
-
         let mut new_points: Vec<(&Face, Point)> = self
             .face_index
             .par_iter()
             .map(|face| {
                 let fp = as_points(face, &self.points);
-                //let p = normalize(centroid_ref(&fp)).to_vec().normalize();
                 (
                     face,
-                    normalize(&centroid_ref(&fp)) + face_normal(&fp) * height,
+                    centroid_ref(&fp).normalized() + face_normal(&fp) * height,
                 )
             })
             .collect::<Vec<_>>();
-
-        /*
-        let mut new_points_ref = new_points
-            .iter_mut()
-            .map(|v| &mut v.1)
-            .collect::<Vec<_>>();
-        circumscribed_resize_ref(&mut new_points_ref, 1.);*/
 
         let edges = self.edges();
 
@@ -796,13 +735,13 @@ impl Polyhedron {
                 vec![
                     (
                         edge.1,
-                        edge_points[0]
-                            + ratio * (edge_points[1] - edge_points[0]),
+                        *edge_points[0]
+                            + ratio * (*edge_points[1] - *edge_points[0]),
                     ),
                     (
                         &reversed_edges[edge.0],
-                        edge_points[1]
-                            + ratio * (edge_points[0] - edge_points[1]),
+                        *edge_points[1]
+                            + ratio * (*edge_points[0] - *edge_points[1]),
                     ),
                 ]
             })
@@ -836,10 +775,6 @@ impl Polyhedron {
                 new_faces
             })
             .collect();
-
-        //n!("{:?}", new_face_index);
-
-        //face_index;
 
         if change_name {
             self.name = format!("g{}", self.name);
@@ -879,7 +814,7 @@ impl Polyhedron {
             })
             .collect();
 
-        let newids =
+        let new_ids =
             vertex_ids_ref_ref(&new_points, self.points.len() as Index);
 
         self.points.extend(vertex_values_as_ref(&new_points));
@@ -887,19 +822,13 @@ impl Polyhedron {
         self.face_index = self
             .face_index
             .par_iter()
-            .flat_map(|f: &Face| match vertex(f, &newids) {
-                Some(centroid) => {
-                    let mut result = Vec::with_capacity(f.len());
-                    for j in 0..f.len() {
-                        result.push(vec![
-                            f[j],
-                            f[(j + 1) % f.len()],
-                            centroid as Index,
-                        ]);
-                    }
-                    result
-                }
-                None => vec![f.clone()],
+            .flat_map(|face: &Face| match vertex(face, &new_ids) {
+                Some(centroid) => (0..face.len())
+                    .map(|j| {
+                        vec![face[j], face[(j + 1) % face.len()], centroid as Index]
+                    })
+                    .collect(),
+                None => vec![face.clone()],
             })
             .collect();
 
@@ -918,6 +847,14 @@ impl Polyhedron {
         self.join(false);
         if change_name {
             self.name = format!("m{}", self.name);
+        }
+    }
+
+    pub fn needle(&mut self, change_name: bool) {
+        self.dual(false);
+        self.truncate(None, false);
+        if change_name {
+            self.name = format!("n{}", self.name);
         }
     }
 
@@ -945,13 +882,13 @@ impl Polyhedron {
                 vec![
                     (
                         edge.1,
-                        egdge_points[0]
-                            + ratio * (egdge_points[1] - egdge_points[0]),
+                        *egdge_points[0]
+                            + ratio * (*egdge_points[1] - *egdge_points[0]),
                     ),
                     (
                         &reversed_edges[edge.0],
-                        egdge_points[1]
-                            + ratio * (egdge_points[0] - egdge_points[1]),
+                        *egdge_points[1]
+                            + ratio * (*egdge_points[0] - *egdge_points[1]),
                     ),
                 ]
             })
@@ -960,33 +897,19 @@ impl Polyhedron {
         let new_ids =
             vertex_ids_ref_ref(&new_points, self.num_points() as Index);
 
-        /*
         let mut face_index: FaceIndex = self
             .face_index
             .iter()
             .map(|face| {
-                face.iter()
-                    .cycle()
-                    .tuple_windows::<(_, _)>()
-                    .map(|edge| {
-                        vertex(&vec![*edge.0, *edge.1], &new_ids).unwrap()
+                (0..face.len())
+                    .map(|j| {
+                        vertex(
+                            &vec![face[j], face[(j + 1) % face.len()]],
+                            &new_ids,
+                        )
+                        .unwrap()
                     })
-                    .take(face.len())
                     .collect()
-            })
-            .collect();*/
-
-        let mut face_index: FaceIndex = self
-            .face_index
-            .iter()
-            .map(|face| {
-                let mut new_faces = Vec::with_capacity(face.len());
-                for j in 0..face.len() {
-                    let a = face[j];
-                    let b = face[(j + 1) % face.len()];
-                    new_faces.push(vertex(&vec![a, b], &new_ids).unwrap());
-                }
-                new_faces
             })
             .collect();
 
@@ -994,28 +917,160 @@ impl Polyhedron {
             self.face_index
                 .iter()
                 .flat_map(|face| {
-                    let mut new_faces = Vec::with_capacity(face.len());
-                    for j in 0..face.len() {
-                        let a = face[j];
-                        let b = face[(j + 1) % face.len()];
-                        let z = face[(j + face.len() - 1) % face.len()];
-                        let eab = vertex(&vec![a, b], &new_ids).unwrap();
-                        let eba = vertex(&vec![b, a], &new_ids).unwrap();
-                        let eza = vertex(&vec![z, a], &new_ids).unwrap();
-                        new_faces.push(vec![a, eba, eab, eza]);
-                    }
-                    new_faces
+                    (0..face.len())
+                        .map(|j| {
+                            let a = face[j];
+                            let b = face[(j + 1) % face.len()];
+                            let z = face[(j + face.len() - 1) % face.len()];
+                            let eab = vertex(&vec![a, b], &new_ids).unwrap();
+                            let eba = vertex(&vec![b, a], &new_ids).unwrap();
+                            let eza = vertex(&vec![z, a], &new_ids).unwrap();
+                            vec![a, eba, eab, eza]
+                        })
+                        .collect::<FaceIndex>()
                 })
                 .collect::<FaceIndex>(),
         );
 
         self.face_index = face_index;
+        println!("{}", self.num_points());
         self.points.extend(vertex_values_as_ref(&new_points));
+        println!("{}", self.num_points());
         if change_name {
             self.name = format!("p{}", self.name);
         }
     }
 
+    pub fn quinto(&mut self, change_name: bool) {
+        let edges = self.edges();
+        let mut new_points: Vec<(Face, Point)> = edges
+            .par_iter()
+            .map(|edge| {
+                let edge_points = as_points(edge, &self.points);
+                (edge.clone(), 0.5 * (*edge_points[0] + *edge_points[1]))
+            })
+            .collect();
+
+        new_points.extend(
+            self.face_index
+                .par_iter()
+                .flat_map(|face| {
+                    let edge_points = as_points(face, &self.points);
+                    let centroid = centroid_ref(&edge_points);
+                    (0..face.len())
+                        .map(|i| {
+                            (
+                                extend![..face, i as u32],
+                                (*edge_points[i]
+                                    + *edge_points[(i + 1) % face.len()]
+                                    + centroid)
+                                    / 3.,
+                            )
+                        })
+                        .collect::<Vec<(Face, Point)>>()
+                })
+                .collect::<Vec<(Face, Point)>>(),
+        );
+
+        let new_ids = vertex_ids_ref(&new_points, self.num_points() as u32);
+
+        let mut new_faces: FaceIndex = self
+            .face_index
+            .par_iter()
+            .map(|face| {
+                (0..face.len())
+                    .map(|face_vertex| {
+                        vertex(&extend![..face, face_vertex as u32], &new_ids)
+                            .unwrap()
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .collect();
+
+        new_faces.extend(
+            self.face_index
+                .par_iter()
+                .flat_map(|face| {
+                    (0..face.len())
+                        .map(|i| {
+                            vec![
+                                face[i],
+                                vertex(
+                                    &distinct_edge(&vec![
+                                        face[(i + face.len() - 1) % face.len()],
+                                        face[i],
+                                    ]),
+                                    &new_ids,
+                                )
+                                .unwrap(),
+                                vertex(
+                                    &distinct_edge(&vec![
+                                        face[i],
+                                        face[(i + 1) % face.len()],
+                                    ]),
+                                    &new_ids,
+                                )
+                                .unwrap(),
+                                vertex(
+                                    &extend![
+                                        ..face,
+                                        ((i + face.len() - 1) % face.len())
+                                            as u32
+                                    ],
+                                    &new_ids,
+                                )
+                                .unwrap(),
+                                vertex(&extend![..face, i as u32], &new_ids)
+                                    .unwrap(),
+                            ]
+                        })
+                        .collect::<FaceIndex>()
+                })
+                .collect::<FaceIndex>(),
+        );
+
+        self.face_index = new_faces;
+        self.points.extend(vertex_values_as_ref(&new_points));
+        if change_name {
+            self.name = format!("q{}", self.name);
+        }
+    }
+
+    /*
+         let (newids = vertex_ids(newv,len(pv)))
+         let (newf =
+              concat(
+              [for (face=pf)    // reduced faces
+                  [for (j=[0:len(face)-1])
+                   let (nv=vertex([face,j],newids))
+                   nv
+                  ]
+                  ]
+
+                  ,
+
+               [for (face=pf)
+                   for (i = [0:len(face)-1])
+                   let (v = face[i])
+                   let (e0 = [face[(i-1+len(face)) % len(face)],face[i]])
+                   let (e1 = [face[i] , face[(i + 1) % len(face)]])
+                   let (e0p = vertex(distinct_edge(e0),newids))
+                   let (e1p = vertex(distinct_edge(e1),newids))
+                   let (iv0 = vertex([face,(i -1 + len(face)) % len(face)],newids))
+                   let (iv1 = vertex([face,i],newids))
+                   [v,e1p,iv1,iv0,e0p]
+
+                  // [v,e0p,iv0,iv1,e1p]
+                  ]
+
+               ) )
+
+         poly(name=str("q",p_name(obj)),
+              vertices= concat(pv,vertex_values(newv)),
+              faces=newf
+             )
+    ; // end quinta
+    */
     pub fn reflect(&mut self, change_name: bool) {
         self.points = self
             .points
@@ -1091,7 +1146,7 @@ impl Polyhedron {
                                 &self.points[*t.1 as usize],
                                 &self.points[*t.2 as usize],
                             )
-                            .normalize()
+                            .normalized()
                         })
                         .take(f.len())
                         .collect::<Normals>()

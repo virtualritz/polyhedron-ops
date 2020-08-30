@@ -69,14 +69,17 @@ fn main() {
         "Press one of\n\
         A(mbo)\n\
         B(evel)\n\
-        C(chamfer)\n
+        C(chamfer)\n\
         D(ual)\n\
-        E(xplode)\n\
+        E(xpand)\n\
         G(yro)↑↓\n\
         J(oin)\n\
         K(iss)↑↓\n\
         M(eta)\n\
+        N(eedle)\n\
         O(rtho)\n\
+        P(propellor)\n\
+        Q(uinto)\n\
         R(eflect)\n\
         S(nub)\n\
         T(runcate)\n\
@@ -128,7 +131,7 @@ fn main() {
                         Key::E => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            poly.explode(true);
+                            poly.expand(true);
                             poly.normalize();
                             last_op = '_';
                         }
@@ -162,6 +165,13 @@ fn main() {
                             poly.normalize();
                             last_op = '_';
                         }
+                        Key::N => {
+                            alter_last_op = false;
+                            last_poly = poly.clone();
+                            poly.needle(true);
+                            poly.normalize();
+                            last_op = '_';
+                        }
                         Key::O => {
                             alter_last_op = false;
                             last_poly = poly.clone();
@@ -173,6 +183,13 @@ fn main() {
                             alter_last_op = false;
                             last_poly = poly.clone();
                             poly.propellor(1. / 3., true);
+                            poly.normalize();
+                            last_op = '_';
+                        }
+                        Key::Q => {
+                            alter_last_op = false;
+                            last_poly = poly.clone();
+                            poly.quinto(true);
                             poly.normalize();
                             last_op = '_';
                         }
