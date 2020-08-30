@@ -13,22 +13,22 @@ functional, lends itself well to translation into functional Rust.
 
 ## Supported Operators
 
-- [x] a - ambo
-- [x] b - bevel (equiv. to ta)
-- [x] c - chamfer
-- [x] d - dual
-- [x] e - explode (a.k.a. expand, equiv. to aa)
-- [x] g - gyro
-- [x] j - join (equiv. to dad)
-- [x] m - meta (equiv. to k3j)
-- [x] o - ortho (equiv. to jj)
-- [x] p - propellor (BROKEN)
-- [x] kN - kis on N-sided faces (if no N, then general kis)
-- [x] q - quinto (BROKEN)
-- [x] r - reflect
-- [x] s - snub (equiv. to dgd)
-- [x] tN - truncate vertices of degree N (equiv. to dkNd; if no N, then truncate all vertices)
-- [ ] w - whirl
+- [x] **a** - ambo
+- [x] **b** - bevel (equiv. to **ta**)
+- [x] **c** - chamfer
+- [x] **d** - dual
+- [x] **e** - expand (a.k.a. explode, equiv. to **aa**)
+- [x] **g** - gyro
+- [x] **j** - join (equiv. to **dad**)
+- [x] **m** - meta (equiv. to **k(3)j**)
+- [x] **o** - ortho (equiv. to **jj**)
+- [x] **p** - propellor (BROKEN)
+- [x] **k**(*n*) - kis on faces with arity *n* or an all faces if *n* is unspecified
+- [x] **q** - quinto (BROKEN)
+- [x] **r** - reflect
+- [x] **s** - snub (equiv. to **dgd**)
+- [x] **t**(*n*) - truncate vertices of valence *n* or on all vertices if *n* is unspecified (equiv. to *dkNd*)
+- [ ] **w** - whirl
 
 
 ## Playing
@@ -41,30 +41,26 @@ cargo run --release --example playground
 
 ### Keyboard Commands
 
-Use keys matching the operator name from the above
-list to apply.
+Use keys matching the operator name from the above list to apply.
 
-Use `Up` and `Down` to adjust the parameter of the
-the last operator.
+Use `Up` and `Down` to adjust the parameter of the the last operator.
 Combine with `Shift` for 10× the change.
 
-`Delete` undoes the last (and only the last)
-operation.
+`Delete` undoes the last (and only the last) operation.
 
-Press `R` to render with 3Delight (requires a
-[3Delight|ɴsɪ installation](https://www.3delight.com/download)).
-Combine with `Shift` to render with 3Delight Cloud.
+Press `R` to render with 3Delight (requires a [3Delight|ɴsɪ
+installation](https://www.3delight.com/download)).
+Combine with `Shift` to render with 3Delight Cloud (requires
+registration).
 
-Press `Space` to save as `$HOME/polyhedron.obj`.
+Press `Space` to save as `$HOME/polyhedron-<type>.obj`.
 
-I use `kiss3d` for realtime preview which is
-close to the metal enough to limit meshes to
-65k vertices. This means the preview will be
-broken if your mesh hits this limit.
+I use `kiss3d` for realtime preview which is close to the metal enough
+to limit meshes to 65k vertices. This means the preview will be broken
+if your mesh hits this limit.
 
-Export & render will always yield a correct OBJ though.
-Which you can view in Blender or another DCC
-app.
+Export & render will always yield a correct OBJ though. Which you can
+view in Wings, Blender or another DCC app.
 
-The app may crash though if your graphics driver
-doesn't handle such ill-defined meshes gracefully. :)
+The app may crash though if your graphics driver doesn't handle such
+ill-defined meshes gracefully. :)
