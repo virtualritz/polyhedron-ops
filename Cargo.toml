@@ -9,7 +9,8 @@ edition = "2018"
 repository = "https://github.com/virtualritz/polyhedron-ops/"
 
 [dependencies]
-ultraviolet = "0.5.1"
+arrayvec = "0.5.1"
+ultraviolet = "0.6.0"
 itertools = "0.9.0"
 nalgebra = "0.22.0"
 kiss3d = "0.25.0"

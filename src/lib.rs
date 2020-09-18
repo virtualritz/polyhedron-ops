@@ -1,6 +1,6 @@
 use itertools::Itertools;
 use nsi;
-use ultraviolet::vec;
+use ultraviolet;
 
 use std::{
     fs::File,
@@ -753,8 +753,6 @@ impl Polyhedron {
         let new_ids =
             vertex_ids_ref_ref(&new_points, self.num_points() as Index);
 
-        //self.points =
-        //self.points.iter_mut().map(|p| normalize(p)).collect();
         self.points.extend(vertex_values_as_ref(&new_points));
 
         self.face_index = self
@@ -825,7 +823,11 @@ impl Polyhedron {
             .flat_map(|face: &Face| match vertex(face, &new_ids) {
                 Some(centroid) => (0..face.len())
                     .map(|j| {
-                        vec![face[j], face[(j + 1) % face.len()], centroid as Index]
+                        vec![
+                            face[j],
+                            face[(j + 1) % face.len()],
+                            centroid as Index,
+                        ]
                     })
                     .collect(),
                 None => vec![face.clone()],
@@ -983,7 +985,7 @@ impl Polyhedron {
                         vertex(&extend![..face, face_vertex as u32], &new_ids)
                             .unwrap()
                     })
-                    .collect::<Vec<_>>()
+                    .collect()
             })
             .collect();
 
@@ -1036,41 +1038,6 @@ impl Polyhedron {
         }
     }
 
-    /*
-         let (newids = vertex_ids(newv,len(pv)))
-         let (newf =
-              concat(
-              [for (face=pf)    // reduced faces
-                  [for (j=[0:len(face)-1])
-                   let (nv=vertex([face,j],newids))
-                   nv
-                  ]
-                  ]
-
-                  ,
-
-               [for (face=pf)
-                   for (i = [0:len(face)-1])
-                   let (v = face[i])
-                   let (e0 = [face[(i-1+len(face)) % len(face)],face[i]])
-                   let (e1 = [face[i] , face[(i + 1) % len(face)]])
-                   let (e0p = vertex(distinct_edge(e0),newids))
-                   let (e1p = vertex(distinct_edge(e1),newids))
-                   let (iv0 = vertex([face,(i -1 + len(face)) % len(face)],newids))
-                   let (iv1 = vertex([face,i],newids))
-                   [v,e1p,iv1,iv0,e0p]
-
-                  // [v,e0p,iv0,iv1,e1p]
-                  ]
-
-               ) )
-
-         poly(name=str("q",p_name(obj)),
-              vertices= concat(pv,vertex_values(newv)),
-              faces=newf
-             )
-    ; // end quinta
-    */
     pub fn reflect(&mut self, change_name: bool) {
         self.points = self
             .points
@@ -1110,6 +1077,100 @@ impl Polyhedron {
             }
         }
     }
+
+    pub fn whirl(&mut self, ratio: Float, height: Float, change_name: bool) {
+        let mut new_points: Vec<(Face, Point)> = self
+            .face_index
+            .par_iter()
+            .flat_map(|face| {
+                let face_points = as_points(face, &self.points);
+                let center = centroid_ref(&face_points)
+                    + face_normal(&face_points) * height;
+                face.iter()
+                    .enumerate()
+                    .map(|v| {
+                        let edge_points = [
+                            face_points[v.0],
+                            face_points[(v.0 + 1) % face.len()],
+                        ];
+                        let middle: ultraviolet::vec::Vec3 = *edge_points[0]
+                            + ratio * (*edge_points[1] - *edge_points[0]);
+                        (
+                            extend![..face, *v.1],
+                            middle + ratio * (center - middle),
+                        )
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>();
+
+        let edges = self.edges();
+
+        let new_points2: Vec<(Face, Point)> = edges
+            .par_iter()
+            .flat_map(|edge| {
+                let edge_points = as_points(edge, &self.points);
+                vec![
+                    (
+                        edge.clone(),
+                        *edge_points[0]
+                            + ratio * (*edge_points[1] - *edge_points[0]),
+                    ),
+                    (
+                        vec![edge[1], edge[0]],
+                        *edge_points[1]
+                            + ratio * (*edge_points[0] - *edge_points[1]),
+                    ),
+                ]
+            })
+            .collect();
+
+        new_points.extend(new_points2);
+
+        let new_ids = vertex_ids_ref(&new_points, self.num_points() as Index);
+
+        //let new_face_index
+
+        if change_name {
+            self.name = format!("w{}", self.name);
+        }
+    }
+
+    /*
+
+        let(newids=vertex_ids(newv,len(pv)))
+        let(newf=concat(
+             flatten(                        // new faces are pentagons
+             [for (face=pf)
+                 [for (j=[0:len(face)-1])
+                    let (a=face[j],
+                         b=face[(j+1)%len(face)],
+                         c=face[(j+2)%len(face)],
+                         eab=vertex([a,b],newids),
+                         eba=vertex([b,a],newids),
+                         ebc=vertex([b,c],newids),
+                         mida=vertex([face,a],newids),
+                         midb=vertex([face,b],newids))
+                    [eab,eba,b,ebc,midb,mida]
+                ]
+             ]
+           )
+         ,
+            [for (face=pf)
+                 [for (j=[0:len(face)-1])
+                    let (a=face[j])
+                    vertex([face,a],newids)
+                 ]
+             ]
+            ))
+
+        poly(name=str("w",p_name(obj)),
+          vertices=  concat(pv, vertex_values(newv)),
+          faces= newf,
+          debug=newv
+          )
+    ; // end whirl
+    */
 
     pub fn reverse(&mut self) {
         self.face_index = self

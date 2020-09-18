@@ -4,11 +4,11 @@ use std::{env, path::PathBuf};
 
 fn nsi_camera(c: &nsi::Context, name: &str, camera_xform: &[f64; 16]) {
     // Setup a camera transform.
-    c.create("cam1_trs", nsi::NodeType::Transform, &[]);
-    c.connect("cam1_trs", "", ".root", "objects", &[]);
+    c.create("camera_xform", nsi::NodeType::Transform, &[]);
+    c.connect("camera_xform", "", ".root", "objects", &[]);
 
     c.set_attribute(
-        "cam1_trs",
+        "camera_xform",
         &[nsi::double_matrix!(
             "transformationmatrix",
             //camera_xform
@@ -17,18 +17,18 @@ fn nsi_camera(c: &nsi::Context, name: &str, camera_xform: &[f64; 16]) {
     );
 
     // Setup a camera.
-    c.create("cam1", nsi::NodeType::PerspectiveCamera, &[]);
+    c.create("camera", nsi::NodeType::PerspectiveCamera, &[]);
 
-    c.set_attribute("cam1", &[nsi::float!("fov", 35.)]);
-    c.connect("cam1", "", "cam1_trs", "objects", &[]);
+    c.set_attribute("camera", &[nsi::float!("fov", 35.)]);
+    c.connect("camera", "", "camera_xform", "objects", &[]);
 
     // Setup a screen.
-    c.create("s1", nsi::NodeType::Screen, &[]);
-    c.connect("s1", "", "cam1", "screens", &[]);
+    c.create("screen", nsi::NodeType::Screen, &[]);
+    c.connect("screen", "", "camera", "screens", &[]);
     c.set_attribute(
-        "s1",
+        "screen",
         &[
-            nsi::integers!("resolution", &[1536, 1536]).array_len(2),
+            nsi::integers!("resolution", &[2048, 2048]).array_len(2),
             nsi::integer!("oversampling", 16),
         ],
     );
@@ -38,10 +38,39 @@ fn nsi_camera(c: &nsi::Context, name: &str, camera_xform: &[f64; 16]) {
         &[
             nsi::integer!("renderatlowpriority", 1),
             nsi::string!("bucketorder", "circle"),
-            nsi::unsigned!("quality.shadingsamples", 512),
+            nsi::unsigned!("quality.shadingsamples", 128),
             nsi::integer!("maximumraydepth.reflection", 6),
         ],
     );
+
+    c.create("albedo", nsi::NodeType::OutputLayer, &[]);
+    c.set_attribute(
+        "albedo",
+        &[
+            nsi::string!("variablename", "albedo"),
+            nsi::string!("variablesource", "shader"),
+            nsi::string!("layertype", "color"),
+            nsi::string!("scalarformat", "float"),
+            nsi::string!("filter", "box"),
+            nsi::double!("filterwidth", 1.),
+        ],
+    );
+    c.connect("albedo", "", "screen", "outputlayers", &[]);
+
+    // Normal layer.
+    c.create("normal", nsi::NodeType::OutputLayer, &[]);
+    c.set_attribute(
+        "normal",
+        &[
+            nsi::string!("variablename", "N.world"),
+            nsi::string!("variablesource", "builtin"),
+            nsi::string!("layertype", "vector"),
+            nsi::string!("scalarformat", "float"),
+            nsi::string!("filter", "box"),
+            nsi::double!("filterwidth", 1.),
+        ],
+    );
+    c.connect("normal", "", "screen", "outputlayers", &[]);
 
     // Setup an output layer.
     c.create(name, nsi::NodeType::OutputLayer, &[]);
@@ -50,15 +79,29 @@ fn nsi_camera(c: &nsi::Context, name: &str, camera_xform: &[f64; 16]) {
         &[
             nsi::string!("variablename", "Ci"),
             nsi::integer!("withalpha", 1),
-            nsi::string!("scalarformat", "half"),
+            nsi::string!("scalarformat", "float"),
+            nsi::double!("filterwidth", 1.),
         ],
     );
-    c.connect(name, "", "s1", "outputlayers", &[]);
+    c.connect(name, "", "screen", "outputlayers", &[]);
 
     // Setup an output driver.
     c.create("driver1", nsi::NodeType::OutputDriver, &[]);
     c.connect("driver1", "", name, "outputdrivers", &[]);
     c.set_attribute("driver1", &[nsi::string!("drivername", "idisplay")]);
+
+    c.create("driver2", nsi::NodeType::OutputDriver, &[]);
+    c.connect("driver2", "", name, "outputdrivers", &[]);
+    c.connect("driver2", "", "albedo", "outputdrivers", &[]);
+    c.connect("driver2", "", "normal", "outputdrivers", &[]);
+    c.set_attribute(
+        "driver2",
+        &[
+            nsi::string!("drivername", "r-display"),
+            nsi::string!("imagefilename", name),
+            nsi::float!("denoise", 1.),
+        ],
+    );
 }
 
 fn nsi_environment(c: &nsi::Context) {
