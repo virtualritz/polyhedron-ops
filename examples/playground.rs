@@ -4,6 +4,12 @@
 #[macro_use]
 extern crate slice_as_array;
 
+pub enum RenderType {
+    Normal,
+    Cloud,
+    Dump,
+}
+
 mod nsi_render;
 
 extern crate nalgebra;
@@ -19,7 +25,7 @@ use kiss3d::{
 };
 
 use na::{Point3, UnitQuaternion, Vector3};
-use std::{cell::RefCell, io, io::Write, rc::Rc};
+use std::{cell::RefCell, io, io::Write, rc::Rc, path::Path};
 
 extern crate polyhedron_ops;
 use polyhedron_ops::prelude::*;
@@ -67,25 +73,25 @@ fn main() {
 
     println!(
         "Press one of\n\
-        A(mbo)\n\
-        B(evel)\n\
-        C(chamfer)\n\
-        D(ual)\n\
-        E(xpand)\n\
-        G(yro)↑↓\n\
-        J(oin)\n\
-        K(iss)↑↓\n\
-        M(eta)\n\
-        N(eedle)\n\
-        O(rtho)\n\
-        P(propellor)\n\
-        Q(uinto)\n\
-        R(eflect)\n\
-        S(nub)\n\
-        T(runcate)\n\
+        [A]mbo\n\
+        [B]evel\n\
+        [C]chamfer\n\
+        [D]ual\n\
+        [E]xpand\n\
+        [G]yro↑↓\n\
+        [J]oin\n\
+        [K]iss↑↓\n\
+        [M]eta\n\
+        [N]eedle\n\
+        [O]rtho\n\
+        [P]propellor\n\
+        [Q]uinto\n\
+        [R]eflect\n\
+        [S]nub\n\
+        [T]runcate\n\
         (Shift)+⬆/⬇︎ – modify the last ↑↓ operation\n\
-        (Shift)+R(ender) – in the cloud w. Shift\n\
-        Space – save"
+        (Shift)+[Enter] – Render (in the cloud w. [Shift])\n\
+        (Shift)+[Space] – save as OBJ (dump to NSI w. [Shift])"
     );
 
     while !window.should_close() {
@@ -193,6 +199,13 @@ fn main() {
                             poly.normalize();
                             last_op = '_';
                         }
+                        Key::R => {
+                            alter_last_op = false;
+                            last_poly = poly.clone();
+                            poly.reflect(true);
+                            poly.normalize();
+                            last_op = '_';
+                        }
                         /*Key::T => {
                             if Super == modifiers {
                                 return;
@@ -214,12 +227,34 @@ fn main() {
                             last_op = '_';
                         }
                         Key::Space => {
-                            println!(
-                                "Exported to {}",
-                                poly.export_as_obj(&path, true)
-                                    .unwrap()
-                                    .display()
-                            );
+                            if modifiers.intersects(Modifiers::Shift) {
+                                let xform = arc_ball
+                                    .inverse_transformation()
+                                    .iter()
+                                    .map(|e| *e as f64)
+                                    .collect::<Vec<_>>();
+
+                                println!(
+                                    "Dumped to {}",
+                                    nsi_render::nsi_render(
+                                        &path,
+                                        &poly,
+                                        slice_as_array!(
+                                            xform.as_slice(),
+                                            [f64; 16]
+                                        )
+                                        .unwrap(),
+                                        RenderType::Dump,
+                                    )
+                                );
+                            } else {
+                                println!(
+                                    "Exported to {}",
+                                    poly.export_as_obj(&path, true)
+                                        .unwrap()
+                                        .display()
+                                );
+                            }
                         }
                         Key::Up => {
                             alter_last_op = true;
@@ -240,7 +275,7 @@ fn main() {
                         Key::Delete => {
                             poly = last_poly.clone();
                         }
-                        Key::R => {
+                        Key::Return => {
                             let xform = arc_ball
                                 .inverse_transformation()
                                 .iter()
@@ -248,11 +283,15 @@ fn main() {
                                 .collect::<Vec<_>>();
 
                             nsi_render::nsi_render(
+                                Path::new(""),
                                 &poly,
                                 slice_as_array!(xform.as_slice(), [f64; 16])
                                     .unwrap(),
-                                "polyhedron",
-                                modifiers.intersects(Modifiers::Shift),
+                                if modifiers.intersects(Modifiers::Shift) {
+                                    RenderType::Cloud
+                                } else {
+                                    RenderType::Normal
+                                },
                             );
                         }
                         _ => {

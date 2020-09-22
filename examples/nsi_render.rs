@@ -1,5 +1,6 @@
 extern crate nsi;
-
+pub use crate::*;
+use std::path::Path;
 use std::{env, path::PathBuf};
 
 fn nsi_camera(c: &nsi::Context, name: &str, camera_xform: &[f64; 16]) {
@@ -90,6 +91,7 @@ fn nsi_camera(c: &nsi::Context, name: &str, camera_xform: &[f64; 16]) {
     c.connect("driver1", "", name, "outputdrivers", &[]);
     c.set_attribute("driver1", &[nsi::string!("drivername", "idisplay")]);
 
+    /*
     c.create("driver2", nsi::NodeType::OutputDriver, &[]);
     c.connect("driver2", "", name, "outputdrivers", &[]);
     c.connect("driver2", "", "albedo", "outputdrivers", &[]);
@@ -101,7 +103,7 @@ fn nsi_camera(c: &nsi::Context, name: &str, camera_xform: &[f64; 16]) {
             nsi::string!("imagefilename", name),
             nsi::float!("denoise", 1.),
         ],
-    );
+    );*/
 }
 
 fn nsi_environment(c: &nsi::Context) {
@@ -191,24 +193,30 @@ fn nsi_material(c: &nsi::Context, name: &str) {
 }
 
 pub fn nsi_render(
+    path: &Path,
     polyhedron: &crate::Polyhedron,
     camera_xform: &[f64; 16],
-    name: &str,
-    cloud_render: bool,
-) {
+    render_type: crate::RenderType,
+) -> String {
+    let destination =
+        path.join(format!("polyhedron-{}.nsi", polyhedron.name()));
+
     let ctx = {
-        if cloud_render {
-            nsi::Context::new(&[
+        match render_type {
+            RenderType::Normal => nsi::Context::new(&[]),
+            RenderType::Cloud => nsi::Context::new(&[
                 nsi::integer!("cloud", 1),
                 nsi::string!("software", "HOUDINI"),
-            ])
-        } else {
-            nsi::Context::new(&[])
+            ]),
+            RenderType::Dump => nsi::Context::new(&[
+                nsi::string!("type", "apistream"),
+                nsi::string!("streamfilename", destination.to_string_lossy().to_string()),
+            ]),
         }
     }
     .expect("Could not create NSI rendering context.");
 
-    nsi_camera(&ctx, name, camera_xform);
+    nsi_camera(&ctx, &(polyhedron.name().to_string() + ".exr"), camera_xform);
 
     nsi_environment(&ctx);
 
@@ -221,4 +229,6 @@ pub fn nsi_render(
 
     // And now, render it!
     ctx.render_control(&[nsi::string!("action", "wait")]);
+
+    destination.to_string_lossy().to_string()
 }
