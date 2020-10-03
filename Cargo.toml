@@ -2,7 +2,7 @@ cargo-features = ["strip"]
 
 [package]
 name = "polyhedron-ops"
-version = "0.1.0"
+version = "0.1.1"
 license = "BSD-3-Clause"
 authors = ["Moritz Moeller <virtualritz@gmail.com>"]
 edition = "2018"
@@ -10,11 +10,11 @@ repository = "https://github.com/virtualritz/polyhedron-ops/"
 
 [dependencies]
 arrayvec = "0.5.1"
-ultraviolet = "0.6.1"
+ultraviolet = "0.7.2"
 itertools = "0.9.0"
 nalgebra = "0.22.0"
-kiss3d = "0.25.0"
-rayon = "1.4.0"
+kiss3d = "0.26.0"
+rayon = "1.4.1"
 dirs = "3.0.1"
 nsi = "0.5.4"
 slice_as_array = "1.1.0"
