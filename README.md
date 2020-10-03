@@ -28,8 +28,12 @@ functional, lends itself well to translation into functional Rust.
 - [x] **r** - reflect
 - [x] **s** - snub (equiv. to **dgd**)
 - [x] **t**(*n*) - truncate vertices of valence *n* or on all vertices if *n* is unspecified (equiv. to *dkNd*)
-- [ ] **w** - whirl
-
+- [x] **w** - whirl
+- [ ] **l** - stellate
+- [ ] **i** - inset
+- [ ] **x** - extrude
+- [ ] **z** - triangulate
+- [ ] **h** - hollow
 
 ## Playing
 

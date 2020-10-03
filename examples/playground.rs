@@ -25,7 +25,7 @@ use kiss3d::{
 };
 
 use na::{Point3, UnitQuaternion, Vector3};
-use std::{cell::RefCell, io, io::Write, rc::Rc, path::Path};
+use std::{cell::RefCell, io, io::Write, path::Path, rc::Rc};
 
 extern crate polyhedron_ops;
 use polyhedron_ops::prelude::*;
@@ -89,6 +89,7 @@ fn main() {
         [R]eflect\n\
         [S]nub\n\
         [T]runcate\n\
+        [W]hirl\n\
         (Shift)+⬆/⬇︎ – modify the last ↑↓ operation\n\
         (Shift)+[Enter] – Render (in the cloud w. [Shift])\n\
         (Shift)+[Space] – save as OBJ (dump to NSI w. [Shift])"
@@ -223,6 +224,13 @@ fn main() {
                             alter_last_op = false;
                             last_poly = poly.clone();
                             poly.truncate(None, true);
+                            poly.normalize();
+                            last_op = '_';
+                        }
+                        Key::W => {
+                            alter_last_op = false;
+                            last_poly = poly.clone();
+                            poly.whirl(1. / 3., 0.2, true);
                             poly.normalize();
                             last_op = '_';
                         }

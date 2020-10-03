@@ -210,13 +210,20 @@ pub fn nsi_render(
             ]),
             RenderType::Dump => nsi::Context::new(&[
                 nsi::string!("type", "apistream"),
-                nsi::string!("streamfilename", destination.to_string_lossy().to_string()),
+                nsi::string!(
+                    "streamfilename",
+                    destination.to_string_lossy().to_string()
+                ),
             ]),
         }
     }
     .expect("Could not create NSI rendering context.");
 
-    nsi_camera(&ctx, &(polyhedron.name().to_string() + ".exr"), camera_xform);
+    nsi_camera(
+        &ctx,
+        &(polyhedron.name().to_string() + ".exr"),
+        camera_xform,
+    );
 
     nsi_environment(&ctx);
 
