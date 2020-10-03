@@ -324,11 +324,8 @@ fn orthogonal(v0: &Point, v1: &Point, v2: &Point) -> Vector {
 }
 
 fn are_collinear(v0: &Point, v1: &Point, v2: &Point) -> bool {
-
-
-             (v0.x * (v1.y - v2.y)
-                + v1.x * (v2.y - v0.y)
-                + v2.x * (v0.y - v1.y)).abs() < 0.0001
+    (v0.x * (v1.y - v2.y) + v1.x * (v2.y - v0.y) + v2.x * (v0.y - v1.y)).abs()
+        < 0.0001
 }
 
 /// Computes the normal of a face.
@@ -423,7 +420,7 @@ fn selected_face(face: &Face, face_arity: Option<&Vec<usize>>) -> bool {
 
 #[inline]
 fn distinct_edges(faces: &FaceIndex) -> EdgeIndex {
-    let edge_index: EdgeIndex = faces
+    faces
         .par_iter()
         .flat_map(|face| {
             face.iter()
@@ -436,9 +433,10 @@ fn distinct_edges(faces: &FaceIndex) -> EdgeIndex {
                 .take(face.len())
                 .collect::<Vec<_>>()
         })
-        .collect();
-
-    edge_index.into_iter().unique().collect()
+        .collect::<EdgeIndex>()
+        .into_iter()
+        .unique()
+        .collect()
 }
 
 /// Extend a vector with some element(s)
@@ -803,18 +801,18 @@ impl Polyhedron {
             .face_index
             .par_iter()
             .flat_map(|face| {
-                let mut new_faces = Vec::with_capacity(face.len());
-                for j in 0..face.len() {
-                    let a = face[j];
-                    let b = face[(j + 1) % face.len()];
-                    let z = face[(j + face.len() - 1) % face.len()];
-                    let eab = vertex(&vec![a, b], &new_ids).unwrap();
-                    let eza = vertex(&vec![z, a], &new_ids).unwrap();
-                    let eaz = vertex(&vec![a, z], &new_ids).unwrap();
-                    let centroid = vertex(face, &new_ids).unwrap();
-                    new_faces.push(vec![a, eab, centroid, eza, eaz]);
-                }
-                new_faces
+                (0..face.len())
+                    .map(|j| {
+                        let a = face[j];
+                        let b = face[(j + 1) % face.len()];
+                        let z = face[(j + face.len() - 1) % face.len()];
+                        let eab = vertex(&vec![a, b], &new_ids).unwrap();
+                        let eza = vertex(&vec![z, a], &new_ids).unwrap();
+                        let eaz = vertex(&vec![a, z], &new_ids).unwrap();
+                        let centroid = vertex(face, &new_ids).unwrap();
+                        vec![a, eab, centroid, eza, eaz]
+                    })
+                    .collect::<FaceIndex>()
             })
             .collect();
 
@@ -915,24 +913,22 @@ impl Polyhedron {
     pub fn propellor(&mut self, ratio: Float, change_name: bool) {
         let edges = self.edges();
 
-        let reversed_edges: EdgeIndex = edges
-            .par_iter()
-            .map(|edge| vec![edge[1], edge[0]])
-            .collect();
+        let reversed_edges: EdgeIndex =
+            edges.iter().map(|edge| vec![edge[1], edge[0]]).collect();
 
         let new_points = edges
-            .par_iter()
-            .enumerate()
-            .flat_map(|edge| {
-                let egdge_points = as_points(edge.1, &self.points);
+            .iter()
+            .zip(reversed_edges.iter())
+            .flat_map(|(edge, reverse_edge)| {
+                let egdge_points = as_points(edge, &self.points);
                 vec![
                     (
-                        edge.1,
+                        edge,
                         *egdge_points[0]
                             + ratio * (*egdge_points[1] - *egdge_points[0]),
                     ),
                     (
-                        &reversed_edges[edge.0],
+                        reverse_edge,
                         *egdge_points[1]
                             + ratio * (*egdge_points[0] - *egdge_points[1]),
                     ),
@@ -1128,8 +1124,8 @@ impl Polyhedron {
             .iter()
             .flat_map(|face| {
                 let face_points = as_points(face, &self.points);
-                let center = centroid_ref(&face_points) +
-                    face_normal(&face_points) * height;
+                let center = centroid_ref(&face_points)
+                    + face_normal(&face_points) * height;
                 face.iter()
                     .enumerate()
                     .map(|v| {
@@ -1177,23 +1173,23 @@ impl Polyhedron {
             .face_index
             .par_iter()
             .flat_map(|face| {
-                let mut new_faces = FaceIndex::with_capacity(face.len());
-                for j in 0..face.len() {
-                    let a = face[j];
-                    let b = face[(j + 1) % face.len()];
-                    let c = face[(j + 2) % face.len()];
-                    let eab = vertex(&vec![a, b], &new_ids).unwrap();
-                    let eba = vertex(&vec![b, a], &new_ids).unwrap();
-                    let ebc = vertex(&vec![b, c], &new_ids).unwrap();
-                    let mut mid = face.clone();
-                    mid.push(a);
-                    let mida = vertex(&mid, &new_ids).unwrap();
-                    mid.pop();
-                    mid.push(b);
-                    let midb = vertex(&mid, &new_ids).unwrap();
-                    new_faces.push(vec![eab, eba, b, ebc, midb, mida]);
-                }
-                new_faces
+                (0..face.len())
+                    .map(|j| {
+                        let a = face[j];
+                        let b = face[(j + 1) % face.len()];
+                        let c = face[(j + 2) % face.len()];
+                        let eab = vertex(&vec![a, b], &new_ids).unwrap();
+                        let eba = vertex(&vec![b, a], &new_ids).unwrap();
+                        let ebc = vertex(&vec![b, c], &new_ids).unwrap();
+                        let mut mid = face.clone();
+                        mid.push(a);
+                        let mida = vertex(&mid, &new_ids).unwrap();
+                        mid.pop();
+                        mid.push(b);
+                        let midb = vertex(&mid, &new_ids).unwrap();
+                        vec![eab, eba, b, ebc, midb, mida]
+                    })
+                    .collect::<FaceIndex>()
             })
             .collect();
 

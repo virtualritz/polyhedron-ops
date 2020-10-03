@@ -90,7 +90,7 @@ fn main() {
         [S]nub\n\
         [T]runcate\n\
         [W]hirl\n\
-        (Shift)+⬆/⬇︎ – modify the last ↑↓ operation\n\
+        (Shift)+⬆⬇︎ – modify the last ↑↓ operation\n\
         (Shift)+[Enter] – Render (in the cloud w. [Shift])\n\
         (Shift)+[Space] – save as OBJ (dump to NSI w. [Shift])"
     );
