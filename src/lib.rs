@@ -1,4 +1,5 @@
 //use itertools::Itertools;
+use itertools::Itertools;
 use nsi;
 use ultraviolet;
 
@@ -13,23 +14,25 @@ use std::{
 
 use rayon::prelude::*;
 
-type Float = f32;
-type Index = u32;
-type Face = Vec<Index>;
-type FaceIndex = Vec<Face>;
-type FaceSet = Vec<Index>;
+pub type Float = f32;
+pub type Index = u32;
+pub type Face = Vec<Index>;
+pub type FaceIndex = Vec<Face>;
+pub type FaceSet = Vec<Index>;
 // We treat an Edge as a Face with arity 2 to avoid copying in certain
 // cases.
-type Edge = Face;
-type EdgeIndex = Vec<Edge>;
+pub type Edge = Face;
+pub type EdgeIndex = Vec<Edge>;
 
 //type FlatPoints = Vec<Float>;
-type Point = ultraviolet::vec::Vec3; //  cgmath::Point3<Float>;
-type Vector = ultraviolet::vec::Vec3;
-type Normal = Vector;
-type Points = Vec<Point>;
-type PointsRef<'a> = Vec<&'a Point>;
-type Normals = Vec<Normal>;
+pub type Point = ultraviolet::vec::Vec3; //  cgmath::Point3<Float>;
+pub type Vector = ultraviolet::vec::Vec3;
+pub type Normal = Vector;
+pub type Points = Vec<Point>;
+pub type PointsRef<'a> = Vec<&'a Point>;
+
+#[allow(dead_code)]
+pub type Normals = Vec<Normal>;
 
 pub enum NormalType {
     Smooth(Float),
@@ -51,7 +54,7 @@ fn format_vec<T: Display>(vector: &Vec<T>) -> String {
         String::new()
     } else {
         let mut string = String::with_capacity(vector.len() * 2);
-        if 1 == vector.len()  {
+        if 1 == vector.len() {
             write!(&mut string, "{}", vector[0]).unwrap();
         } else {
             string.push('[');
@@ -331,7 +334,6 @@ fn face_irregularity(face: &Face, points: &Points) -> Float {
 }
 
 #[inline]
-// FIXME: rename to face_as_points
 fn as_points<'a>(f: &[Index], points: &'a Points) -> PointsRef<'a> {
     f.par_iter().map(|index| &points[*index as usize]).collect()
 }
@@ -347,9 +349,10 @@ fn are_collinear(v0: &Point, v1: &Point, v2: &Point) -> bool {
 }
 
 /// Computes the normal of a face.
-/// Assumes the face is planar.
+/// Tries to do the right thing if the face
+/// is non-planar or degenerate.
 #[inline]
-fn face_normal(points: &PointsRef) -> Vector {
+fn face_normal(points: &PointsRef) -> Option<Vector> {
     let mut normal = Vector::zero();
     let mut num_considered_edges = 0;
 
@@ -365,8 +368,12 @@ fn face_normal(points: &PointsRef) -> Vector {
             normal -= orthogonal(&corner.0, &corner.1, &corner.2).normalized();
         });
 
-    normal /= num_considered_edges as f32;
-    normal
+    if 0 != num_considered_edges {
+        normal /= num_considered_edges as f32;
+        Some(normal)
+    } else {
+        None
+    }
 }
 
 #[inline]
@@ -484,8 +491,6 @@ pub struct Polyhedron {
 }
 
 impl Polyhedron {
-    //[ for (f=faces) if(v!=[] && search(v,f)) f ];
-
     pub fn new() -> Self {
         Self {
             points: Vec::new(),
@@ -493,26 +498,6 @@ impl Polyhedron {
             face_set_index: Vec::new(),
             name: String::new(),
         }
-    }
-
-    #[inline]
-    pub fn name(&self) -> &String {
-        &self.name
-    }
-
-    #[inline]
-    pub fn points_len(&self) -> usize {
-        self.points.len()
-    }
-
-    #[inline]
-    pub fn normalize(&mut self) {
-        max_resize(&mut self.points, 1.);
-    }
-
-    #[inline]
-    pub fn edges(&self) -> EdgeIndex {
-        distinct_edges(&self.face_index)
     }
 
     #[inline]
@@ -544,55 +529,11 @@ impl Polyhedron {
                 .collect()]);
     }
 
+    /// Creates degree-4 vertices. It is also called
+    /// [rectification](https://en.wikipedia.org/wiki/Rectification_(geometry)),
+    /// or the [medial graph](https://en.wikipedia.org/wiki/Medial_graph) in graph theory.
     #[inline]
-    pub fn triangulate(&mut self, shortest: bool) {
-        self.face_index = self
-            .face_index
-            .iter()
-            .flat_map(|face| match face.len() {
-                // Bitriangulate quadrilateral faces
-                // use shortest diagonal so triangles are
-                // most nearly equilateral.
-                4 => {
-                    let p = as_points(face, &self.points);
-
-                    if shortest
-                        == ((*p[0] - *p[2]).mag_sq() < (*p[1] - *p[3]).mag_sq())
-                    {
-                        vec![
-                            vec![face[0], face[1], face[2]],
-                            vec![face[0], face[2], face[3]],
-                        ]
-                    } else {
-                        vec![
-                            vec![face[1], face[2], face[3]],
-                            vec![face[1], face[3], face[0]],
-                        ]
-                    }
-                }
-                5 => vec![
-                    vec![face[0], face[1], face[4]],
-                    vec![face[1], face[2], face[4]],
-                    vec![face[4], face[2], face[3]],
-                ],
-                _ => {
-                    let a = face[0];
-                    let mut bb = face[1];
-                    face.iter()
-                        .skip(2)
-                        .map(|c| {
-                            let b = bb;
-                            bb = *c;
-                            vec![a, b, *c]
-                        })
-                        .collect()
-                } //_ => vec![face.clone()],
-            })
-            .collect();
-    }
-
-    #[inline]
-    pub fn ambo(&mut self, change_name: bool) {
+    pub fn ambo<'a>(&'a mut self, change_name: bool) -> &'a mut Self {
         let edges = distinct_edges(&self.face_index);
 
         let points: Vec<(&Vec<u32>, Point)> = edges
@@ -647,15 +588,18 @@ impl Polyhedron {
         if change_name {
             self.name = format!("a{}", self.name);
         }
+
+        self
     }
 
-    pub fn bevel(
-        &mut self,
+    pub fn bevel<'a>(
+        &'a mut self,
         height: Option<Float>,
         vertex_degree: Option<Vec<usize>>,
+        regular: bool,
         change_name: bool,
-    ) {
-        self.truncate(height.clone(), vertex_degree.clone(), false);
+    ) -> &'a mut Self {
+        self.truncate(height.clone(), vertex_degree.clone(), regular, false);
         self.ambo(false);
 
         if change_name {
@@ -663,17 +607,26 @@ impl Polyhedron {
             if let Some(height) = height {
                 write!(&mut params, "{}", height).unwrap();
             }
-            if let Some(vertex_degree) = height {
+            if let Some(vertex_degree) = vertex_degree {
                 write!(&mut params, ",{}", format_vec(&vertex_degree)).unwrap();
+            }
+            if regular {
+                params.push_str(",{t}");
             }
             self.name = format!("b{}{}", params, self.name);
         }
+
+        self
     }
 
-    pub fn chamfer(&mut self, ratio: Option<Float>, change_name: bool) {
+    pub fn chamfer<'a>(
+        &'a mut self,
+        ratio: Option<Float>,
+        change_name: bool,
+    ) -> &'a mut Self {
         let ratio_ = match ratio {
             Some(r) => r,
-            None => 1./2.
+            None => 1. / 2.,
         };
 
         let new_points = self
@@ -750,17 +703,17 @@ impl Polyhedron {
         self.points.extend(vertex_values(&new_points));
 
         if change_name {
-            match ratio {
-                Some(ratio) => {
-                    self.name =
-                        format!("c{}{}", ratio, self.name)
-                }
-                None => self.name = format!("c{}", self.name),
+            let mut params = String::new();
+            if let Some(ratio) = ratio {
+                write!(&mut params, "{}", ratio).unwrap();
             }
+            self.name = format!("c{}{}", params, self.name);
         }
+
+        self
     }
 
-    pub fn dual(&mut self, change_name: bool) {
+    pub fn dual<'a>(&'a mut self, change_name: bool) -> &'a mut Self {
         let new_points = self
             .face_index
             .par_iter()
@@ -770,32 +723,38 @@ impl Polyhedron {
         // FIXME: FaceSetIndex
         self.face_index = Self::points_to_faces(self);
         self.points = new_points;
+
         if change_name {
             self.name = format!("d{}", self.name);
         }
+
+        self
     }
 
-    pub fn expand(&mut self, change_name: bool) {
+    pub fn expand<'a>(&'a mut self, change_name: bool) -> &'a mut Self {
         self.ambo(false);
         self.ambo(false);
+
         if change_name {
             self.name = format!("e{}", self.name);
         }
+
+        self
     }
 
-    pub fn gyro(
-        &mut self,
-        ratio: Option<f32>, /* 0.3333 */
+    pub fn gyro<'a>(
+        &'a mut self,
+        ratio: Option<f32>,
         height: Option<f32>,
         change_name: bool,
-    ) {
+    ) -> &'a mut Self {
         let ratio_ = match ratio {
             Some(r) => r,
-            None => 1./3.
+            None => 1. / 3.,
         };
         let height_ = match height {
             Some(h) => h,
-            None => 0.
+            None => 0.,
         };
 
         // retain original points, add face centroids and directed
@@ -807,7 +766,8 @@ impl Polyhedron {
                 let fp = as_points(face, &self.points);
                 (
                     face,
-                    centroid_ref(&fp).normalized() + face_normal(&fp) * height_,
+                    centroid_ref(&fp).normalized()
+                        + face_normal(&fp).unwrap() * height_,
                 )
             })
             .collect::<Vec<_>>();
@@ -877,27 +837,44 @@ impl Polyhedron {
             }
             self.name = format!("g{}{}", params, self.name);
         }
+
+        self
     }
 
-    pub fn join(&mut self, change_name: bool) {
+    pub fn join<'a>(&'a mut self, change_name: bool) -> &'a mut Self {
         self.dual(false);
         self.ambo(false);
         self.dual(false);
+
         if change_name {
             self.name = format!("j{}", self.name);
         }
+
+        self
     }
 
-    /// kis – each face with a specified arity n is divided into n
-    /// triangles which extend to the face centroid existimg points
-    /// retained.
-    pub fn kis(
-        &mut self,
+    /// Splits each face into triangles, one for each edge,
+    /// which extend to the face centroid. Existimg points
+    /// are retained.
+    /// # Arguments
+    /// * `height` - An offset to add to the face centroid point along the
+    ///              face normal.
+    /// * `face_arity` - Only facs matching the arities given will be
+    ///                  affected.
+    /// * `regular` - Only faces whose edges are 90% the same length,
+    ///               within the same face, are affected.
+    pub fn kis<'a>(
+        &'a mut self,
         height: Option<Float>,
         face_arity: Option<Vec<usize>>,
         regular: bool,
         change_name: bool,
-    ) {
+    ) -> &'a mut Self {
+        let height_ = match height {
+            Some(h) => h,
+            None => 0.,
+        };
+
         let new_points: Vec<(&Face, Point)> = self
             .face_index
             .par_iter()
@@ -908,7 +885,10 @@ impl Polyhedron {
             })
             .map(|face| {
                 let fp = as_points(face, &self.points);
-                (face, centroid_ref(&fp) + face_normal(&fp) * height)
+                (
+                    face,
+                    centroid_ref(&fp) + face_normal(&fp).unwrap() * height_,
+                )
             })
             .collect();
 
@@ -935,31 +915,36 @@ impl Polyhedron {
             .collect();
 
         if change_name {
-            match face_arity {
-                Some(face_arity) => {
-                    self.name = format!("k{:?}{}", face_arity, self.name)
-                }
-                None => self.name = format!("k{}", self.name),
+            let mut params = String::new();
+            if let Some(height) = height {
+                write!(&mut params, "{}", height).unwrap();
             }
+            if let Some(face_arity) = face_arity {
+                write!(&mut params, ",{}", format_vec(&face_arity)).unwrap();
+            }
+            self.name = format!("k{}{}", params, self.name);
         }
-    } // end kis
 
-    pub fn inset(&self) {
-        self.loft()
+        self
     }
 
-    pub fn loft(&self) {
+    fn _inset(&self) {
+        self._loft()
+    }
+
+    fn _loft(&self) {
         // FIXME
     }
 
-    pub fn medial(
-        &mut self,
+    pub fn medial<'a>(
+        &'a mut self,
         height: Option<Float>,
         vertex_degree: Option<Vec<usize>>,
+        regular: bool,
         change_name: bool,
-    ) {
+    ) -> &'a mut Self {
         self.dual(false);
-        self.truncate(height.clone(), vertex_degree.clone(), false);
+        self.truncate(height.clone(), vertex_degree.clone(), regular, false);
         self.ambo(false);
 
         if change_name {
@@ -967,68 +952,101 @@ impl Polyhedron {
             if let Some(height) = height {
                 write!(&mut params, "{}", height).unwrap();
             }
-            if let Some(vertex_degree) = height {
+            if let Some(vertex_degree) = vertex_degree {
                 write!(&mut params, ",{}", format_vec(&vertex_degree)).unwrap();
+            }
+            if regular {
+                params.push_str(",{t}");
             }
             self.name = format!("M{}{}", params, self.name);
         }
+
+        self
     }
 
-    pub fn meta(
-        &mut self,
+    pub fn meta<'a>(
+        &'a mut self,
+        height: Option<Float>,
         vertex_degree: Option<Vec<usize>>,
+        regular: bool,
         change_name: bool,
-    ) {
+    ) -> &'a mut Self {
         self.kis(
-            0.,
+            height,
             match vertex_degree {
                 // By default meta works on verts.
                 // of valence three.
                 None => Some(vec![3]),
-                Some(n) => Some(n),
+                _ => vertex_degree.clone(),
             },
-            false,
+            regular,
             false,
         );
         self.join(false);
-        if change_name {
-            self.name = format!("m{}", self.name);
-        }
-    }
-
-    pub fn needle(
-        &mut self,
-        height: Option<Float>,
-        vertex_degree: Option<Vec<usize>>,
-        change_name: bool,
-    ) {
-        self.dual(false);
-        self.truncate(height.clone(), vertex_degree.clone(), false);
 
         if change_name {
             let mut params = String::new();
             if let Some(height) = height {
                 write!(&mut params, "{}", height).unwrap();
             }
-            if let Some(vertex_degree) = height {
+            if let Some(vertex_degree) = vertex_degree {
                 write!(&mut params, ",{}", format_vec(&vertex_degree)).unwrap();
+            }
+            if regular {
+                params.push_str(",{t}");
+            }
+            self.name = format!("m{}{}", params, self.name);
+        }
+
+        self
+    }
+
+    pub fn needle<'a>(
+        &'a mut self,
+        height: Option<Float>,
+        vertex_degree: Option<Vec<usize>>,
+        regular: bool,
+        change_name: bool,
+    ) -> &'a mut Self {
+        self.dual(false);
+        self.truncate(height.clone(), vertex_degree.clone(), regular, false);
+
+        if change_name {
+            let mut params = String::new();
+            if let Some(height) = height {
+                write!(&mut params, "{}", height).unwrap();
+            }
+            if let Some(vertex_degree) = vertex_degree {
+                write!(&mut params, ",{}", format_vec(&vertex_degree)).unwrap();
+            }
+            if regular {
+                params.push_str(",{t}");
             }
             self.name = format!("n{}{}", params, self.name);
         }
+
+        self
     }
 
-    pub fn ortho(&mut self, change_name: bool) {
+    pub fn ortho<'a>(&'a mut self, change_name: bool) -> &'a mut Self {
         self.join(false);
         self.join(false);
+
         if change_name {
             self.name = format!("o{}", self.name);
         }
+
+        self
     }
 
-    pub fn propellor(&mut self, ratio: Option<Float>, change_name: bool) {
+    pub fn propellor<'a>(
+        &'a mut self,
+        ratio: Option<Float>,
+        change_name: bool,
+    ) -> &'a mut Self {
         let ratio_ = match ratio {
             Some(r) => r,
-            None => 1./3.
+            None => 1. / 3.,
         };
 
         let edges = self.edges();
@@ -1099,9 +1117,11 @@ impl Polyhedron {
         if change_name {
             self.name = format!("p{}", self.name);
         }
+
+        self
     }
 
-    pub fn quinto(&mut self, change_name: bool) {
+    pub fn quinto<'a>(&'a mut self, change_name: bool) -> &'a mut Self {
         let edges = self.edges();
         let mut new_points: Vec<(Face, Point)> = edges
             .iter()
@@ -1191,40 +1211,62 @@ impl Polyhedron {
 
         self.face_index = face_index;
         self.points.extend(vertex_values_as_ref(&new_points));
+
         if change_name {
             self.name = format!("q{}", self.name);
         }
+
+        self
     }
 
-    pub fn reflect(&mut self, change_name: bool) {
+    pub fn reflect<'a>(&'a mut self, change_name: bool) -> &'a mut Self {
         self.points = self
             .points
             .par_iter()
             .map(|v| Point::new(v.x, -v.y, v.z))
             .collect();
         self.reverse();
+
         if change_name {
             self.name = format!("r{}", self.name);
         }
+
+        self
     }
 
-    pub fn snub(&mut self, ratio: Option<Float>, height: Option<Float>, change_name: bool) {
+    pub fn snub<'a>(
+        &'a mut self,
+        ratio: Option<Float>,
+        height: Option<Float>,
+        change_name: bool,
+    ) -> &'a mut Self {
         self.dual(false);
         self.gyro(ratio, height, false);
         self.dual(false);
+
         if change_name {
-            self.name = format!("s{}", self.name);
+            let mut params = String::new();
+            if let Some(ratio) = ratio {
+                write!(&mut params, "{}", ratio).unwrap();
+            }
+            if let Some(height) = height {
+                write!(&mut params, ",{}", height).unwrap();
+            }
+            self.name = format!("s{}{}", params, self.name);
         }
+
+        self
     }
 
-    pub fn truncate(
-        &mut self,
+    pub fn truncate<'a>(
+        &'a mut self,
         height: Option<Float>,
         vertex_degree: Option<Vec<usize>>,
+        regular: bool,
         change_name: bool,
-    ) {
+    ) -> &'a mut Self {
         self.dual(false);
-        self.kis(height, vertex_degree.clone(), false, false);
+        self.kis(height, vertex_degree.clone(), regular, false);
         self.dual(false);
 
         if change_name {
@@ -1232,21 +1274,31 @@ impl Polyhedron {
             if let Some(height) = height {
                 write!(&mut params, "{}", height).unwrap();
             }
-            if let Some(vertex_degree) = height {
+            if let Some(vertex_degree) = vertex_degree {
                 write!(&mut params, ",{}", format_vec(&vertex_degree)).unwrap();
+            }
+            if regular {
+                params.push_str(",{t}");
             }
             self.name = format!("t{}{}", params, self.name);
         }
+
+        self
     }
 
-    pub fn whirl(&mut self, ratio: Option<Float>, height: Option<Float>, change_name: bool) {
+    pub fn whirl<'a>(
+        &'a mut self,
+        ratio: Option<Float>,
+        height: Option<Float>,
+        change_name: bool,
+    ) -> &'a mut Self {
         let ratio_ = match ratio {
             Some(r) => r,
-            None => 1./3.
+            None => 1. / 3.,
         };
         let height_ = match height {
             Some(h) => h,
-            None => 0.
+            None => 0.,
         };
 
         let mut new_points: Vec<(Face, Point)> = self
@@ -1255,7 +1307,7 @@ impl Polyhedron {
             .flat_map(|face| {
                 let face_points = as_points(face, &self.points);
                 let center = centroid_ref(&face_points)
-                    + face_normal(&face_points) * height_;
+                    + face_normal(&face_points).unwrap() * height_;
                 face.iter()
                     .enumerate()
                     .map(|v| {
@@ -1284,12 +1336,12 @@ impl Polyhedron {
                     (
                         edge.clone(),
                         *edge_points[0]
-                            + ratio * (*edge_points[1] - *edge_points[0]),
+                            + ratio_ * (*edge_points[1] - *edge_points[0]),
                     ),
                     (
                         vec![edge[1], edge[0]],
                         *edge_points[1]
-                            + ratio * (*edge_points[0] - *edge_points[1]),
+                            + ratio_ * (*edge_points[0] - *edge_points[1]),
                     ),
                 ]
             })
@@ -1347,7 +1399,7 @@ impl Polyhedron {
 
         if change_name {
             let mut params = String::new();
-            if let Some(height) = ratio {
+            if let Some(ratio) = ratio {
                 write!(&mut params, "{}", ratio).unwrap();
             }
             if let Some(height) = height {
@@ -1355,23 +1407,78 @@ impl Polyhedron {
             }
             self.name = format!("w{}{}", params, self.name);
         }
+
+        self
     }
 
-    pub fn zip(&mut self, change_name: bool) {
+    pub fn zip<'a>(
+        &'a mut self,
+        height: Option<Float>,
+        vertex_degree: Option<Vec<usize>>,
+        regular: bool,
+        change_name: bool,
+    ) -> &'a mut Self {
         self.dual(false);
-        self.kis(0., None, false, false);
+        self.kis(height, vertex_degree.clone(), regular, false);
+
         if change_name {
-            self.name = format!("z{}", self.name);
+            let mut params = String::new();
+            if let Some(height) = height {
+                write!(&mut params, "{}", height).unwrap();
+            }
+            if let Some(vertex_degree) = vertex_degree {
+                write!(&mut params, ",{}", format_vec(&vertex_degree)).unwrap();
+            }
+            if regular {
+                params.push_str(",{t}");
+            }
+            self.name = format!("z{}{}", params, self.name);
         }
+
+        self
     }
 
+    /// Reverses the winding order of faces.
+    /// Clockwise(default) becomes counter-clockwise and vice versa.
     pub fn reverse(&mut self) {
         self.face_index
             .par_iter_mut()
             .for_each(|face| face.reverse());
     }
 
-    fn normals(&self, normal_type: NormalType) -> Normals {
+    /// Returns the name of this polyhedron.
+    /// This can be used to reconstruct the polyhedron
+    /// using Polyhedron::from<&str>().
+    #[inline]
+    pub fn name(&self) -> &String {
+        &self.name
+    }
+
+    #[inline]
+    pub fn points_len(&self) -> usize {
+        self.points.len()
+    }
+
+    #[inline]
+    pub fn points<'a>(&'a self) -> &'a Points {
+        &self.points
+    }
+
+    pub fn face_index<'a>(&'a self) -> &'a FaceIndex {
+        &self.face_index
+    }
+
+    #[inline]
+    pub fn normalize(&mut self) {
+        max_resize(&mut self.points, 1.);
+    }
+
+    #[inline]
+    pub fn edges(&self) -> EdgeIndex {
+        distinct_edges(&self.face_index)
+    }
+
+    pub fn normals(&self, normal_type: NormalType) -> Normals {
         match normal_type {
             NormalType::Smooth(_angle) => vec![],
             NormalType::Flat => self
@@ -1431,6 +1538,53 @@ impl Polyhedron {
             .flatten()
             .collect(),*/
         }
+    }
+
+    #[inline]
+    pub fn triangulate(&mut self, shortest: bool) {
+        self.face_index = self
+            .face_index
+            .iter()
+            .flat_map(|face| match face.len() {
+                // Bitriangulate quadrilateral faces
+                // use shortest diagonal so triangles are
+                // most nearly equilateral.
+                4 => {
+                    let p = as_points(face, &self.points);
+
+                    if shortest
+                        == ((*p[0] - *p[2]).mag_sq() < (*p[1] - *p[3]).mag_sq())
+                    {
+                        vec![
+                            vec![face[0], face[1], face[2]],
+                            vec![face[0], face[2], face[3]],
+                        ]
+                    } else {
+                        vec![
+                            vec![face[1], face[2], face[3]],
+                            vec![face[1], face[3], face[0]],
+                        ]
+                    }
+                }
+                5 => vec![
+                    vec![face[0], face[1], face[4]],
+                    vec![face[1], face[2], face[4]],
+                    vec![face[4], face[2], face[3]],
+                ],
+                _ => {
+                    let a = face[0];
+                    let mut bb = face[1];
+                    face.iter()
+                        .skip(2)
+                        .map(|c| {
+                            let b = bb;
+                            bb = *c;
+                            vec![a, b, *c]
+                        })
+                        .collect()
+                } //_ => vec![face.clone()],
+            })
+            .collect();
     }
 
     pub fn to_nsi(&self, ctx: &nsi::Context) -> String {

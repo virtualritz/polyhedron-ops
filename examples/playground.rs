@@ -1,6 +1,3 @@
-//use cgmath::prelude::*;
-//use itertools::Itertools;
-
 #[macro_use]
 extern crate slice_as_array;
 
@@ -13,6 +10,7 @@ pub enum RenderType {
 mod nsi_render;
 
 extern crate nalgebra;
+use na::{Point3, UnitQuaternion, Vector3};
 use nalgebra as na;
 
 extern crate kiss3d;
@@ -24,7 +22,7 @@ use kiss3d::{
     window::Window,
 };
 
-use na::{Point3, UnitQuaternion, Vector3};
+use rayon::prelude::*;
 use std::{cell::RefCell, io, io::Write, path::Path, rc::Rc};
 
 extern crate polyhedron_ops;
@@ -40,95 +38,98 @@ struct VertexIndex {
     pub normal: Index,
 }*/
 
-impl From<Polyhedron> for kiss3d::resource::Mesh {
-    fn from(mut polyhedron: Polyhedron) -> kiss3d::resource::Mesh {
-        polyhedron.reverse();
+#[inline]
+fn as_points<'a>(f: &[Index], points: &'a Points) -> PointsRef<'a> {
+    f.par_iter().map(|index| &points[*index as usize]).collect()
+}
 
-        /*
-        let mut normals_polyhedron = Polyhedron {
-            points: normals.clone(),
-            face_index: {
-                let mut index = 0u32;
-                polyhedron
-                    .face_index
-                    .par_iter()
-                    .map(|f| {
-                        let face =
-                            (index..index + f.len() as u32).collect();
-                        index += f.len() as u32;
-                        face
-                    })
-                    .collect()
-            },
-        };
+fn into_mesh(mut polyhedron: Polyhedron) -> kiss3d::resource::Mesh {
+    polyhedron.reverse();
 
-        polyhedron.triangulate(false);
-        normals_polyhedron.triangulate(false);
-
-        // We now have two meshes with identical topology but different
-        // index arrays. We unify the mapping.
-        // FIXME: some points will be written to multiple
-        let mut normals = vec![
-            na::Vector3::new(0.0f32, 0., 0.);
-            polyhedron.points_len()
-        ];
-
-        for f in 0..polyhedron.face_index.len() {
-            for i in 0..polyhedron.face_index[f].len() {
-                let v = normals_polyhedron.points
-                    [normals_polyhedron.face_index[f][i] as usize];
-
-                normals[polyhedron.face_index[f][i] as usize] =
-                    na::Vector3::new(v.x, v.y, v.z);
-            }
-        }*/
-        polyhedron.triangulate(true);
-
-        let normals = polyhedron
-            .normals(NormalType::Flat)
-            .par_iter()
-            .map(|n| na::Vector3::new(-n.x, -n.y, -n.z))
-            .collect::<Vec<_>>();
-
-        let face_index = (0..normals.len() as u16)
-            .step_by(3)
-            .map(|i| na::Point3::new(i, i + 1, i + 2))
-            .collect::<Vec<_>>();
-
-        Mesh::new(
-            // Dupliacate points per face so we can
-            // match the normals per face.
+    /*
+    let mut normals_polyhedron = Polyhedron {
+        points: normals.clone(),
+        face_index: {
+            let mut index = 0u32;
             polyhedron
                 .face_index
                 .par_iter()
-                .flat_map(|f| {
-                    as_points(f, &polyhedron.points)
-                        .par_iter()
-                        .map(|v| na::Point3::<f32>::new(v.x, v.y, v.z))
-                        .collect::<Vec<_>>()
+                .map(|f| {
+                    let face =
+                        (index..index + f.len() as u32).collect();
+                    index += f.len() as u32;
+                    face
                 })
-                .collect::<Vec<_>>(),
-            face_index,
-            Some(normals),
-            None,
-            false,
-        )
+                .collect()
+        },
+    };
 
-        /* smooth shaded mesh
-        Mesh::new(
-            mesh.points
-                .par_iter()
-                .map(|v| na::Point3::<f32>::new(v.x, v.y, v.z))
-                .collect(),
-            mesh.face_index
-                .par_iter()
-                .map(|f| na::Point3::new(f[0] as u16, f[1] as u16, f[2] as u16))
-                .collect(),
-            None,
-            None,
-            false,
-        )*/
-    }
+    polyhedron.triangulate(false);
+    normals_polyhedron.triangulate(false);
+
+    // We now have two meshes with identical topology but different
+    // index arrays. We unify the mapping.
+    // FIXME: some points will be written to multiple
+    let mut normals = vec![
+        na::Vector3::new(0.0f32, 0., 0.);
+        polyhedron.points_len()
+    ];
+
+    for f in 0..polyhedron.face_index.len() {
+        for i in 0..polyhedron.face_index[f].len() {
+            let v = normals_polyhedron.points
+                [normals_polyhedron.face_index[f][i] as usize];
+
+            normals[polyhedron.face_index[f][i] as usize] =
+                na::Vector3::new(v.x, v.y, v.z);
+        }
+    }*/
+    polyhedron.triangulate(true);
+
+    let normals = polyhedron
+        .normals(NormalType::Flat)
+        .par_iter()
+        .map(|n| na::Vector3::new(-n.x, -n.y, -n.z))
+        .collect::<Vec<_>>();
+
+    let face_index = (0..normals.len() as u16)
+        .step_by(3)
+        .map(|i| na::Point3::new(i, i + 1, i + 2))
+        .collect::<Vec<_>>();
+
+    Mesh::new(
+        // Dupliacate points per face so we can
+        // match the normals per face.
+        polyhedron
+            .face_index()
+            .par_iter()
+            .flat_map(|f| {
+                as_points(f, polyhedron.points())
+                    .par_iter()
+                    .map(|v| na::Point3::<f32>::new(v.x, v.y, v.z))
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>(),
+        face_index,
+        Some(normals),
+        None,
+        false,
+    )
+
+    /* smooth shaded mesh
+    Mesh::new(
+        mesh.points
+            .par_iter()
+            .map(|v| na::Point3::<f32>::new(v.x, v.y, v.z))
+            .collect(),
+        mesh.face_index
+            .par_iter()
+            .map(|f| na::Point3::new(f[0] as u16, f[1] as u16, f[2] as u16))
+            .collect(),
+        None,
+        None,
+        false,
+    )*/
 }
 
 fn main() {
@@ -145,7 +146,7 @@ fn main() {
     let mut poly = Polyhedron::tetrahedron();
     poly.normalize();
 
-    let mesh = Rc::new(RefCell::new(Mesh::from(poly.clone())));
+    let mesh = Rc::new(RefCell::new(into_mesh(poly.clone())));
     let mut c = window.add_mesh(mesh, Vector3::new(1.0, 1.0, 1.0));
 
     c.set_color(0.9, 0.8, 0.7);
@@ -210,16 +211,18 @@ fn main() {
                         Key::C => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            poly.chamfer(1. / 2., true);
+                            last_op_value = 0.;
+                            poly.chamfer(None, true);
                             poly.normalize();
                             last_op = '_';
                         }
                         Key::B => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            poly.bevel(true);
+                            last_op_value = 0.;
+                            poly.bevel(None, None, false, true);
                             poly.normalize();
-                            last_op = '_';
+                            last_op = 'b';
                         }
                         Key::D => {
                             alter_last_op = false;
@@ -239,7 +242,7 @@ fn main() {
                             alter_last_op = false;
                             last_poly = poly.clone();
                             last_op_value = 0.;
-                            poly.gyro(1. / 3., last_op_value, true);
+                            poly.gyro(None, None, true);
                             poly.normalize();
                             last_op = 'g';
                         }
@@ -254,27 +257,30 @@ fn main() {
                             alter_last_op = false;
                             last_poly = poly.clone();
                             last_op_value = 0.;
-                            poly.kis(last_op_value, None, false, true);
+                            poly.kis(None, None, false, true);
                             poly.normalize();
                             last_op = 'k';
                         }
                         Key::M => {
                             alter_last_op = false;
                             last_poly = poly.clone();
+                            last_op_value = 0.;
                             if modifiers.intersects(Modifiers::Shift) {
-                                poly.medial(true);
+                                poly.medial(None, None, false, true);
+                                last_op = 'M';
                             } else {
-                                poly.meta(true);
+                                poly.meta(None, None, false, true);
+                                last_op = 'm';
                             }
                             poly.normalize();
-                            last_op = '_';
                         }
                         Key::N => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            poly.needle(true);
+                            last_op_value = 0.;
+                            poly.needle(None, None, false, true);
                             poly.normalize();
-                            last_op = '_';
+                            last_op = 'n';
                         }
                         Key::O => {
                             alter_last_op = false;
@@ -286,7 +292,8 @@ fn main() {
                         Key::P => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            poly.propellor(1. / 3., true);
+                            last_op_value = 0.;
+                            poly.propellor(None, true);
                             poly.normalize();
                             last_op = '_';
                         }
@@ -312,31 +319,35 @@ fn main() {
                         Key::S => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            poly.snub(true);
+                            last_op_value = 0.;
+                            poly.snub(None, None, true);
                             poly.normalize();
-                            last_op = '_';
+                            last_op = 's';
                         }
 
                         Key::T => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            poly.truncate(None, true);
+                            last_op_value = 0.;
+                            poly.truncate(None, None, false, true);
                             poly.normalize();
-                            last_op = '_';
+                            last_op = 't';
                         }
                         Key::W => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            poly.whirl(1. / 3., 0.2, true);
+                            last_op_value = 0.;
+                            poly.whirl(None, None, true);
                             poly.normalize();
-                            last_op = '_';
+                            last_op = 'w';
                         }
                         Key::Z => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            poly.zip(true);
+                            last_op_value = 0.;
+                            poly.zip(None, None, false, true);
                             poly.normalize();
-                            last_op = '_';
+                            last_op = 'z';
                         }
                         Key::Space => {
                             if modifiers.intersects(Modifiers::Shift) {
@@ -412,22 +423,84 @@ fn main() {
                     };
                     if alter_last_op {
                         alter_last_op = false;
+                        if '_' != last_op {
+                            poly = last_poly.clone();
+                        }
                         match last_op {
+                            'b' => {
+                                poly.bevel(
+                                    Some(last_op_value),
+                                    None,
+                                    false,
+                                    true,
+                                );
+                            }
                             'g' => {
-                                poly = last_poly.clone();
-                                poly.gyro(1. / 3., last_op_value, true);
-                                poly.normalize();
+                                poly.gyro(None, Some(last_op_value), true);
                             }
                             'k' => {
-                                poly = last_poly.clone();
-                                poly.kis(last_op_value, None, false, true);
-                                poly.normalize();
+                                poly.kis(
+                                    Some(last_op_value),
+                                    None,
+                                    false,
+                                    true,
+                                );
                             }
+                            'm' => {
+                                poly.meta(
+                                    Some(last_op_value),
+                                    None,
+                                    false,
+                                    true,
+                                );
+                            }
+                            'M' => {
+                                poly.medial(
+                                    Some(last_op_value),
+                                    None,
+                                    false,
+                                    true,
+                                );
+                            }
+                            'n' => {
+                                poly.medial(
+                                    Some(last_op_value),
+                                    None,
+                                    false,
+                                    true,
+                                );
+                            }
+                            's' => {
+                                poly.snub(None, Some(last_op_value), true);
+                            }
+                            't' => {
+                                poly.truncate(
+                                    Some(last_op_value),
+                                    None,
+                                    false,
+                                    true,
+                                );
+                            }
+                            'w' => {
+                                poly.whirl(None, Some(last_op_value), true);
+                            }
+                            'z' => {
+                                poly.zip(
+                                    Some(last_op_value),
+                                    None,
+                                    false,
+                                    true,
+                                );
+                            }
+
                             _ => (),
+                        }
+                        if '_' != last_op {
+                            poly.normalize();
                         }
                     }
                     c.unlink();
-                    let mesh = Rc::new(RefCell::new(Mesh::from(poly.clone())));
+                    let mesh = Rc::new(RefCell::new(into_mesh(poly.clone())));
                     c = window.add_mesh(mesh, Vector3::new(1.0, 1.0, 1.0));
                     c.set_color(0.9, 0.8, 0.7);
                     c.enable_backface_culling(false);
