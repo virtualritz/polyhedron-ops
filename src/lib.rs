@@ -1,16 +1,15 @@
-use itertools::Itertools;
+//use itertools::Itertools;
 use nsi;
 use ultraviolet;
 
 use std::{
     error::Error,
+    fmt::{Display, Write},
     fs::File,
-    io::Write,
+    io::Write as IoWrite,
     iter::Iterator,
     path::{Path, PathBuf},
 };
-
-use kiss3d::resource::Mesh;
 
 use rayon::prelude::*;
 
@@ -24,7 +23,7 @@ type FaceSet = Vec<Index>;
 type Edge = Face;
 type EdgeIndex = Vec<Edge>;
 
-type FlatPoints = Vec<Float>;
+//type FlatPoints = Vec<Float>;
 type Point = ultraviolet::vec::Vec3; //  cgmath::Point3<Float>;
 type Vector = ultraviolet::vec::Vec3;
 type Normal = Vector;
@@ -45,6 +44,25 @@ pub mod prelude {
     //pub use crate::NormalType;
 
     pub use crate::*;
+}
+
+fn format_vec<T: Display>(vector: &Vec<T>) -> String {
+    if vector.is_empty() {
+        String::new()
+    } else {
+        let mut string = String::with_capacity(vector.len() * 2);
+        if 1 == vector.len()  {
+            write!(&mut string, "{}", vector[0]).unwrap();
+        } else {
+            string.push('[');
+            write!(&mut string, "{}", vector[0]).unwrap();
+            for i in vector.get(1..).unwrap() {
+                write!(&mut string, ",{}", i).unwrap();
+            }
+            string.push(']');
+        }
+        string
+    }
 }
 
 #[inline]
@@ -483,7 +501,7 @@ impl Polyhedron {
     }
 
     #[inline]
-    pub fn num_points(&self) -> usize {
+    pub fn points_len(&self) -> usize {
         self.points.len()
     }
 
@@ -631,15 +649,33 @@ impl Polyhedron {
         }
     }
 
-    pub fn bevel(&mut self, change_name: bool) {
-        self.truncate(None, false);
+    pub fn bevel(
+        &mut self,
+        height: Option<Float>,
+        vertex_degree: Option<Vec<usize>>,
+        change_name: bool,
+    ) {
+        self.truncate(height.clone(), vertex_degree.clone(), false);
         self.ambo(false);
+
         if change_name {
-            self.name = format!("b{}", self.name);
+            let mut params = String::new();
+            if let Some(height) = height {
+                write!(&mut params, "{}", height).unwrap();
+            }
+            if let Some(vertex_degree) = height {
+                write!(&mut params, ",{}", format_vec(&vertex_degree)).unwrap();
+            }
+            self.name = format!("b{}{}", params, self.name);
         }
     }
 
-    pub fn chamfer(&mut self, ratio: Float, change_name: bool) {
+    pub fn chamfer(&mut self, ratio: Option<Float>, change_name: bool) {
+        let ratio_ = match ratio {
+            Some(r) => r,
+            None => 1./2.
+        };
+
         let new_points = self
             .face_index
             .par_iter()
@@ -654,14 +690,14 @@ impl Polyhedron {
                     new_face.push(face[j]);
                     result.push((
                         new_face,
-                        *face_points[j] + ratio * (centroid - *face_points[j]),
+                        *face_points[j] + ratio_ * (centroid - *face_points[j]),
                     ))
                 });
                 result
             })
             .collect::<Vec<_>>();
 
-        let new_ids = vertex_ids_ref(&new_points, self.num_points() as Index);
+        let new_ids = vertex_ids_ref(&new_points, self.points_len() as Index);
 
         let mut face_index: FaceIndex = self
             .face_index
@@ -709,12 +745,18 @@ impl Polyhedron {
 
         self.face_index = face_index;
         self.points.par_iter_mut().for_each(|point| {
-            *point = (1.5 * ratio) * *point;
+            *point = (1.5 * ratio_) * *point;
         });
         self.points.extend(vertex_values(&new_points));
 
         if change_name {
-            self.name = format!("g{}", self.name);
+            match ratio {
+                Some(ratio) => {
+                    self.name =
+                        format!("c{}{}", ratio, self.name)
+                }
+                None => self.name = format!("c{}", self.name),
+            }
         }
     }
 
@@ -743,10 +785,19 @@ impl Polyhedron {
 
     pub fn gyro(
         &mut self,
-        ratio: f32, /* 0.3333 */
-        height: f32,
+        ratio: Option<f32>, /* 0.3333 */
+        height: Option<f32>,
         change_name: bool,
     ) {
+        let ratio_ = match ratio {
+            Some(r) => r,
+            None => 1./3.
+        };
+        let height_ = match height {
+            Some(h) => h,
+            None => 0.
+        };
+
         // retain original points, add face centroids and directed
         // edge points each N-face becomes N pentagons
         let mut new_points: Vec<(&Face, Point)> = self
@@ -756,7 +807,7 @@ impl Polyhedron {
                 let fp = as_points(face, &self.points);
                 (
                     face,
-                    centroid_ref(&fp).normalized() + face_normal(&fp) * height,
+                    centroid_ref(&fp).normalized() + face_normal(&fp) * height_,
                 )
             })
             .collect::<Vec<_>>();
@@ -778,12 +829,12 @@ impl Polyhedron {
                     (
                         edge.1,
                         *edge_points[0]
-                            + ratio * (*edge_points[1] - *edge_points[0]),
+                            + ratio_ * (*edge_points[1] - *edge_points[0]),
                     ),
                     (
                         &reversed_edges[edge.0],
                         *edge_points[1]
-                            + ratio * (*edge_points[0] - *edge_points[1]),
+                            + ratio_ * (*edge_points[0] - *edge_points[1]),
                     ),
                 ]
             })
@@ -793,7 +844,7 @@ impl Polyhedron {
         //  2 points per edge
 
         let new_ids =
-            vertex_ids_ref_ref(&new_points, self.num_points() as Index);
+            vertex_ids_ref_ref(&new_points, self.points_len() as Index);
 
         self.points.extend(vertex_values_as_ref(&new_points));
 
@@ -817,7 +868,14 @@ impl Polyhedron {
             .collect();
 
         if change_name {
-            self.name = format!("g{}", self.name);
+            let mut params = String::new();
+            if let Some(ratio) = ratio {
+                write!(&mut params, "{}", ratio).unwrap();
+            }
+            if let Some(height) = height {
+                write!(&mut params, ",{}", height).unwrap();
+            }
+            self.name = format!("g{}{}", params, self.name);
         }
     }
 
@@ -835,8 +893,8 @@ impl Polyhedron {
     /// retained.
     pub fn kis(
         &mut self,
-        height: Float,
-        face_arity: Option<&Vec<usize>>,
+        height: Option<Float>,
+        face_arity: Option<Vec<usize>>,
         regular: bool,
         change_name: bool,
     ) {
@@ -844,7 +902,7 @@ impl Polyhedron {
             .face_index
             .par_iter()
             .filter(|face| {
-                selected_face(face, face_arity) && !regular
+                selected_face(face, face_arity.as_ref()) && !regular
                     || ((face_irregularity(face, &self.points) - 1.0).abs()
                         < 0.1)
             })
@@ -886,19 +944,76 @@ impl Polyhedron {
         }
     } // end kis
 
-    pub fn meta(&mut self, change_name: bool) {
-        self.kis(0., Some(&vec![3]), false, false);
+    pub fn inset(&self) {
+        self.loft()
+    }
+
+    pub fn loft(&self) {
+        // FIXME
+    }
+
+    pub fn medial(
+        &mut self,
+        height: Option<Float>,
+        vertex_degree: Option<Vec<usize>>,
+        change_name: bool,
+    ) {
+        self.dual(false);
+        self.truncate(height.clone(), vertex_degree.clone(), false);
+        self.ambo(false);
+
+        if change_name {
+            let mut params = String::new();
+            if let Some(height) = height {
+                write!(&mut params, "{}", height).unwrap();
+            }
+            if let Some(vertex_degree) = height {
+                write!(&mut params, ",{}", format_vec(&vertex_degree)).unwrap();
+            }
+            self.name = format!("M{}{}", params, self.name);
+        }
+    }
+
+    pub fn meta(
+        &mut self,
+        vertex_degree: Option<Vec<usize>>,
+        change_name: bool,
+    ) {
+        self.kis(
+            0.,
+            match vertex_degree {
+                // By default meta works on verts.
+                // of valence three.
+                None => Some(vec![3]),
+                Some(n) => Some(n),
+            },
+            false,
+            false,
+        );
         self.join(false);
         if change_name {
             self.name = format!("m{}", self.name);
         }
     }
 
-    pub fn needle(&mut self, change_name: bool) {
+    pub fn needle(
+        &mut self,
+        height: Option<Float>,
+        vertex_degree: Option<Vec<usize>>,
+        change_name: bool,
+    ) {
         self.dual(false);
-        self.truncate(None, false);
+        self.truncate(height.clone(), vertex_degree.clone(), false);
+
         if change_name {
-            self.name = format!("n{}", self.name);
+            let mut params = String::new();
+            if let Some(height) = height {
+                write!(&mut params, "{}", height).unwrap();
+            }
+            if let Some(vertex_degree) = height {
+                write!(&mut params, ",{}", format_vec(&vertex_degree)).unwrap();
+            }
+            self.name = format!("n{}{}", params, self.name);
         }
     }
 
@@ -910,34 +1025,38 @@ impl Polyhedron {
         }
     }
 
-    pub fn propellor(&mut self, ratio: Float, change_name: bool) {
-        let edges = self.edges();
+    pub fn propellor(&mut self, ratio: Option<Float>, change_name: bool) {
+        let ratio_ = match ratio {
+            Some(r) => r,
+            None => 1./3.
+        };
 
+        let edges = self.edges();
         let reversed_edges: EdgeIndex =
             edges.iter().map(|edge| vec![edge[1], edge[0]]).collect();
 
         let new_points = edges
             .iter()
             .zip(reversed_edges.iter())
-            .flat_map(|(edge, reverse_edge)| {
-                let egdge_points = as_points(edge, &self.points);
+            .flat_map(|(edge, reversed_edge)| {
+                let edge_points = as_points(edge, &self.points);
                 vec![
                     (
                         edge,
-                        *egdge_points[0]
-                            + ratio * (*egdge_points[1] - *egdge_points[0]),
+                        *edge_points[0]
+                            + ratio_ * (*edge_points[1] - *edge_points[0]),
                     ),
                     (
-                        reverse_edge,
-                        *egdge_points[1]
-                            + ratio * (*egdge_points[0] - *egdge_points[1]),
+                        reversed_edge,
+                        *edge_points[1]
+                            + ratio_ * (*edge_points[0] - *edge_points[1]),
                     ),
                 ]
             })
             .collect::<Vec<_>>();
 
         let new_ids =
-            vertex_ids_ref_ref(&new_points, self.num_points() as Index);
+            vertex_ids_ref_ref(&new_points, self.points_len() as Index);
 
         let mut face_index: FaceIndex = self
             .face_index
@@ -975,9 +1094,8 @@ impl Polyhedron {
         );
 
         self.face_index = face_index;
-        println!("{}", self.num_points());
         self.points.extend(vertex_values_as_ref(&new_points));
-        println!("{}", self.num_points());
+
         if change_name {
             self.name = format!("p{}", self.name);
         }
@@ -1014,9 +1132,9 @@ impl Polyhedron {
                 .collect::<Vec<(Face, Point)>>(),
         );
 
-        let new_ids = vertex_ids_ref(&new_points, self.num_points() as u32);
+        let new_ids = vertex_ids_ref(&new_points, self.points_len() as u32);
 
-        let mut new_faces: FaceIndex = self
+        let mut face_index: FaceIndex = self
             .face_index
             .iter()
             .map(|face| {
@@ -1029,7 +1147,7 @@ impl Polyhedron {
             })
             .collect();
 
-        new_faces.extend(
+        face_index.extend(
             self.face_index
                 .iter()
                 .flat_map(|face| {
@@ -1071,7 +1189,7 @@ impl Polyhedron {
                 .collect::<FaceIndex>(),
         );
 
-        self.face_index = new_faces;
+        self.face_index = face_index;
         self.points.extend(vertex_values_as_ref(&new_points));
         if change_name {
             self.name = format!("q{}", self.name);
@@ -1090,9 +1208,9 @@ impl Polyhedron {
         }
     }
 
-    pub fn snub(&mut self, change_name: bool) {
+    pub fn snub(&mut self, ratio: Option<Float>, height: Option<Float>, change_name: bool) {
         self.dual(false);
-        self.gyro(1. / 3., 0., false);
+        self.gyro(ratio, height, false);
         self.dual(false);
         if change_name {
             self.name = format!("s{}", self.name);
@@ -1101,31 +1219,43 @@ impl Polyhedron {
 
     pub fn truncate(
         &mut self,
-        vertex_valence: Option<&Vec<usize>>,
+        height: Option<Float>,
+        vertex_degree: Option<Vec<usize>>,
         change_name: bool,
     ) {
         self.dual(false);
-        self.kis(0., vertex_valence, false, false);
+        self.kis(height, vertex_degree.clone(), false, false);
         self.dual(false);
 
         if change_name {
-            match vertex_valence {
-                Some(vertex_valence) => {
-                    self.name = format!("t{:?}{}", vertex_valence, self.name)
-                }
-                None => self.name = format!("t{}", self.name),
+            let mut params = String::new();
+            if let Some(height) = height {
+                write!(&mut params, "{}", height).unwrap();
             }
+            if let Some(vertex_degree) = height {
+                write!(&mut params, ",{}", format_vec(&vertex_degree)).unwrap();
+            }
+            self.name = format!("t{}{}", params, self.name);
         }
     }
 
-    pub fn whirl(&mut self, ratio: Float, height: Float, change_name: bool) {
+    pub fn whirl(&mut self, ratio: Option<Float>, height: Option<Float>, change_name: bool) {
+        let ratio_ = match ratio {
+            Some(r) => r,
+            None => 1./3.
+        };
+        let height_ = match height {
+            Some(h) => h,
+            None => 0.
+        };
+
         let mut new_points: Vec<(Face, Point)> = self
             .face_index
             .iter()
             .flat_map(|face| {
                 let face_points = as_points(face, &self.points);
                 let center = centroid_ref(&face_points)
-                    + face_normal(&face_points) * height;
+                    + face_normal(&face_points) * height_;
                 face.iter()
                     .enumerate()
                     .map(|v| {
@@ -1134,10 +1264,10 @@ impl Polyhedron {
                             face_points[(v.0 + 1) % face.len()],
                         ];
                         let middle: ultraviolet::vec::Vec3 = *edge_points[0]
-                            + ratio * (*edge_points[1] - *edge_points[0]);
+                            + ratio_ * (*edge_points[1] - *edge_points[0]);
                         (
                             extend![..face, *v.1],
-                            middle + ratio * (center - middle),
+                            middle + ratio_ * (center - middle),
                         )
                     })
                     .collect::<Vec<_>>()
@@ -1167,9 +1297,9 @@ impl Polyhedron {
 
         new_points.extend(new_points2);
 
-        let new_ids = vertex_ids_ref(&new_points, self.num_points() as Index);
+        let new_ids = vertex_ids_ref(&new_points, self.points_len() as Index);
 
-        let mut new_face_index: FaceIndex = self
+        let mut face_index: FaceIndex = self
             .face_index
             .par_iter()
             .flat_map(|face| {
@@ -1193,7 +1323,7 @@ impl Polyhedron {
             })
             .collect();
 
-        new_face_index.extend(
+        face_index.extend(
             self.face_index
                 .par_iter()
                 .map(|face| {
@@ -1210,31 +1340,40 @@ impl Polyhedron {
                 .collect::<FaceIndex>(),
         );
 
-        self.append_new_face_set(new_face_index.len() - self.face_index.len());
+        self.append_new_face_set(face_index.len() - self.face_index.len());
 
         self.points.extend(vertex_values(&new_points));
-        self.face_index = new_face_index;
+        self.face_index = face_index;
 
         if change_name {
-            self.name = format!("w{}", self.name);
+            let mut params = String::new();
+            if let Some(height) = ratio {
+                write!(&mut params, "{}", ratio).unwrap();
+            }
+            if let Some(height) = height {
+                write!(&mut params, ",{}", height).unwrap();
+            }
+            self.name = format!("w{}{}", params, self.name);
+        }
+    }
+
+    pub fn zip(&mut self, change_name: bool) {
+        self.dual(false);
+        self.kis(0., None, false, false);
+        if change_name {
+            self.name = format!("z{}", self.name);
         }
     }
 
     pub fn reverse(&mut self) {
-        self.face_index = self
-            .face_index
-            .par_iter()
-            .map(|f| {
-                let mut new_face = f.clone();
-                new_face.reverse();
-                new_face
-            })
-            .collect();
+        self.face_index
+            .par_iter_mut()
+            .for_each(|face| face.reverse());
     }
 
-    pub fn normals(&self, normal_type: NormalType) -> Normals {
+    fn normals(&self, normal_type: NormalType) -> Normals {
         match normal_type {
-            NormalType::Smooth(angle) => vec![],
+            NormalType::Smooth(_angle) => vec![],
             NormalType::Flat => self
                 .face_index
                 .par_iter()
@@ -1312,7 +1451,7 @@ impl Polyhedron {
         let positions = unsafe {
             std::slice::from_raw_parts(
                 self.points.as_ptr().cast::<Float>(),
-                3 * self.num_points(),
+                3 * self.points_len(),
             )
         };
 
@@ -1419,6 +1558,10 @@ impl Polyhedron {
             face_set_index: vec![(0..4).collect()],
             name: String::from("T"),
         }
+    }
+
+    pub fn cube() -> Self {
+        Self::hexahedron()
     }
 
     pub fn hexahedron() -> Self {
@@ -1564,98 +1707,5 @@ impl Polyhedron {
             face_set_index: vec![(0..20).collect()],
             name: String::from("I"),
         }
-    }
-}
-
-use nalgebra as na;
-
-impl From<Polyhedron> for kiss3d::resource::Mesh {
-    fn from(mut polyhedron: Polyhedron) -> kiss3d::resource::Mesh {
-        polyhedron.reverse();
-
-        /*
-        let mut normals_polyhedron = Polyhedron {
-            points: normals.clone(),
-            face_index: {
-                let mut index = 0u32;
-                polyhedron
-                    .face_index
-                    .par_iter()
-                    .map(|f| {
-                        let face =
-                            (index..index + f.len() as u32).collect();
-                        index += f.len() as u32;
-                        face
-                    })
-                    .collect()
-            },
-        };
-
-        polyhedron.triangulate(false);
-        normals_polyhedron.triangulate(false);
-
-        // We now have two meshes with identical topology but different
-        // index arrays. We unify the mapping.
-        // FIXME: some points will be written to multiple
-        let mut normals = vec![
-            na::Vector3::new(0.0f32, 0., 0.);
-            polyhedron.num_points()
-        ];
-
-        for f in 0..polyhedron.face_index.len() {
-            for i in 0..polyhedron.face_index[f].len() {
-                let v = normals_polyhedron.points
-                    [normals_polyhedron.face_index[f][i] as usize];
-
-                normals[polyhedron.face_index[f][i] as usize] =
-                    na::Vector3::new(v.x, v.y, v.z);
-            }
-        }*/
-        polyhedron.triangulate(true);
-
-        let normals = polyhedron
-            .normals(NormalType::Flat)
-            .par_iter()
-            .map(|n| na::Vector3::new(-n.x, -n.y, -n.z))
-            .collect::<Vec<_>>();
-
-        let face_index = (0..normals.len() as u16)
-            .step_by(3)
-            .map(|i| na::Point3::new(i, i + 1, i + 2))
-            .collect::<Vec<_>>();
-
-        Mesh::new(
-            // Dupliacate points per face so we can
-            // match the normals per face.
-            polyhedron
-                .face_index
-                .par_iter()
-                .flat_map(|f| {
-                    as_points(f, &polyhedron.points)
-                        .par_iter()
-                        .map(|v| na::Point3::<f32>::new(v.x, v.y, v.z))
-                        .collect::<Vec<_>>()
-                })
-                .collect::<Vec<_>>(),
-            face_index,
-            Some(normals),
-            None,
-            false,
-        )
-
-        /* smooth shaded mesh
-        Mesh::new(
-            mesh.points
-                .par_iter()
-                .map(|v| na::Point3::<f32>::new(v.x, v.y, v.z))
-                .collect(),
-            mesh.face_index
-                .par_iter()
-                .map(|f| na::Point3::new(f[0] as u16, f[1] as u16, f[2] as u16))
-                .collect(),
-            None,
-            None,
-            false,
-        )*/
     }
 }

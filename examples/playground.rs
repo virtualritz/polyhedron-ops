@@ -40,6 +40,97 @@ struct VertexIndex {
     pub normal: Index,
 }*/
 
+impl From<Polyhedron> for kiss3d::resource::Mesh {
+    fn from(mut polyhedron: Polyhedron) -> kiss3d::resource::Mesh {
+        polyhedron.reverse();
+
+        /*
+        let mut normals_polyhedron = Polyhedron {
+            points: normals.clone(),
+            face_index: {
+                let mut index = 0u32;
+                polyhedron
+                    .face_index
+                    .par_iter()
+                    .map(|f| {
+                        let face =
+                            (index..index + f.len() as u32).collect();
+                        index += f.len() as u32;
+                        face
+                    })
+                    .collect()
+            },
+        };
+
+        polyhedron.triangulate(false);
+        normals_polyhedron.triangulate(false);
+
+        // We now have two meshes with identical topology but different
+        // index arrays. We unify the mapping.
+        // FIXME: some points will be written to multiple
+        let mut normals = vec![
+            na::Vector3::new(0.0f32, 0., 0.);
+            polyhedron.points_len()
+        ];
+
+        for f in 0..polyhedron.face_index.len() {
+            for i in 0..polyhedron.face_index[f].len() {
+                let v = normals_polyhedron.points
+                    [normals_polyhedron.face_index[f][i] as usize];
+
+                normals[polyhedron.face_index[f][i] as usize] =
+                    na::Vector3::new(v.x, v.y, v.z);
+            }
+        }*/
+        polyhedron.triangulate(true);
+
+        let normals = polyhedron
+            .normals(NormalType::Flat)
+            .par_iter()
+            .map(|n| na::Vector3::new(-n.x, -n.y, -n.z))
+            .collect::<Vec<_>>();
+
+        let face_index = (0..normals.len() as u16)
+            .step_by(3)
+            .map(|i| na::Point3::new(i, i + 1, i + 2))
+            .collect::<Vec<_>>();
+
+        Mesh::new(
+            // Dupliacate points per face so we can
+            // match the normals per face.
+            polyhedron
+                .face_index
+                .par_iter()
+                .flat_map(|f| {
+                    as_points(f, &polyhedron.points)
+                        .par_iter()
+                        .map(|v| na::Point3::<f32>::new(v.x, v.y, v.z))
+                        .collect::<Vec<_>>()
+                })
+                .collect::<Vec<_>>(),
+            face_index,
+            Some(normals),
+            None,
+            false,
+        )
+
+        /* smooth shaded mesh
+        Mesh::new(
+            mesh.points
+                .par_iter()
+                .map(|v| na::Point3::<f32>::new(v.x, v.y, v.z))
+                .collect(),
+            mesh.face_index
+                .par_iter()
+                .map(|f| na::Point3::new(f[0] as u16, f[1] as u16, f[2] as u16))
+                .collect(),
+            None,
+            None,
+            false,
+        )*/
+    }
+}
+
 fn main() {
     let distance = 2.0f32;
     let eye = Point3::new(distance, distance, distance);
@@ -73,23 +164,25 @@ fn main() {
 
     println!(
         "Press one of\n\
-        [A]mbo\n\
-        [B]evel\n\
-        [C]chamfer\n\
-        [D]ual\n\
-        [E]xpand\n\
-        [G]yro↑↓\n\
-        [J]oin\n\
-        [K]iss↑↓\n\
-        [M]eta\n\
-        [N]eedle\n\
-        [O]rtho\n\
-        [P]propellor\n\
-        [Q]uinto\n\
-        [R]eflect\n\
-        [S]nub\n\
-        [T]runcate\n\
-        [W]hirl\n\
+        [a]mbo\n\
+        [b]evel\n\
+        [c]chamfer\n\
+        [d]ual\n\
+        [e]xpand\n\
+        [g]yro↑↓\n\
+        [j]oin\n\
+        [k]iss↑↓\n\
+        [M]edial\n\
+        [m]eta\n\
+        [n]eedle\n\
+        [o]rtho\n\
+        [p]propellor\n\
+        [q]uinto\n\
+        [r]eflect\n\
+        [s]nub\n\
+        [t]runcate\n\
+        [w]hirl\n\
+        [z]ip\n\
         (Shift)+⬆⬇︎ – modify the last ↑↓ operation\n\
         (Shift)+[Enter] – Render (in the cloud w. [Shift])\n\
         (Shift)+[Space] – save as OBJ (dump to NSI w. [Shift])"
@@ -168,7 +261,11 @@ fn main() {
                         Key::M => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            poly.meta(true);
+                            if modifiers.intersects(Modifiers::Shift) {
+                                poly.medial(true);
+                            } else {
+                                poly.meta(true);
+                            }
                             poly.normalize();
                             last_op = '_';
                         }
@@ -231,6 +328,13 @@ fn main() {
                             alter_last_op = false;
                             last_poly = poly.clone();
                             poly.whirl(1. / 3., 0.2, true);
+                            poly.normalize();
+                            last_op = '_';
+                        }
+                        Key::Z => {
+                            alter_last_op = false;
+                            last_poly = poly.clone();
+                            poly.zip(true);
                             poly.normalize();
                             last_op = '_';
                         }

@@ -20,6 +20,7 @@ functional, lends itself well to translation into functional Rust.
 - [x] **e** - expand (a.k.a. explode, equiv. to **aa**)
 - [x] **g** - gyro
 - [x] **j** - join (equiv. to **dad**)
+- [x] **M** - medial (equiv. to **dta**)
 - [x] **m** - meta (equiv. to **k(3)j**)
 - [x] **o** - ortho (equiv. to **jj**)
 - [x] **p** - propellor (BROKEN)
@@ -29,8 +30,12 @@ functional, lends itself well to translation into functional Rust.
 - [x] **s** - snub (equiv. to **dgd**)
 - [x] **t**(*n*) - truncate vertices of valence *n* or on all vertices if *n* is unspecified (equiv. to *dkNd*)
 - [x] **w** - whirl
+- [x] **z** - zip (equiv. to **dk**)
+
+### Other Operators
+
 - [ ] **l** - stellate
-- [ ] **i** - inset
+- [ ] **i** - inset/loft
 - [ ] **x** - extrude
 - [ ] **z** - triangulate
 - [ ] **h** - hollow
