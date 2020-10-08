@@ -57,7 +57,7 @@ Combine with `Shift` for 10× the change.
 
 `Delete` undoes the last (and only the last) operation.
 
-Press `R` to render with 3Delight (requires a [3Delight|ɴsɪ
+Press `Enter` to render with 3Delight (requires a [3Delight|ɴsɪ
 installation](https://www.3delight.com/download)).
 Combine with `Shift` to render with 3Delight Cloud (requires
 registration).
