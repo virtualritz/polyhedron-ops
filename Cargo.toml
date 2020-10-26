@@ -11,13 +11,13 @@ repository = "https://github.com/virtualritz/polyhedron-ops/"
 [dependencies]
 ultraviolet = "0.7.4"
 itertools = "0.9.0"
-rayon = "1.4.1"
+rayon = "1.5.0"
 nsi = "0.5.4"
 
 [dev-dependencies]
 dirs = "3.0.1"
-nalgebra = "0.22.0"
-kiss3d = "0.26.0"
+nalgebra = "0.23.0"
+kiss3d = "0.27.0"
 slice_as_array = "1.1.0"
 
 [profile.release]
