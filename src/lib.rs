@@ -605,7 +605,7 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(height) = height {
-                write!(&mut params, "{}", height).unwrap();
+                write!(&mut params, "{:.1}", height).unwrap();
             }
             if let Some(vertex_degree) = vertex_degree {
                 write!(&mut params, ",{}", format_vec(&vertex_degree)).unwrap();
@@ -705,7 +705,7 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{}", ratio).unwrap();
+                write!(&mut params, "{:.1}", ratio).unwrap();
             }
             self.name = format!("c{}{}", params, self.name);
         }
@@ -830,10 +830,10 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{}", ratio).unwrap();
+                write!(&mut params, "{:.1}", ratio).unwrap();
             }
             if let Some(height) = height {
-                write!(&mut params, ",{}", height).unwrap();
+                write!(&mut params, ",{:.1}", height).unwrap();
             }
             self.name = format!("g{}{}", params, self.name);
         }
@@ -917,10 +917,10 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(height) = height {
-                write!(&mut params, "{}", height).unwrap();
+                write!(&mut params, "{:.1}", height).unwrap();
             }
             if let Some(face_arity) = face_arity {
-                write!(&mut params, ",{}", format_vec(&face_arity)).unwrap();
+                write!(&mut params, ",{:.1}", format_vec(&face_arity)).unwrap();
             }
             self.name = format!("k{}{}", params, self.name);
         }
@@ -950,7 +950,7 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(height) = height {
-                write!(&mut params, "{}", height).unwrap();
+                write!(&mut params, "{:.1}", height).unwrap();
             }
             if let Some(vertex_degree) = vertex_degree {
                 write!(&mut params, ",{}", format_vec(&vertex_degree)).unwrap();
@@ -987,7 +987,7 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(height) = height {
-                write!(&mut params, "{}", height).unwrap();
+                write!(&mut params, "{:.1}", height).unwrap();
             }
             if let Some(vertex_degree) = vertex_degree {
                 write!(&mut params, ",{}", format_vec(&vertex_degree)).unwrap();
@@ -1014,7 +1014,7 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(height) = height {
-                write!(&mut params, "{}", height).unwrap();
+                write!(&mut params, "{:.1}", height).unwrap();
             }
             if let Some(vertex_degree) = vertex_degree {
                 write!(&mut params, ",{}", format_vec(&vertex_degree)).unwrap();
@@ -1247,10 +1247,10 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{}", ratio).unwrap();
+                write!(&mut params, "{:.1}", ratio).unwrap();
             }
             if let Some(height) = height {
-                write!(&mut params, ",{}", height).unwrap();
+                write!(&mut params, ",{:.1}", height).unwrap();
             }
             self.name = format!("s{}{}", params, self.name);
         }
@@ -1272,7 +1272,7 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(height) = height {
-                write!(&mut params, "{}", height).unwrap();
+                write!(&mut params, "{:.1}", height).unwrap();
             }
             if let Some(vertex_degree) = vertex_degree {
                 write!(&mut params, ",{}", format_vec(&vertex_degree)).unwrap();
@@ -1400,10 +1400,10 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{}", ratio).unwrap();
+                write!(&mut params, "{:.1}", ratio).unwrap();
             }
             if let Some(height) = height {
-                write!(&mut params, ",{}", height).unwrap();
+                write!(&mut params, ",{:.1}", height).unwrap();
             }
             self.name = format!("w{}{}", params, self.name);
         }
@@ -1424,7 +1424,7 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(height) = height {
-                write!(&mut params, "{}", height).unwrap();
+                write!(&mut params, "{:.1}", height).unwrap();
             }
             if let Some(vertex_degree) = vertex_degree {
                 write!(&mut params, ",{}", format_vec(&vertex_degree)).unwrap();

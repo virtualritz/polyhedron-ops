@@ -164,28 +164,33 @@ fn main() {
     let path = dirs::home_dir().unwrap();
 
     println!(
-        "Press one of\n\
+        "Press one of:\n\
+        _____________\n\
         [a]mbo\n\
-        [b]evel\n\
+        [b]evel ↑↓\n\
         [c]chamfer\n\
         [d]ual\n\
         [e]xpand\n\
-        [g]yro↑↓\n\
+        [g]yro ↑↓\n\
         [j]oin\n\
-        [k]iss↑↓\n\
-        [M]edial\n\
-        [m]eta\n\
-        [n]eedle\n\
+        [k]iss ↑↓\n\
+        [M]edial ↑↓\n\
+        [m]eta ↑↓\n\
+        [n]eedle ↑↓\n\
         [o]rtho\n\
         [p]propellor\n\
         [q]uinto\n\
         [r]eflect\n\
-        [s]nub\n\
-        [t]runcate\n\
-        [w]hirl\n\
-        [z]ip\n\
-        (Shift)+⬆⬇︎ – modify the last ↑↓ operation\n\
+        [s]nub ↑↓\n\
+        [t]runcate ↑↓\n\
+        [w]hirl ↑↓\n\
+        [z]ip ↑↓\n\
+        ______________________________________________________\n\
+        (Shift)+⬆⬇︎ – modify the last operation marked with ↑↓\n\
+        [Delete] - Undo last operation\n\
+        ______________________________________________________\n\
         (Shift)+[Enter] – Render (in the cloud w. [Shift])\n\
+        ______________________________________________________\n\
         (Shift)+[Space] – save as OBJ (dump to NSI w. [Shift])"
     );
 
@@ -463,7 +468,7 @@ fn main() {
                                 );
                             }
                             'n' => {
-                                poly.medial(
+                                poly.needle(
                                     Some(last_op_value),
                                     None,
                                     false,
