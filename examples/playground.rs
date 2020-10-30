@@ -143,7 +143,7 @@ fn main() {
     let mut window = Window::new("Polyhedron Operations");
     window.set_light(Light::StickToCamera);
 
-    let mut poly = Polyhedron::tetrahedron();
+    let mut poly = Polyhedron::dodecahedron();
     poly.normalize();
 
     let mesh = Rc::new(RefCell::new(into_mesh(poly.clone())));

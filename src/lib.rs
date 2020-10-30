@@ -343,10 +343,11 @@ fn orthogonal(v0: &Point, v1: &Point, v2: &Point) -> Vector {
     (*v1 - *v0).cross(*v2 - *v1)
 }
 
+#[inline]
 fn are_collinear(v0: &Point, v1: &Point, v2: &Point) -> bool {
-    (v0.x * (v1.y - v2.y) + v1.x * (v2.y - v0.y) + v2.x * (v0.y - v1.y)).abs()
-        < 0.0001
+    orthogonal(&v0, &v1, &v2).mag_sq() < 0.0001
 }
+
 
 /// Computes the normal of a face.
 /// Tries to do the right thing if the face
