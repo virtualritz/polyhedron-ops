@@ -1,4 +1,4 @@
-//use itertools::Itertools;
+use clamped::Clamp;
 use itertools::Itertools;
 use nsi;
 use ultraviolet;
@@ -325,7 +325,7 @@ fn _project_on_sphere(points: &mut Points, radius: Float) {
 }
 
 #[inline]
-fn face_irregularity(face: &Face, points: &Points) -> Float {
+fn face_irregular_faces_onlyity(face: &Face, points: &Points) -> Float {
     let lengths = face_edges(face, points);
     // The largest value in lengths or NaN (0./0.) otherwise.
     lengths.par_iter().cloned().reduce(|| Float::NAN, Float::max)
@@ -534,14 +534,19 @@ impl Polyhedron {
     /// [rectification](https://en.wikipedia.org/wiki/Rectification_(geometry)),
     /// or the [medial graph](https://en.wikipedia.org/wiki/Medial_graph) in graph theory.
     #[inline]
-    pub fn ambo<'a>(&'a mut self, change_name: bool) -> &'a mut Self {
+    pub fn ambo<'a>(&'a mut self, ratio: Option<Float>, change_name: bool) -> &'a mut Self {
+        let ratio_ = match ratio {
+            Some(r) => r.clamped(0.0, 1.0),
+            None => 1. / 2.,
+        };
+
         let edges = distinct_edges(&self.face_index);
 
         let points: Vec<(&Vec<u32>, Point)> = edges
             .par_iter()
             .map(|edge| {
                 let edge_points = as_points(edge, &self.points);
-                (edge, 0.5 * (*edge_points[0] + *edge_points[1]))
+                (edge, ratio_ * *edge_points[0] + (1.0 - ratio_) * *edge_points[1])
             })
             .collect();
 
@@ -587,7 +592,11 @@ impl Polyhedron {
         self.points = vertex_values(&points);
 
         if change_name {
-            self.name = format!("a{}", self.name);
+            let mut params = String::new();
+            if let Some(ratio) = ratio {
+                write!(&mut params, "{:.1}", ratio).unwrap();
+            }
+            write!(self.name, "a{}{}", params, self.name.clone()).unwrap();
         }
 
         self
@@ -596,25 +605,26 @@ impl Polyhedron {
     pub fn bevel<'a>(
         &'a mut self,
         height: Option<Float>,
-        vertex_degree: Option<Vec<usize>>,
-        regular: bool,
+        vertex_valence: Option<Vec<usize>>,
+        ratio: Option<Float>,
+        regular_faces_only: bool,
         change_name: bool,
     ) -> &'a mut Self {
-        self.truncate(height.clone(), vertex_degree.clone(), regular, false);
-        self.ambo(false);
+        self.truncate(height.clone(), vertex_valence.clone(), regular_faces_only, false);
+        self.ambo(ratio, false);
 
         if change_name {
             let mut params = String::new();
             if let Some(height) = height {
                 write!(&mut params, "{:.1}", height).unwrap();
             }
-            if let Some(vertex_degree) = vertex_degree {
-                write!(&mut params, ",{}", format_vec(&vertex_degree)).unwrap();
+            if let Some(vertex_valence) = vertex_valence {
+                write!(&mut params, ",{}", format_vec(&vertex_valence)).unwrap();
             }
-            if regular {
+            if regular_faces_only {
                 params.push_str(",{t}");
             }
-            self.name = format!("b{}{}", params, self.name);
+            write!(self.name, "b{}{}", params, self.name.clone()).unwrap();
         }
 
         self
@@ -708,7 +718,7 @@ impl Polyhedron {
             if let Some(ratio) = ratio {
                 write!(&mut params, "{:.1}", ratio).unwrap();
             }
-            self.name = format!("c{}{}", params, self.name);
+            write!(self.name, "c{}{}", params, self.name.clone()).unwrap();
         }
 
         self
@@ -726,18 +736,22 @@ impl Polyhedron {
         self.points = new_points;
 
         if change_name {
-            self.name = format!("d{}", self.name);
+            write!(self.name, "d{}", self.name.clone()).unwrap();
         }
 
         self
     }
 
-    pub fn expand<'a>(&'a mut self, change_name: bool) -> &'a mut Self {
-        self.ambo(false);
-        self.ambo(false);
+    pub fn expand<'a>(&'a mut self, ratio: Option<Float>, change_name: bool) -> &'a mut Self {
+        self.ambo(ratio, false);
+        self.ambo(ratio, false);
 
         if change_name {
-            self.name = format!("e{}", self.name);
+            let mut params = String::new();
+            if let Some(ratio) = ratio {
+                write!(&mut params, "{:.1}", ratio).unwrap();
+            }
+            write!(self.name, "e{}{}", params, self.name.clone()).unwrap();
         }
 
         self
@@ -836,19 +850,23 @@ impl Polyhedron {
             if let Some(height) = height {
                 write!(&mut params, ",{:.1}", height).unwrap();
             }
-            self.name = format!("g{}{}", params, self.name);
+            write!(self.name, "g{}{}", params, self.name.clone()).unwrap();
         }
 
         self
     }
 
-    pub fn join<'a>(&'a mut self, change_name: bool) -> &'a mut Self {
+    pub fn join<'a>(&'a mut self, ratio: Option<Float>, change_name: bool) -> &'a mut Self {
         self.dual(false);
-        self.ambo(false);
+        self.ambo(ratio, false);
         self.dual(false);
 
         if change_name {
-            self.name = format!("j{}", self.name);
+            let mut params = String::new();
+            if let Some(ratio) = ratio {
+                write!(&mut params, "{:.1}", ratio).unwrap();
+            }
+            write!(self.name, "j{}{}", params, self.name.clone()).unwrap();
         }
 
         self
@@ -860,15 +878,15 @@ impl Polyhedron {
     /// # Arguments
     /// * `height` - An offset to add to the face centroid point along the
     ///              face normal.
-    /// * `face_arity` - Only facs matching the arities given will be
+    /// * `face_arity` - Only faces matching the given arities will be
     ///                  affected.
-    /// * `regular` - Only faces whose edges are 90% the same length,
+    /// * `regular_faces_only` - Only faces whose edges are 90% the same length,
     ///               within the same face, are affected.
     pub fn kis<'a>(
         &'a mut self,
         height: Option<Float>,
         face_arity: Option<Vec<usize>>,
-        regular: bool,
+        regular_faces_only: bool,
         change_name: bool,
     ) -> &'a mut Self {
         let height_ = match height {
@@ -880,8 +898,8 @@ impl Polyhedron {
             .face_index
             .par_iter()
             .filter(|face| {
-                selected_face(face, face_arity.as_ref()) && !regular
-                    || ((face_irregularity(face, &self.points) - 1.0).abs()
+                selected_face(face, face_arity.as_ref()) && !regular_faces_only
+                    || ((face_irregular_faces_onlyity(face, &self.points) - 1.0).abs()
                         < 0.1)
             })
             .map(|face| {
@@ -923,7 +941,7 @@ impl Polyhedron {
             if let Some(face_arity) = face_arity {
                 write!(&mut params, ",{:.1}", format_vec(&face_arity)).unwrap();
             }
-            self.name = format!("k{}{}", params, self.name);
+            write!(self.name, "k{}{}", params, self.name.clone()).unwrap();
         }
 
         self
@@ -940,26 +958,27 @@ impl Polyhedron {
     pub fn medial<'a>(
         &'a mut self,
         height: Option<Float>,
-        vertex_degree: Option<Vec<usize>>,
-        regular: bool,
+        vertex_valence: Option<Vec<usize>>,
+        ratio: Option<Float>,
+        regular_faces_only: bool,
         change_name: bool,
     ) -> &'a mut Self {
         self.dual(false);
-        self.truncate(height.clone(), vertex_degree.clone(), regular, false);
-        self.ambo(false);
+        self.truncate(height.clone(), vertex_valence.clone(), regular_faces_only, false);
+        self.ambo(ratio, false);
 
         if change_name {
             let mut params = String::new();
             if let Some(height) = height {
                 write!(&mut params, "{:.1}", height).unwrap();
             }
-            if let Some(vertex_degree) = vertex_degree {
-                write!(&mut params, ",{}", format_vec(&vertex_degree)).unwrap();
+            if let Some(vertex_valence) = vertex_valence {
+                write!(&mut params, ",{}", format_vec(&vertex_valence)).unwrap();
             }
-            if regular {
+            if regular_faces_only {
                 params.push_str(",{t}");
             }
-            self.name = format!("M{}{}", params, self.name);
+            write!(self.name, "M{}{}", params, self.name.clone()).unwrap();
         }
 
         self
@@ -968,35 +987,36 @@ impl Polyhedron {
     pub fn meta<'a>(
         &'a mut self,
         height: Option<Float>,
-        vertex_degree: Option<Vec<usize>>,
-        regular: bool,
+        vertex_valence: Option<Vec<usize>>,
+        ratio: Option<Float>,
+        regular_faces_only: bool,
         change_name: bool,
     ) -> &'a mut Self {
         self.kis(
             height,
-            match vertex_degree {
+            match vertex_valence {
                 // By default meta works on verts.
                 // of valence three.
                 None => Some(vec![3]),
-                _ => vertex_degree.clone(),
+                _ => vertex_valence.clone(),
             },
-            regular,
+            regular_faces_only,
             false,
         );
-        self.join(false);
+        self.join(ratio, false);
 
         if change_name {
             let mut params = String::new();
             if let Some(height) = height {
                 write!(&mut params, "{:.1}", height).unwrap();
             }
-            if let Some(vertex_degree) = vertex_degree {
-                write!(&mut params, ",{}", format_vec(&vertex_degree)).unwrap();
+            if let Some(vertex_valence) = vertex_valence {
+                write!(&mut params, ",{}", format_vec(&vertex_valence)).unwrap();
             }
-            if regular {
+            if regular_faces_only {
                 params.push_str(",{t}");
             }
-            self.name = format!("m{}{}", params, self.name);
+            write!(self.name, "m{}{}", params, self.name.clone()).unwrap();
         }
 
         self
@@ -1005,36 +1025,40 @@ impl Polyhedron {
     pub fn needle<'a>(
         &'a mut self,
         height: Option<Float>,
-        vertex_degree: Option<Vec<usize>>,
-        regular: bool,
+        vertex_valence: Option<Vec<usize>>,
+        regular_faces_only: bool,
         change_name: bool,
     ) -> &'a mut Self {
         self.dual(false);
-        self.truncate(height.clone(), vertex_degree.clone(), regular, false);
+        self.truncate(height.clone(), vertex_valence.clone(), regular_faces_only, false);
 
         if change_name {
             let mut params = String::new();
             if let Some(height) = height {
                 write!(&mut params, "{:.1}", height).unwrap();
             }
-            if let Some(vertex_degree) = vertex_degree {
-                write!(&mut params, ",{}", format_vec(&vertex_degree)).unwrap();
+            if let Some(vertex_valence) = vertex_valence {
+                write!(&mut params, ",{}", format_vec(&vertex_valence)).unwrap();
             }
-            if regular {
+            if regular_faces_only {
                 params.push_str(",{t}");
             }
-            self.name = format!("n{}{}", params, self.name);
+            write!(self.name, "n{}{}", params, self.name.clone()).unwrap();
         }
 
         self
     }
 
-    pub fn ortho<'a>(&'a mut self, change_name: bool) -> &'a mut Self {
-        self.join(false);
-        self.join(false);
+    pub fn ortho<'a>(&'a mut self, ratio: Option<Float>, change_name: bool) -> &'a mut Self {
+        self.join(ratio, false);
+        self.join(ratio, false);
 
         if change_name {
-            self.name = format!("o{}", self.name);
+            let mut params = String::new();
+            if let Some(ratio) = ratio {
+                write!(&mut params, "{:.1}", ratio).unwrap();
+            }
+            write!(self.name, "o{}{}", params, self.name.clone()).unwrap();
         }
 
         self
@@ -1116,7 +1140,11 @@ impl Polyhedron {
         self.points.extend(vertex_values_as_ref(&new_points));
 
         if change_name {
-            self.name = format!("p{}", self.name);
+            let mut params = String::new();
+            if let Some(ratio) = ratio {
+                write!(&mut params, "{:.1}", ratio).unwrap();
+            }
+            write!(self.name, "p{}{}", params, self.name.clone()).unwrap();
         }
 
         self
@@ -1214,7 +1242,7 @@ impl Polyhedron {
         self.points.extend(vertex_values_as_ref(&new_points));
 
         if change_name {
-            self.name = format!("q{}", self.name);
+            write!(self.name, "q{}", self.name.clone()).unwrap();
         }
 
         self
@@ -1229,7 +1257,7 @@ impl Polyhedron {
         self.reverse();
 
         if change_name {
-            self.name = format!("r{}", self.name);
+            write!(self.name, "r{}", self.name.clone()).unwrap();
         }
 
         self
@@ -1253,7 +1281,7 @@ impl Polyhedron {
             if let Some(height) = height {
                 write!(&mut params, ",{:.1}", height).unwrap();
             }
-            self.name = format!("s{}{}", params, self.name);
+            write!(self.name, "s{}{}", params, self.name.clone()).unwrap();
         }
 
         self
@@ -1262,12 +1290,12 @@ impl Polyhedron {
     pub fn truncate<'a>(
         &'a mut self,
         height: Option<Float>,
-        vertex_degree: Option<Vec<usize>>,
-        regular: bool,
+        vertex_valence: Option<Vec<usize>>,
+        regular_faces_only: bool,
         change_name: bool,
     ) -> &'a mut Self {
         self.dual(false);
-        self.kis(height, vertex_degree.clone(), regular, false);
+        self.kis(height, vertex_valence.clone(), regular_faces_only, false);
         self.dual(false);
 
         if change_name {
@@ -1275,13 +1303,13 @@ impl Polyhedron {
             if let Some(height) = height {
                 write!(&mut params, "{:.1}", height).unwrap();
             }
-            if let Some(vertex_degree) = vertex_degree {
-                write!(&mut params, ",{}", format_vec(&vertex_degree)).unwrap();
+            if let Some(vertex_valence) = vertex_valence {
+                write!(&mut params, ",{}", format_vec(&vertex_valence)).unwrap();
             }
-            if regular {
+            if regular_faces_only {
                 params.push_str(",{t}");
             }
-            self.name = format!("t{}{}", params, self.name);
+            write!(self.name, "t{}{}", params, self.name.clone()).unwrap();
         }
 
         self
@@ -1406,7 +1434,7 @@ impl Polyhedron {
             if let Some(height) = height {
                 write!(&mut params, ",{:.1}", height).unwrap();
             }
-            self.name = format!("w{}{}", params, self.name);
+            write!(self.name, "w{}{}", params, self.name.clone()).unwrap();
         }
 
         self
@@ -1415,22 +1443,22 @@ impl Polyhedron {
     pub fn zip<'a>(
         &'a mut self,
         height: Option<Float>,
-        vertex_degree: Option<Vec<usize>>,
-        regular: bool,
+        vertex_valence: Option<Vec<usize>>,
+        regular_faces_only: bool,
         change_name: bool,
     ) -> &'a mut Self {
         self.dual(false);
-        self.kis(height, vertex_degree.clone(), regular, false);
+        self.kis(height, vertex_valence.clone(), regular_faces_only, false);
 
         if change_name {
             let mut params = String::new();
             if let Some(height) = height {
                 write!(&mut params, "{:.1}", height).unwrap();
             }
-            if let Some(vertex_degree) = vertex_degree {
-                write!(&mut params, ",{}", format_vec(&vertex_degree)).unwrap();
+            if let Some(vertex_valence) = vertex_valence {
+                write!(&mut params, ",{}", format_vec(&vertex_valence)).unwrap();
             }
-            if regular {
+            if regular_faces_only {
                 params.push_str(",{t}");
             }
             self.name = format!("z{}{}", params, self.name);

@@ -166,19 +166,19 @@ fn main() {
     println!(
         "Press one of:\n\
         _____________\n\
-        [a]mbo\n\
+        [a]mbo ↑↓\n\
         [b]evel ↑↓\n\
-        [c]chamfer\n\
+        [c]chamfer ↑↓\n\
         [d]ual\n\
-        [e]xpand\n\
+        [e]xpand ↑↓\n\
         [g]yro ↑↓\n\
-        [j]oin\n\
+        [j]oin ↑↓\n\
         [k]iss ↑↓\n\
         [M]edial ↑↓\n\
         [m]eta ↑↓\n\
         [n]eedle ↑↓\n\
-        [o]rtho\n\
-        [p]propellor\n\
+        [o]rtho ↑↓\n\
+        [p]propellor ↑↓\n\
         [q]uinto\n\
         [r]eflect\n\
         [s]nub ↑↓\n\
@@ -187,7 +187,8 @@ fn main() {
         [z]ip ↑↓\n\
         ______________________________________________________\n\
         (Shift)+⬆⬇︎ – modify the last operation marked with ↑↓\n\
-        [Delete] - Undo last operation\n\
+                      (10× w. [Shift])\n\
+        [Delete]    - Undo last operation\n\
         ______________________________________________________\n\
         (Shift)+[Enter] – Render (in the cloud w. [Shift])\n\
         ______________________________________________________\n\
@@ -209,29 +210,31 @@ fn main() {
                         Key::A => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            poly.ambo(true);
+                            last_op_value = 0.5;
+                            poly.ambo(None, true);
                             poly.normalize();
-                            last_op = '_';
+                            last_op = 'a';
                         }
                         Key::C => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            last_op_value = 0.;
+                            last_op_value = 0.5;
                             poly.chamfer(None, true);
                             poly.normalize();
-                            last_op = '_';
+                            last_op = 'c';
                         }
                         Key::B => {
                             alter_last_op = false;
                             last_poly = poly.clone();
                             last_op_value = 0.;
-                            poly.bevel(None, None, false, true);
+                            poly.bevel(None, None, None, false, true);
                             poly.normalize();
                             last_op = 'b';
                         }
                         Key::D => {
                             alter_last_op = false;
                             last_poly = poly.clone();
+                            last_op_value = 0.;
                             poly.dual(true);
                             poly.normalize();
                             last_op = '_';
@@ -239,9 +242,10 @@ fn main() {
                         Key::E => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            poly.expand(true);
+                            last_op_value = 0.5;
+                            poly.expand(None, true);
                             poly.normalize();
-                            last_op = '_';
+                            last_op = 'e';
                         }
                         Key::G => {
                             alter_last_op = false;
@@ -254,9 +258,10 @@ fn main() {
                         Key::J => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            poly.join(true);
+                            last_op_value = 0.5;
+                            poly.join(None, true);
                             poly.normalize();
-                            last_op = '_';
+                            last_op = 'j';
                         }
                         Key::K => {
                             alter_last_op = false;
@@ -271,10 +276,10 @@ fn main() {
                             last_poly = poly.clone();
                             last_op_value = 0.;
                             if modifiers.intersects(Modifiers::Shift) {
-                                poly.medial(None, None, false, true);
+                                poly.medial(None, None, None, false, true);
                                 last_op = 'M';
                             } else {
-                                poly.meta(None, None, false, true);
+                                poly.meta(None, None, None, false, true);
                                 last_op = 'm';
                             }
                             poly.normalize();
@@ -290,17 +295,18 @@ fn main() {
                         Key::O => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            poly.ortho(true);
+                            last_op_value = 0.5;
+                            poly.ortho(None, true);
                             poly.normalize();
-                            last_op = '_';
+                            last_op = 'o';
                         }
                         Key::P => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            last_op_value = 0.;
+                            last_op_value = 1. / 3.;
                             poly.propellor(None, true);
                             poly.normalize();
-                            last_op = '_';
+                            last_op = 'p';
                         }
                         Key::Q => {
                             alter_last_op = false;
@@ -432,16 +438,38 @@ fn main() {
                             poly = last_poly.clone();
                         }
                         match last_op {
+                            'a' => {
+                                poly.ambo(
+                                    Some(last_op_value),
+                                    true,
+                                );
+                            }
                             'b' => {
                                 poly.bevel(
                                     Some(last_op_value),
                                     None,
+                                    Some(last_op_value),
                                     false,
+                                    true,
+                                );
+                            }
+                            'c' => {
+                                poly.chamfer(
+                                    Some(last_op_value),
+                                    true,
+                                );
+                            }
+                            'e' => {
+                                poly.expand(
+                                    Some(last_op_value),
                                     true,
                                 );
                             }
                             'g' => {
                                 poly.gyro(None, Some(last_op_value), true);
+                            }
+                            'j' => {
+                                poly.join(Some(last_op_value), true);
                             }
                             'k' => {
                                 poly.kis(
@@ -455,14 +483,22 @@ fn main() {
                                 poly.meta(
                                     Some(last_op_value),
                                     None,
+                                    Some(last_op_value),
                                     false,
                                     true,
                                 );
+                            }
+                            'o' => {
+                                poly.ortho(Some(last_op_value), true);
+                            }
+                            'p' => {
+                                poly.propellor(Some(last_op_value), true);
                             }
                             'M' => {
                                 poly.medial(
                                     Some(last_op_value),
                                     None,
+                                    Some(last_op_value),
                                     false,
                                     true,
                                 );

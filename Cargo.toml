@@ -9,7 +9,8 @@ edition = "2018"
 repository = "https://github.com/virtualritz/polyhedron-ops/"
 
 [dependencies]
-ultraviolet = "0.7.4"
+clamped = "1.0.0"
+ultraviolet = "0.7.5"
 itertools = "0.9.0"
 rayon = "1.5.0"
 nsi = "0.5.4"
