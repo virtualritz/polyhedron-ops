@@ -179,7 +179,7 @@ fn main() {
         [n]eedle ↑↓\n\
         [o]rtho ↑↓\n\
         [p]propellor ↑↓\n\
-        [q]uinto\n\
+        [q]uinto ↑↓\n\
         [r]eflect\n\
         [s]nub ↑↓\n\
         [t]runcate ↑↓\n\
@@ -311,9 +311,10 @@ fn main() {
                         Key::Q => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            poly.quinto(true);
+                            last_op_value = 0.5;
+                            poly.quinto(None, true);
                             poly.normalize();
-                            last_op = '_';
+                            last_op = 'q';
                         }
                         Key::R => {
                             alter_last_op = false;
@@ -439,31 +440,22 @@ fn main() {
                         }
                         match last_op {
                             'a' => {
-                                poly.ambo(
-                                    Some(last_op_value),
-                                    true,
-                                );
+                                poly.ambo(Some(last_op_value), true);
                             }
                             'b' => {
                                 poly.bevel(
                                     Some(last_op_value),
-                                    None,
                                     Some(last_op_value),
+                                    None,
                                     false,
                                     true,
                                 );
                             }
                             'c' => {
-                                poly.chamfer(
-                                    Some(last_op_value),
-                                    true,
-                                );
+                                poly.chamfer(Some(last_op_value), true);
                             }
                             'e' => {
-                                poly.expand(
-                                    Some(last_op_value),
-                                    true,
-                                );
+                                poly.expand(Some(last_op_value), true);
                             }
                             'g' => {
                                 poly.gyro(None, Some(last_op_value), true);
@@ -482,8 +474,8 @@ fn main() {
                             'm' => {
                                 poly.meta(
                                     Some(last_op_value),
-                                    None,
                                     Some(last_op_value),
+                                    None,
                                     false,
                                     true,
                                 );
@@ -494,11 +486,14 @@ fn main() {
                             'p' => {
                                 poly.propellor(Some(last_op_value), true);
                             }
+                            'q' => {
+                                poly.quinto(Some(last_op_value), true);
+                            }
                             'M' => {
                                 poly.medial(
                                     Some(last_op_value),
-                                    None,
                                     Some(last_op_value),
+                                    None,
                                     false,
                                     true,
                                 );

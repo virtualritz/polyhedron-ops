@@ -24,11 +24,11 @@ functional, lends itself well to translation into functional Rust.
 - [x] **m** - meta (equiv. to **k(3)j**)
 - [x] **o** - ortho (equiv. to **jj**)
 - [x] **p** - propellor (BROKEN)
-- [x] **k**(*n*) - kis on faces with arity *n* or an all faces if *n* is unspecified
-- [x] **q** - quinto (BROKEN)
+- [x] **k** - kis
+- [x] **q** - quinto
 - [x] **r** - reflect
 - [x] **s** - snub (equiv. to **dgd**)
-- [x] **t**(*n*) - truncate vertices of valence *n* or on all vertices if *n* is unspecified (equiv. to *dkNd*)
+- [x] **t** - truncate vertices (equiv. to *dkNd*)
 - [x] **w** - whirl
 - [x] **z** - zip (equiv. to **dk**)
 
