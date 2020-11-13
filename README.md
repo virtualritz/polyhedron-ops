@@ -23,7 +23,7 @@ functional, lends itself well to translation into functional Rust.
 - [x] **M** - medial (equiv. to **dta**)
 - [x] **m** - meta (equiv. to **k(3)j**)
 - [x] **o** - ortho (equiv. to **jj**)
-- [x] **p** - propellor (BROKEN)
+- [x] **p** - propellor
 - [x] **k** - kis
 - [x] **q** - quinto
 - [x] **r** - reflect
