@@ -1209,11 +1209,17 @@ impl Polyhedron {
 
     pub fn quinto<'a>(
         &'a mut self,
-        ratio: Option<Float>,
+        height: Option<Float>,
         change_name: bool,
     ) -> &'a mut Self {
-        let ratio_ = match ratio {
-            Some(r) => r.clamped(0.0, 1.0),
+        let height_ = match height {
+            Some(h) => {
+                if h < 0.0 {
+                    0.0
+                } else {
+                    h
+                }
+            }
             None => 0.5,
         };
         let edges = self.edges();
@@ -1221,7 +1227,7 @@ impl Polyhedron {
             .par_iter()
             .map(|edge| {
                 let edge_points = as_points(edge, &self.points);
-                (edge.clone(), ratio_ * (*edge_points[0] + *edge_points[1]))
+                (edge.clone(), height_ * (*edge_points[0] + *edge_points[1]))
             })
             .collect();
 
@@ -1299,7 +1305,11 @@ impl Polyhedron {
         self.points.extend(vertex_values_as_ref(&new_points));
 
         if change_name {
-            write!(self.name, "q{}", self.name.clone()).unwrap();
+            let mut params = String::new();
+            if let Some(h) = height {
+                write!(&mut params, "{:.1}", h).unwrap();
+            }
+            write!(self.name, "q{}{}", params, self.name.clone()).unwrap();
         }
 
         self
