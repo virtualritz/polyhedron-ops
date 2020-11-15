@@ -1,10 +1,15 @@
 [package]
 name = "polyhedron-ops"
 version = "0.1.1"
-license = "BSD-3-Clause"
 authors = ["Moritz Moeller <virtualritz@gmail.com>"]
 edition = "2018"
+keywords = ["3d", "creative", "geometry", "graphics", "rendering"]
+categories = ["graphics", "mathematics", "multimedia", "rendering"]
+license = "MIT OR Apache-2.0 OR Zlib"
+description = "Conway/Hart Polyhedron Operations"
+readme = "README.md"
 repository = "https://github.com/virtualritz/polyhedron-ops/"
+documentation = "https://docs.rs/polyhedron-ops/"
 
 [features]
 default = []
@@ -33,8 +38,6 @@ required-features = [ "nsi" ]
 lto = "on"
 opt-level = 3
 codegen-units = 1
-rpath = true
-panic = "abort"
 
 [profile.dev.package.'*']
 opt-level = 3
