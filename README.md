@@ -1,15 +1,50 @@
 # Polyhedron Operators
 
-This crate implements the [Conway Polyhedral
+This crate implements the [Conway Polyhedron
 Operators](http://en.wikipedia.org/wiki/Conway_polyhedron_notation)
 and their extensions by [George W. Hart](http://www.georgehart.com/)
 and others.
 
-This is an experiment to improve my understanding of iterators
-in Rust. It is based on Hart’s OpenSCAD code which, being
-functional, lends itself well to translation into functional Rust.
-
 ![Some brutalist Polyhedron, rendered with 3Delight|ɴsɪ](polyhedron.jpg)
+
+*Some brutalist Polyhedron, rendered with
+[3Delight|ɴsɪ](www.3delight.com) and post processed in
+[Darktable](https://www.darktable.org/)*
+
+This is an experiment to improve my understanding of iterators in Rust.
+It is based on [Kit Wallace](http://kitwallace.tumblr.com/tagged/conway)’s
+OpenSCAD code. As OpenSCAD Language is functional it lends itself
+well to translation into functional Rust.
+
+```rust
+use polyhedron_ops::Polyhedron;
+use std::path::Path;
+
+// Conway notation: gapcD
+let mut polyhedron =
+    Polyhedron::dodecahedron()
+        .chamfer(None, true)
+        .propellor(None, true)
+        .ambo(None, true)
+        .gyro(None, None, true)
+        .finalize();
+// Export as ./polyhedron-gapcD.obj
+polyhedron.export_as_obj(&Path::new("."), false);
+```
+
+The above code starts from a
+[dodecahedron](https://en.wikipedia.org/wiki/Dodecahedron) and
+iteratively applies four operators.
+
+The resulting shape is shown below.
+
+![](gapcD.jpg)
+
+## Caveat
+
+This is in a rough shape. Probably buggy. Documentation sucks.
+
+In short: use at your own risk.
 
 ## Supported Operators
 
@@ -21,7 +56,7 @@ functional, lends itself well to translation into functional Rust.
 - [x] **g** - gyro
 - [x] **j** - join (equiv. to **dad**)
 - [x] **M** - medial (equiv. to **dta**)
-- [x] **m** - meta (equiv. to **k(3)j**)
+- [x] **m** - meta (equiv. to **k,,3j**)
 - [x] **o** - ortho (equiv. to **jj**)
 - [x] **p** - propellor
 - [x] **k** - kis
@@ -66,11 +101,11 @@ registration).
 Press `Space` to save as `$HOME/polyhedron-<type>.obj`.
 
 I use `kiss3d` for realtime preview which is close to the metal enough
-to limit meshes to 65k vertices. This means the preview will be broken
+to limit meshes to 64k vertices. This means the preview will be broken
 if your mesh hits this limit.
-
-Export & render will always yield a correct OBJ though. Which you can
-view in Wings, Blender or another DCC app.
 
 The app may crash though if your graphics driver doesn't handle such
 ill-defined meshes gracefully. :)
+
+Export & render will always yield a correct OBJ though. Which you can
+view in Wings, Blender or another DCC app.

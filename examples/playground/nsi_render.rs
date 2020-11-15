@@ -94,7 +94,10 @@ fn nsi_globals_and_camera(
     // Setup an output driver.
     c.create("driver1", nsi::NodeType::OutputDriver, &[]);
     c.connect("driver1", "", name, "outputdrivers", &[]);
-    c.set_attribute("driver1", &[nsi::string!("drivername", "idisplay")]);
+    c.set_attribute("driver1", &[
+        nsi::string!("drivername", "idisplay"),
+        nsi::string!("filename", name),
+    ]);
 
     /*
     c.create("driver2", nsi::NodeType::OutputDriver, &[]);

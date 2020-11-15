@@ -1,10 +1,12 @@
 //! # Conway-Hart Polyhedron Operations
 //!
-//! This crate implements all of [Conway's polyhedron operators](https://en.wikipedia.org/wiki/Conway_polyhedron_notation) and
-//! several extensions; foremost those by George W. Hart.
+//! This crate implements the [Conway Polyhedron
+//! Operators](http://en.wikipedia.org/wiki/Conway_polyhedron_notation)
+//! and their extensions by
+//! [George W. Hart](http://www.georgehart.com/) and others.
 //!
 //! The internal representation are mesh buffers.
-//!
+//! ## Example
 //! ```
 //! use polyhedron_ops::Polyhedron;
 //! use std::path::Path;
@@ -20,6 +22,22 @@
 //! // Export as ./polyhedron-gapcD.obj
 //! polyhedron.export_as_obj(&Path::new("."), false);
 //!```
+//! The above code starts from a
+//! [dodecahedron](https://en.wikipedia.org/wiki/Dodecahedron) and
+//! iteratively applies four operators.
+//!
+//! The resulting shape is shown below.
+//!
+//! ![](https://raw.githubusercontent.com/virtualritz/polyhedron-operators/master/gapcD.jpg)
+//!
+//! ## Cargo Features
+//! The crate supports sending data to renderers implementing the
+//! [ɴsɪ](http://nsi.readthedocs.io/) API. The method is called
+//! `to_nsi()` and is enabled through the `"nsi"` feature:
+//! ```toml
+//! [dependencies]
+//! polyhedron-ops = { version = "0.1.0", features = [ "nsi" ] }
+//! ```
 use clamped::Clamp;
 use itertools::Itertools;
 #[cfg(feature = "nsi")]
@@ -562,11 +580,11 @@ impl Polyhedron {
     /// [medial graph](https://en.wikipedia.org/wiki/Medial_graph)
     /// in graph theory.
     #[inline]
-    pub fn ambo<'a>(
-        &'a mut self,
+    pub fn ambo(
+        &mut self,
         ratio: Option<Float>,
         change_name: bool,
-    ) -> &'a mut Self {
+    ) -> &mut Self {
         let ratio_ = match ratio {
             Some(r) => r.clamped(0.0, 1.0),
             None => 1. / 2.,

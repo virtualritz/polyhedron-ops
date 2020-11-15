@@ -1,6 +1,6 @@
 [package]
 name = "polyhedron-ops"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Moritz Moeller <virtualritz@gmail.com>"]
 edition = "2018"
 keywords = ["3d", "creative", "geometry", "graphics", "rendering"]
@@ -29,10 +29,8 @@ kiss3d = "0.27.0"
 slice_as_array = "1.1.0"
 nsi = "0.5.4"
 
-[[example]]
-path = "examples/playground/playground.rs"
-name = "playground"
-required-features = [ "nsi" ]
+[package.metadata.docs.rs]
+features = [ "nsi" ]
 
 [profile.release]
 lto = "on"
@@ -41,3 +39,8 @@ codegen-units = 1
 
 [profile.dev.package.'*']
 opt-level = 3
+
+[[example]]
+path = "examples/playground/playground.rs"
+name = "playground"
+required-features = [ "nsi" ]
