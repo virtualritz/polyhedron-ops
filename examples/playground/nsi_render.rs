@@ -35,7 +35,7 @@ fn nsi_globals_and_camera(
         "screen",
         &[
             nsi::integers!("resolution", &[2048, 2048]).array_len(2),
-            nsi::integer!("oversampling", 16),
+            nsi::integer!("oversampling", 32),
         ],
     );
 
@@ -149,7 +149,7 @@ fn nsi_environment(c: &nsi::Context) {
 
         c.set_attribute(
             "env_shader",
-            &[nsi::string!("image", "assets/wooden_lounge_2k.tdl")],
+            &[nsi::string!("image", "assets/wooden_lounge_1k.tdl")],
         );
     }
 }
