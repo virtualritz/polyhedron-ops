@@ -5,7 +5,11 @@
 //! and their extensions by
 //! [George W. Hart](http://www.georgehart.com/) and others.
 //!
-//! The internal representation are mesh buffers.
+//! The internal representation uses mesh buffers. These need
+//! furter preprocessing before they can be sent to a GPU but
+//! are almost fine to send to an offline renderer, as-is.
+//!
+//! See the `playground` example for code on how to do either.
 //! ## Example
 //! ```
 //! use polyhedron_ops::Polyhedron;
