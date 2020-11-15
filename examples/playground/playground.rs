@@ -28,16 +28,6 @@ use std::{cell::RefCell, io, io::Write, path::Path, rc::Rc};
 extern crate polyhedron_ops;
 use polyhedron_ops::prelude::*;
 
-/// Struct storing indices corresponding to the vertex
-/// Some points may not have texcoords or normals, 0 is used to
-/// indicate this as OBJ indices begin at 1
-/*#[derive(Hash, Eq, PartialEq, PartialOrd, Ord, Debug, Copy, Clone)]
-struct VertexIndex {
-    pub position: Index,
-    pub texture: Index,
-    pub normal: Index,
-}*/
-
 #[inline]
 fn as_points<'a>(f: &[Index], points: &'a Points) -> PointsRef<'a> {
     f.par_iter().map(|index| &points[*index as usize]).collect()
@@ -143,7 +133,7 @@ fn main() {
     let mut window = Window::new("Polyhedron Operations");
     window.set_light(Light::StickToCamera);
 
-    let mut poly = Polyhedron::dodecahedron();
+    let mut poly = Polyhedron::tetrahedron();
     poly.normalize();
 
     let mesh = Rc::new(RefCell::new(into_mesh(poly.clone())));
@@ -163,9 +153,17 @@ fn main() {
 
     let path = dirs::home_dir().unwrap();
 
-    println!(
+    let mut render_quality = 0;
+
+    print!(
         "Press one of:\n\
-        _____________\n\
+        ____________________________________________ Start Shapes (Reset) _____\n\
+        [T]etrahedron\n\
+        [C]ube (Hexahedron)\n\
+        [O]ctahedron\n\
+        [D]dodecahedron\n\
+        [I]cosehedron\n\
+        ______________________________________________________ Operations _____\n\
         [a]mbo ↑↓\n\
         [b]evel ↑↓\n\
         [c]chamfer ↑↓\n\
@@ -185,15 +183,18 @@ fn main() {
         [t]runcate ↑↓\n\
         [w]hirl ↑↓\n\
         [z]ip ↑↓\n\
-        ______________________________________________________\n\
-        (Shift)+⬆⬇︎ – modify the last operation marked with ↑↓\n\
-                      (10× w. [Shift])\n\
-        [Delete]    - Undo last operation\n\
-        ______________________________________________________\n\
+        _______________________________________________________ Modifiers _____\n\
+        (Shift)+⬆⬇︎ – modify the last operation marked with ↑↓ (10× w. [Shift])\n\
+        [Delete]    – Undo last operation\n\
+        _______________________________________________________ Rendering _____\n\
         (Shift)+[Enter] – Render (in the cloud w. [Shift])\n\
-        ______________________________________________________\n\
-        (Shift)+[Space] – save as OBJ (dump to NSI w. [Shift])"
+        [0]..[9]        – Set render quality preview .. super high quality\n\
+        _______________________________________________________ Exporting _____\n\
+        (Shift)+[Space] – save as OBJ (dump to NSI w. [Shift])\n\
+        _______________________________________________________________________\n\
+        ❯ {} – render quality {:<80}\r", poly.name(), render_quality
     );
+    io::stdout().flush().unwrap();
 
     while !window.should_close() {
         // rotate the arc-ball camera.
@@ -207,6 +208,16 @@ fn main() {
                     match key {
                         Key::Numpad1 => use_arc_ball = true,
                         Key::Numpad2 => use_arc_ball = false,
+                        Key::Key0 => render_quality = 0,
+                        Key::Key1 => render_quality = 1,
+                        Key::Key2 => render_quality = 2,
+                        Key::Key3 => render_quality = 3,
+                        Key::Key4 => render_quality = 4,
+                        Key::Key5 => render_quality = 5,
+                        Key::Key6 => render_quality = 6,
+                        Key::Key7 => render_quality = 7,
+                        Key::Key8 => render_quality = 8,
+                        Key::Key9 => render_quality = 9,
                         Key::A => {
                             alter_last_op = false;
                             last_poly = poly.clone();
@@ -214,14 +225,6 @@ fn main() {
                             poly.ambo(None, true);
                             poly.normalize();
                             last_op = 'a';
-                        }
-                        Key::C => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            last_op_value = 0.5;
-                            poly.chamfer(None, true);
-                            poly.normalize();
-                            last_op = 'c';
                         }
                         Key::B => {
                             alter_last_op = false;
@@ -231,12 +234,30 @@ fn main() {
                             poly.normalize();
                             last_op = 'b';
                         }
+                        Key::C => {
+                            alter_last_op = false;
+                            last_poly = poly.clone();
+                            if modifiers.intersects(Modifiers::Shift) {
+                                poly = Polyhedron::hexahedron();
+                                poly.normalize();
+                            } else {
+                                last_op_value = 0.5;
+                                poly.chamfer(None, true);
+                                poly.normalize();
+                                last_op = 'c';
+                            }
+                        }
                         Key::D => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            last_op_value = 0.;
-                            poly.dual(true);
-                            poly.normalize();
+                            if modifiers.intersects(Modifiers::Shift) {
+                                poly = Polyhedron::dodecahedron();
+                                poly.normalize();
+                            } else {
+                                last_op_value = 0.;
+                                poly.dual(true);
+                                poly.normalize();
+                            }
                             last_op = '_';
                         }
                         Key::E => {
@@ -254,6 +275,14 @@ fn main() {
                             poly.gyro(None, None, true);
                             poly.normalize();
                             last_op = 'g';
+                        }
+                        Key::I => {
+                            if modifiers.intersects(Modifiers::Shift) {
+                                alter_last_op = false;
+                                last_poly = poly.clone();
+                                poly = Polyhedron::icosahedron();
+                                poly.normalize();
+                            }
                         }
                         Key::J => {
                             alter_last_op = false;
@@ -295,10 +324,15 @@ fn main() {
                         Key::O => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            last_op_value = 0.5;
-                            poly.ortho(None, true);
-                            poly.normalize();
-                            last_op = 'o';
+                            if modifiers.intersects(Modifiers::Shift) {
+                                poly = Polyhedron::octahedron();
+                                poly.normalize();
+                            } else {
+                                last_op_value = 0.5;
+                                poly.ortho(None, true);
+                                poly.normalize();
+                                last_op = 'o';
+                            }
                         }
                         Key::P => {
                             alter_last_op = false;
@@ -323,11 +357,6 @@ fn main() {
                             poly.normalize();
                             last_op = '_';
                         }
-                        /*Key::T => {
-                            if Super == modifiers {
-                                return;
-                            }
-                        }*/
                         Key::S => {
                             alter_last_op = false;
                             last_poly = poly.clone();
@@ -336,14 +365,18 @@ fn main() {
                             poly.normalize();
                             last_op = 's';
                         }
-
                         Key::T => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            last_op_value = 0.;
-                            poly.truncate(None, None, false, true);
-                            poly.normalize();
-                            last_op = 't';
+                            if modifiers.intersects(Modifiers::Shift) {
+                                poly = Polyhedron::tetrahedron();
+                                poly.normalize();
+                            } else {
+                                last_op_value = 0.;
+                                poly.truncate(None, None, false, true);
+                                poly.normalize();
+                                last_op = 't';
+                            }
                         }
                         Key::W => {
                             alter_last_op = false;
@@ -379,6 +412,7 @@ fn main() {
                                             [f64; 16]
                                         )
                                         .unwrap(),
+                                        render_quality,
                                         RenderType::Dump,
                                     )
                                 );
@@ -422,6 +456,7 @@ fn main() {
                                 &poly,
                                 slice_as_array!(xform.as_slice(), [f64; 16])
                                     .unwrap(),
+                                render_quality,
                                 if modifiers.intersects(Modifiers::Shift) {
                                     RenderType::Cloud
                                 } else {
@@ -542,29 +577,32 @@ fn main() {
                     c.enable_backface_culling(false);
                     c.set_points_size(10.);
 
-                    print!("{}\r", poly.name());
+                    print!(
+                        "❯ {} – render quality {:<80}\r",
+                        poly.name(),
+                        render_quality
+                    );
                     io::stdout().flush().unwrap();
                 }
                 _ => {}
             }
         }
 
-        /*
         window.draw_line(
             &Point3::origin(),
-            &Point3::new(10.0, 0.0, 0.0),
-            &Point3::new(10.0, 0.0, 0.0),
+            &Point3::new(1.0, 0.0, 0.0),
+            &Point3::new(1.0, 0.0, 0.0),
         );
         window.draw_line(
             &Point3::origin(),
-            &Point3::new(0.0, 10.0, 0.0),
-            &Point3::new(0.0, 10.0, 0.0),
+            &Point3::new(0.0, 1.0, 0.0),
+            &Point3::new(0.0, 1.0, 0.0),
         );
         window.draw_line(
             &Point3::origin(),
-            &Point3::new(0.0, 0.0, 10.0),
-            &Point3::new(0.0, 0.0, 10.0),
-        );*/
+            &Point3::new(0.0, 0.0, 1.0),
+            &Point3::new(0.0, 0.0, 1.0),
+        );
 
         if use_arc_ball {
             window.render_with_camera(&mut arc_ball);

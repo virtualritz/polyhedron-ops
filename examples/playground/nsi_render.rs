@@ -3,7 +3,12 @@ pub use crate::*;
 use std::path::Path;
 use std::{env, path::PathBuf};
 
-fn nsi_camera(c: &nsi::Context, name: &str, camera_xform: &[f64; 16]) {
+fn nsi_globals_and_camera(
+    c: &nsi::Context,
+    name: &str,
+    camera_xform: &[f64; 16],
+    render_quality: u32,
+) {
     // Setup a camera transform.
     c.create("camera_xform", nsi::NodeType::Transform, &[]);
     c.connect("camera_xform", "", ".root", "objects", &[]);
@@ -39,7 +44,7 @@ fn nsi_camera(c: &nsi::Context, name: &str, camera_xform: &[f64; 16]) {
         &[
             nsi::integer!("renderatlowpriority", 1),
             nsi::string!("bucketorder", "circle"),
-            nsi::unsigned!("quality.shadingsamples", 128),
+            nsi::unsigned!("quality.shadingsamples", 1 << (3 + render_quality)),
             nsi::integer!("maximumraydepth.reflection", 6),
         ],
     );
@@ -196,6 +201,7 @@ pub fn nsi_render(
     path: &Path,
     polyhedron: &crate::Polyhedron,
     camera_xform: &[f64; 16],
+    render_quality: u32,
     render_type: crate::RenderType,
 ) -> String {
     let destination =
@@ -219,15 +225,16 @@ pub fn nsi_render(
     }
     .expect("Could not create NSI rendering context.");
 
-    nsi_camera(
+    nsi_globals_and_camera(
         &ctx,
         &(polyhedron.name().to_string() + ".exr"),
         camera_xform,
+        render_quality,
     );
 
     nsi_environment(&ctx);
 
-    let name = polyhedron.to_nsi(&ctx);
+    let name = polyhedron.to_nsi(&ctx, None, None, None);
 
     nsi_material(&ctx, &name);
 

@@ -1,5 +1,28 @@
+//! # Conway-Hart Polyhedron Operations
+//!
+//! This crate implements all of [Conway's polyhedron operators](https://en.wikipedia.org/wiki/Conway_polyhedron_notation) and
+//! several extensions; foremost those by George W. Hart.
+//!
+//! The internal representation are mesh buffers.
+//!
+//! ```
+//! use polyhedron_ops::Polyhedron;
+//! use std::path::Path;
+//!
+//! // Conway notation: gapcD
+//! let mut polyhedron =
+//!     Polyhedron::dodecahedron()
+//!         .chamfer(None, true)
+//!         .propellor(None, true)
+//!         .ambo(None, true)
+//!         .gyro(None, None, true)
+//!         .finalize();
+//! // Export as ./polyhedron-gapcD.obj
+//! polyhedron.export_as_obj(&Path::new("."), false);
+//!```
 use clamped::Clamp;
 use itertools::Itertools;
+#[cfg(feature = "nsi")]
 use nsi;
 use ultraviolet;
 
@@ -43,9 +66,6 @@ pub mod prelude {
     //! Re-exports commonly used types and traits.
     //!
     //! Importing the contents of this module is recommended.
-
-    //pub use crate::NormalType;
-
     pub use crate::*;
 }
 
@@ -80,12 +100,21 @@ fn vadd(points: &mut Points, v: &Vector) {
 
 #[inline]
 fn centroid(points: &Points) -> Point {
-    let total_displacement = points
-        .into_par_iter()
-        .cloned()
-        .reduce(|| Point::zero(), |accumulate, point| accumulate + point);
+    points
+        .into_iter()
+        .fold(Point::zero(), |accumulate, point| accumulate + *point)
+        //.into_par_iter()
+        //.cloned()
+        //.reduce(|| Point::zero(), |accumulate, point| accumulate + point);
+        / points.len() as Float
+}
 
-    total_displacement / points.len() as Float
+#[inline]
+fn centroid_ref(points: &PointsRef) -> Point {
+    points
+        .into_iter()
+        .fold(Point::zero(), |accumulate, point| accumulate + **point)
+        / points.len() as Float
 }
 
 #[inline]
@@ -159,16 +188,6 @@ fn _to_centroid_points(points: &Points) -> Points {
 #[inline]
 fn center_on_centroid(points: &mut Points) {
     vadd(points, &-centroid(points));
-}
-
-#[inline]
-fn centroid_ref<'a>(points: &'a PointsRef) -> Point {
-    let total_displacement = points
-        .into_iter()
-        //.cloned()
-        .fold(Point::zero(), |accumulate, point| accumulate + **point);
-
-    total_displacement / points.len() as Float
 }
 
 #[inline]
@@ -372,7 +391,14 @@ fn face_normal(points: &PointsRef) -> Option<Vector> {
         normal /= num_considered_edges as f32;
         Some(normal)
     } else {
-        None
+        // Total degenerate or zero size face.
+        // We just return the normalized vector
+        // from the origin to the center of the face.
+        Some(centroid_ref(points).normalized())
+
+        // FIXME: this branch should return None.
+        // We need a method to cleanup geometry
+        // of degenrate faces/edges instead.
     }
 }
 
@@ -603,22 +629,22 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{:.1}", ratio).unwrap();
+                write!(&mut params, "{:.2}", ratio).unwrap();
             }
-            write!(self.name, "a{}{}", params, self.name.clone()).unwrap();
+            self.name = format!("a{}{}", params, self.name);
         }
 
         self
     }
 
-    pub fn bevel<'a>(
-        &'a mut self,
+    pub fn bevel(
+        &mut self,
         ratio: Option<Float>,
         height: Option<Float>,
         vertex_valence: Option<Vec<usize>>,
         regular_faces_only: bool,
         change_name: bool,
-    ) -> &'a mut Self {
+    ) -> &mut Self {
         self.truncate(
             height.clone(),
             vertex_valence.clone(),
@@ -630,10 +656,10 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{:.1}", ratio).unwrap();
+                write!(&mut params, "{:.2}", ratio).unwrap();
             }
             if let Some(height) = height {
-                write!(&mut params, "{:.1}", height).unwrap();
+                write!(&mut params, "{:.2}", height).unwrap();
             }
             if let Some(vertex_valence) = vertex_valence {
                 write!(&mut params, ",{}", format_vec(&vertex_valence))
@@ -642,17 +668,17 @@ impl Polyhedron {
             if regular_faces_only {
                 params.push_str(",{t}");
             }
-            write!(self.name, "b{}{}", params, self.name.clone()).unwrap();
+            self.name = format!("b{}{}", params, self.name);
         }
 
         self
     }
 
-    pub fn chamfer<'a>(
-        &'a mut self,
+    pub fn chamfer(
+        &mut self,
         ratio: Option<Float>,
         change_name: bool,
-    ) -> &'a mut Self {
+    ) -> &mut Self {
         let ratio_ = match ratio {
             Some(r) => r.clamped(0.0, 1.0),
             None => 1. / 2.,
@@ -734,16 +760,16 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{:.1}", ratio).unwrap();
+                write!(&mut params, "{:.2}", ratio).unwrap();
             }
-            write!(self.name, "c{}{}", params, self.name.clone()).unwrap();
+            self.name = format!("c{}{}", params, self.name);
         }
 
         self
     }
 
     /// Replaces each face with a vertex, and each vertex with a face.
-    pub fn dual<'a>(&'a mut self, change_name: bool) -> &'a mut Self {
+    pub fn dual(&mut self, change_name: bool) -> &mut Self {
         let new_points = self
             .face_index
             .par_iter()
@@ -755,37 +781,37 @@ impl Polyhedron {
         self.points = new_points;
 
         if change_name {
-            write!(self.name, "d{}", self.name.clone()).unwrap();
+            self.name = format!("d{}", self.name);
         }
 
         self
     }
 
-    pub fn expand<'a>(
-        &'a mut self,
+    pub fn expand(
+        &mut self,
         ratio: Option<Float>,
         change_name: bool,
-    ) -> &'a mut Self {
+    ) -> &mut Self {
         self.ambo(ratio, false);
         self.ambo(ratio, false);
 
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{:.1}", ratio).unwrap();
+                write!(&mut params, "{:.2}", ratio).unwrap();
             }
-            write!(self.name, "e{}{}", params, self.name.clone()).unwrap();
+            self.name = format!("e{}{}", params, self.name);
         }
 
         self
     }
 
-    pub fn gyro<'a>(
-        &'a mut self,
+    pub fn gyro(
+        &mut self,
         ratio: Option<f32>,
         height: Option<f32>,
         change_name: bool,
-    ) -> &'a mut Self {
+    ) -> &mut Self {
         let ratio_ = match ratio {
             Some(r) => r.clamped(0.0, 1.0),
             None => 1. / 3.,
@@ -868,12 +894,12 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{:.1}", ratio).unwrap();
+                write!(&mut params, "{:.2}", ratio).unwrap();
             }
             if let Some(height) = height {
-                write!(&mut params, ",{:.1}", height).unwrap();
+                write!(&mut params, ",{:.2}", height).unwrap();
             }
-            write!(self.name, "g{}{}", params, self.name.clone()).unwrap();
+            self.name = format!("g{}{}", params, self.name);
         }
 
         self
@@ -884,11 +910,11 @@ impl Polyhedron {
     /// # Arguments
     /// * `ratio` - the ratio at which the adjacent edges gets split.
     ///             Will be clamped to `[0,1]`. Default value is `0.5`.
-    pub fn join<'a>(
-        &'a mut self,
+    pub fn join(
+        &mut self,
         ratio: Option<Float>,
         change_name: bool,
-    ) -> &'a mut Self {
+    ) -> &mut Self {
         self.dual(false);
         self.ambo(ratio, false);
         self.dual(false);
@@ -896,9 +922,9 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{:.1}", ratio).unwrap();
+                write!(&mut params, "{:.2}", ratio).unwrap();
             }
-            write!(self.name, "j{}{}", params, self.name.clone()).unwrap();
+            self.name = format!("j{}{}", params, self.name);
         }
 
         self
@@ -914,13 +940,13 @@ impl Polyhedron {
     ///                  affected.
     /// * `regular_faces_only` - Only faces whose edges are 90% the same length,
     ///               within the same face, are affected.
-    pub fn kis<'a>(
-        &'a mut self,
+    pub fn kis(
+        &mut self,
         height: Option<Float>,
         face_arity: Option<Vec<usize>>,
         regular_faces_only: bool,
         change_name: bool,
-    ) -> &'a mut Self {
+    ) -> &mut Self {
         let height_ = match height {
             Some(h) => h,
             None => 0.,
@@ -970,12 +996,12 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(height) = height {
-                write!(&mut params, "{:.1}", height).unwrap();
+                write!(&mut params, "{:.2}", height).unwrap();
             }
             if let Some(face_arity) = face_arity {
-                write!(&mut params, ",{:.1}", format_vec(&face_arity)).unwrap();
+                write!(&mut params, ",{:.2}", format_vec(&face_arity)).unwrap();
             }
-            write!(self.name, "k{}{}", params, self.name.clone()).unwrap();
+            self.name = format!("k{}{}", params, self.name);
         }
 
         self
@@ -989,14 +1015,14 @@ impl Polyhedron {
         // FIXME
     }
 
-    pub fn medial<'a>(
-        &'a mut self,
+    pub fn medial(
+        &mut self,
         ratio: Option<Float>,
         height: Option<Float>,
         vertex_valence: Option<Vec<usize>>,
         regular_faces_only: bool,
         change_name: bool,
-    ) -> &'a mut Self {
+    ) -> &mut Self {
         self.dual(false);
         self.truncate(
             height.clone(),
@@ -1009,10 +1035,10 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{:.1}", ratio).unwrap();
+                write!(&mut params, "{:.2}", ratio).unwrap();
             }
             if let Some(height) = height {
-                write!(&mut params, "{:.1}", height).unwrap();
+                write!(&mut params, "{:.2}", height).unwrap();
             }
             if let Some(vertex_valence) = vertex_valence {
                 write!(&mut params, ",{}", format_vec(&vertex_valence))
@@ -1021,20 +1047,20 @@ impl Polyhedron {
             if regular_faces_only {
                 params.push_str(",{t}");
             }
-            write!(self.name, "M{}{}", params, self.name.clone()).unwrap();
+            self.name = format!("M{}{}", params, self.name);
         }
 
         self
     }
 
-    pub fn meta<'a>(
-        &'a mut self,
+    pub fn meta(
+        &mut self,
         ratio: Option<Float>,
         height: Option<Float>,
         vertex_valence: Option<Vec<usize>>,
         regular_faces_only: bool,
         change_name: bool,
-    ) -> &'a mut Self {
+    ) -> &mut Self {
         self.kis(
             height,
             match vertex_valence {
@@ -1051,10 +1077,10 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{:.1}", ratio).unwrap();
+                write!(&mut params, "{:.2}", ratio).unwrap();
             }
             if let Some(height) = height {
-                write!(&mut params, "{:.1}", height).unwrap();
+                write!(&mut params, "{:.2}", height).unwrap();
             }
             if let Some(vertex_valence) = vertex_valence {
                 write!(&mut params, ",{}", format_vec(&vertex_valence))
@@ -1063,19 +1089,19 @@ impl Polyhedron {
             if regular_faces_only {
                 params.push_str(",{t}");
             }
-            write!(self.name, "m{}{}", params, self.name.clone()).unwrap();
+            self.name = format!("m{}{}", params, self.name);
         }
 
         self
     }
 
-    pub fn needle<'a>(
-        &'a mut self,
+    pub fn needle(
+        &mut self,
         height: Option<Float>,
         vertex_valence: Option<Vec<usize>>,
         regular_faces_only: bool,
         change_name: bool,
-    ) -> &'a mut Self {
+    ) -> &mut Self {
         self.dual(false);
         self.truncate(
             height.clone(),
@@ -1087,7 +1113,7 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(height) = height {
-                write!(&mut params, "{:.1}", height).unwrap();
+                write!(&mut params, "{:.2}", height).unwrap();
             }
             if let Some(vertex_valence) = vertex_valence {
                 write!(&mut params, ",{}", format_vec(&vertex_valence))
@@ -1096,36 +1122,36 @@ impl Polyhedron {
             if regular_faces_only {
                 params.push_str(",{t}");
             }
-            write!(self.name, "n{}{}", params, self.name.clone()).unwrap();
+            self.name = format!("n{}{}", params, self.name);
         }
 
         self
     }
 
-    pub fn ortho<'a>(
-        &'a mut self,
+    pub fn ortho(
+        &mut self,
         ratio: Option<Float>,
         change_name: bool,
-    ) -> &'a mut Self {
+    ) -> &mut Self {
         self.join(ratio, false);
         self.join(ratio, false);
 
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{:.1}", ratio).unwrap();
+                write!(&mut params, "{:.2}", ratio).unwrap();
             }
-            write!(self.name, "o{}{}", params, self.name.clone()).unwrap();
+            self.name = format!("o{}{}", params, self.name);
         }
 
         self
     }
 
-    pub fn propellor<'a>(
-        &'a mut self,
+    pub fn propellor(
+        &mut self,
         ratio: Option<Float>,
         change_name: bool,
-    ) -> &'a mut Self {
+    ) -> &mut Self {
         let ratio_ = match ratio {
             Some(r) => r.clamped(0.0, 1.0),
             None => 1. / 3.,
@@ -1199,19 +1225,19 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{:.1}", ratio).unwrap();
+                write!(&mut params, "{:.2}", ratio).unwrap();
             }
-            write!(self.name, "p{}{}", params, self.name.clone()).unwrap();
+            self.name = format!("p{}{}", params, self.name);
         }
 
         self
     }
 
-    pub fn quinto<'a>(
-        &'a mut self,
+    pub fn quinto(
+        &mut self,
         height: Option<Float>,
         change_name: bool,
-    ) -> &'a mut Self {
+    ) -> &mut Self {
         let height_ = match height {
             Some(h) => {
                 if h < 0.0 {
@@ -1307,15 +1333,15 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(h) = height {
-                write!(&mut params, "{:.1}", h).unwrap();
+                write!(&mut params, "{:.2}", h).unwrap();
             }
-            write!(self.name, "q{}{}", params, self.name.clone()).unwrap();
+            self.name = format!("q{}{}", params, self.name);
         }
 
         self
     }
 
-    pub fn reflect<'a>(&'a mut self, change_name: bool) -> &'a mut Self {
+    pub fn reflect(&mut self, change_name: bool) -> &mut Self {
         self.points = self
             .points
             .par_iter()
@@ -1324,18 +1350,18 @@ impl Polyhedron {
         self.reverse();
 
         if change_name {
-            write!(self.name, "r{}", self.name.clone()).unwrap();
+            self.name = format!("r{}", self.name);
         }
 
         self
     }
 
-    pub fn snub<'a>(
-        &'a mut self,
+    pub fn snub(
+        &mut self,
         ratio: Option<Float>,
         height: Option<Float>,
         change_name: bool,
-    ) -> &'a mut Self {
+    ) -> &mut Self {
         self.dual(false);
         self.gyro(ratio, height, false);
         self.dual(false);
@@ -1343,24 +1369,24 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{:.1}", ratio).unwrap();
+                write!(&mut params, "{:.2}", ratio).unwrap();
             }
             if let Some(height) = height {
-                write!(&mut params, ",{:.1}", height).unwrap();
+                write!(&mut params, ",{:.2}", height).unwrap();
             }
-            write!(self.name, "s{}{}", params, self.name.clone()).unwrap();
+            self.name = format!("s{}{}", params, self.name);
         }
 
         self
     }
 
-    pub fn truncate<'a>(
-        &'a mut self,
+    pub fn truncate(
+        &mut self,
         height: Option<Float>,
         vertex_valence: Option<Vec<usize>>,
         regular_faces_only: bool,
         change_name: bool,
-    ) -> &'a mut Self {
+    ) -> &mut Self {
         self.dual(false);
         self.kis(height, vertex_valence.clone(), regular_faces_only, false);
         self.dual(false);
@@ -1368,7 +1394,7 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(height) = height {
-                write!(&mut params, "{:.1}", height).unwrap();
+                write!(&mut params, "{:.2}", height).unwrap();
             }
             if let Some(vertex_valence) = vertex_valence {
                 write!(&mut params, ",{}", format_vec(&vertex_valence))
@@ -1377,18 +1403,18 @@ impl Polyhedron {
             if regular_faces_only {
                 params.push_str(",{t}");
             }
-            write!(self.name, "t{}{}", params, self.name.clone()).unwrap();
+            self.name = format!("t{}{}", params, self.name);
         }
 
         self
     }
 
-    pub fn whirl<'a>(
-        &'a mut self,
+    pub fn whirl(
+        &mut self,
         ratio: Option<Float>,
         height: Option<Float>,
         change_name: bool,
-    ) -> &'a mut Self {
+    ) -> &mut Self {
         let ratio_ = match ratio {
             Some(r) => r.clamped(0.0, 1.0),
             None => 1. / 3.,
@@ -1497,31 +1523,31 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{:.1}", ratio).unwrap();
+                write!(&mut params, "{:.2}", ratio).unwrap();
             }
             if let Some(height) = height {
-                write!(&mut params, ",{:.1}", height).unwrap();
+                write!(&mut params, ",{:.2}", height).unwrap();
             }
-            write!(self.name, "w{}{}", params, self.name.clone()).unwrap();
+            self.name = format!("w{}{}", params, self.name);
         }
 
         self
     }
 
-    pub fn zip<'a>(
-        &'a mut self,
+    pub fn zip(
+        &mut self,
         height: Option<Float>,
         vertex_valence: Option<Vec<usize>>,
         regular_faces_only: bool,
         change_name: bool,
-    ) -> &'a mut Self {
+    ) -> &mut Self {
         self.dual(false);
         self.kis(height, vertex_valence.clone(), regular_faces_only, false);
 
         if change_name {
             let mut params = String::new();
             if let Some(height) = height {
-                write!(&mut params, "{:.1}", height).unwrap();
+                write!(&mut params, "{:.2}", height).unwrap();
             }
             if let Some(vertex_valence) = vertex_valence {
                 write!(&mut params, ",{}", format_vec(&vertex_valence))
@@ -1538,10 +1564,12 @@ impl Polyhedron {
 
     /// Reverses the winding order of faces.
     /// Clockwise(default) becomes counter-clockwise and vice versa.
-    pub fn reverse(&mut self) {
+    pub fn reverse(&mut self) -> &mut Self {
         self.face_index
             .par_iter_mut()
             .for_each(|face| face.reverse());
+
+        self
     }
 
     /// Returns the name of this polyhedron.
@@ -1558,11 +1586,11 @@ impl Polyhedron {
     }
 
     #[inline]
-    pub fn points<'a>(&'a self) -> &'a Points {
+    pub fn points(&self) -> &Points {
         &self.points
     }
 
-    pub fn face_index<'a>(&'a self) -> &'a FaceIndex {
+    pub fn face_index(&self) -> &FaceIndex {
         &self.face_index
     }
 
@@ -1639,7 +1667,7 @@ impl Polyhedron {
     }
 
     #[inline]
-    pub fn triangulate(&mut self, shortest: bool) {
+    pub fn triangulate(&mut self, shortest: bool) -> &mut Self {
         self.face_index = self
             .face_index
             .iter()
@@ -1683,14 +1711,51 @@ impl Polyhedron {
                 } //_ => vec![face.clone()],
             })
             .collect();
+
+        self
     }
 
-    pub fn to_nsi(&self, ctx: &nsi::Context) -> String {
-        // Create a new mesh node and call it 'dodecahedron'.
+    pub fn finalize(&self) -> Self {
+        self.clone()
+    }
+
+    /// Writes the polyhedron to the specified
+    /// [ɴsɪ](https:://crates.io/crates/nsi) context.
+    /// # Arguments
+    /// * `height` - An offset to add to the face centroid point along the
+    ///              face normal.
+    /// * `face_arity` - Only faces matching the given arities will be
+    ///                  affected.
+    /// * `regular_faces_only` - Only faces whose edges are 90% the same length,
+    ///               within the same face, are affected.
+    #[cfg(feature = "nsi")]
+    pub fn to_nsi(
+        &self,
+        ctx: &nsi::Context,
+        parent: Option<&str>,
+        crease_hardness: Option<f32>,
+        corner_hardness: Option<f32>,
+    ) -> String {
+        let parent = match parent {
+            Some(p) => p,
+            None => ".root",
+        };
+
+        // Create a new mesh node.
         ctx.create(self.name.clone(), nsi::NodeType::Mesh, &[]);
 
-        // Connect the 'dodecahedron' node to the scene's root.
-        ctx.connect(self.name.clone(), "", nsi::NodeType::Root, "objects", &[]);
+        // Connect the node to the scene's root.
+        ctx.connect(self.name.clone(), "", parent, "objects", &[]);
+
+        // Flatten point vector.
+        // Fast, unsafe version. May exploce on some platforms.
+        // If so, use commented out code below instead.
+        let positions = unsafe {
+            std::slice::from_raw_parts(
+                self.points.as_ptr().cast::<Float>(),
+                3 * self.points_len(),
+            )
+        };
 
         /*
         let positions: FlatPoints = self
@@ -1700,56 +1765,94 @@ impl Polyhedron {
             .collect();
         */
 
-        let positions = unsafe {
-            std::slice::from_raw_parts(
-                self.points.as_ptr().cast::<Float>(),
-                3 * self.points_len(),
-            )
-        };
-
         let face_arity = self
             .face_index
             .par_iter()
             .map(|face| face.len() as u32)
             .collect::<Vec<_>>();
 
-        let edges = self.edges().into_iter().flatten().collect::<Vec<_>>();
         let face_index = self.face_index.concat();
 
         ctx.set_attribute(
             self.name.clone(),
             &[
+                // Positions.
                 nsi::points!("P", positions),
+                // Index into the position array.
                 nsi::unsigneds!("P.indices", &face_index),
-                // 5 points per each face.
+                // Arity of each face.
                 nsi::unsigneds!("nvertices", &face_arity),
-                // Render this as a subdivison surface.
+                // Render this as a C-C subdivison surface.
                 nsi::string!("subdivision.scheme", "catmull-clark"),
-                // Crease each of our 30 edges a bit.
-                nsi::unsigneds!("subdivision.creasevertices", &edges),
-                nsi::floats!(
-                    "subdivision.creasesharpness",
-                    &vec![10.; edges.len()]
-                ),
-                nsi::unsigned!("subdivision.smoothcreasecorners", 0),
             ],
         );
 
+        let crease_hardness = match crease_hardness {
+            Some(h) => h,
+            // Default: semi sharp creases.
+            None => 10.,
+        };
+
+        // Crease each of our edges a bit?
+        if 0.0 != crease_hardness {
+            let edges =
+                self.edges().into_par_iter().flatten().collect::<Vec<_>>();
+            ctx.set_attribute(
+                self.name.clone(),
+                &[
+                    nsi::unsigneds!("subdivision.creasevertices", &edges),
+                    nsi::floats!(
+                        "subdivision.creasesharpness",
+                        &vec![crease_hardness; edges.len()]
+                    ),
+                ],
+            );
+        }
+
+        match corner_hardness {
+            Some(hardness) => {
+                if 0.0 < hardness {
+                    let corners = self
+                        .points
+                        .par_iter()
+                        .enumerate()
+                        .map(|(i, _)| i as u32)
+                        .collect::<Vec<_>>();
+                    ctx.set_attribute(
+                        self.name.clone(),
+                        &[
+                            nsi::unsigneds!(
+                                "subdivision.cornervertices",
+                                &corners
+                            ),
+                            nsi::floats!(
+                                "subdivision.cornersharpness",
+                                &vec![hardness; corners.len()]
+                            ),
+                        ],
+                    );
+                }
+            }
+            // Have the renderer semi create sharp corners automagically.
+            None => ctx.set_attribute(
+                self.name.clone(),
+                &[
+                    // Disabling below flag activates the specific deRose
+                    // extensions for the C-C creasing algorithm
+                    // that causes any vertex with where more then three
+                    // creased edges meet to forma a corner.
+                    // See fig. 8c/d in this paper:
+                    // http://graphics.pixar.com/people/derose/publications/Geri/paper.pdf
+                    nsi::unsigned!(
+                        "subdivision.smoothcreasecorners",
+                        false as _
+                    ),
+                ],
+            ),
+        };
+
         self.name.clone()
     }
-    /*
-    function average_normal(fp) =
-        let(fl=len(fp))
-
-            let unit_normals = normale(face)
-            let(unitns=
-                [for(i=[0:fl-1])
-                    let(n=orthogonal(fp[i],fp[(i+1)%fl],fp[(i+2)%fl]))
-                    let(normn=norm(n))
-                    normn==0 ? [] : n/normn
-          ]
-         )
-    vsum(unitns)/len(unitns);*/
 
     pub fn export_as_obj(
         &self,
@@ -1812,6 +1915,7 @@ impl Polyhedron {
         }
     }
 
+    #[inline]
     pub fn cube() -> Self {
         Self::hexahedron()
     }

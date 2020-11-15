@@ -32,20 +32,21 @@ functional, lends itself well to translation into functional Rust.
 - [x] **w** - whirl
 - [x] **z** - zip (equiv. to **dk**)
 
-### Other Operators
+### Other Operators (TBD)
 
-- [ ] **l** - stellate
 - [ ] **i** - inset/loft
+- [ ] **h** - hexpropellor
+- [ ] **l** - stellate
 - [ ] **x** - extrude
 - [ ] **z** - triangulate
-- [ ] **h** - hollow
+- [ ] **H** - hollow (called ’intrude‘ in Wings3D)
 
 ## Playing
 
 There is a playground example app to test things & have fun:
 
 ```
-cargo run --release --example playground
+cargo run --release --example playground --features="nsi"
 ```
 
 ### Keyboard Commands
