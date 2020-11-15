@@ -7,9 +7,9 @@ and others.
 
 ![Some brutalist Polyhedron, rendered with 3Delight|ɴsɪ](polyhedron.jpg)
 
-*Some brutalist Polyhedron, rendered with
-[3Delight|ɴsɪ](www.3delight.com) and post processed in
-[Darktable](https://www.darktable.org/)*
+*Some brutalist polyhedron; rendered with
+[3Delight|ɴsɪ](https://www.3delight.com) and post processed in
+[Darktable](https://www.darktable.org/).*
 
 This is an experiment to improve my understanding of iterators in Rust.
 It is based on [Kit Wallace](http://kitwallace.tumblr.com/tagged/conway)’s
