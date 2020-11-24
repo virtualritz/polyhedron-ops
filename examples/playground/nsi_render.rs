@@ -6,7 +6,7 @@ use std::{env, path::PathBuf};
 fn nsi_globals_and_camera(
     c: &nsi::Context,
     name: &str,
-    camera_xform: &[f64; 16],
+    _camera_xform: &[f64; 16],
     render_quality: u32,
 ) {
     // Setup a camera transform.
@@ -94,10 +94,13 @@ fn nsi_globals_and_camera(
     // Setup an output driver.
     c.create("driver1", nsi::NodeType::OutputDriver, &[]);
     c.connect("driver1", "", name, "outputdrivers", &[]);
-    c.set_attribute("driver1", &[
-        nsi::string!("drivername", "idisplay"),
-        nsi::string!("filename", name),
-    ]);
+    c.set_attribute(
+        "driver1",
+        &[
+            nsi::string!("drivername", "idisplay"),
+            nsi::string!("filename", name),
+        ],
+    );
 
     /*
     c.create("driver2", nsi::NodeType::OutputDriver, &[]);
@@ -219,14 +222,11 @@ pub fn nsi_render(
             ]),
             RenderType::Dump => nsi::Context::new(&[
                 nsi::string!("type", "apistream"),
-                nsi::string!(
-                    "streamfilename",
-                    destination.to_string_lossy().to_string()
-                ),
+                nsi::string!("streamfilename", destination.to_str().unwrap()),
             ]),
         }
     }
-    .expect("Could not create NSI rendering context.");
+    .unwrap();
 
     nsi_globals_and_camera(
         &ctx,

@@ -1,32 +1,32 @@
-#[macro_use]
-extern crate slice_as_array;
+use kiss3d::{
+    camera::{ArcBall, FirstPerson},
+    event::{Action, Key, Modifiers, WindowEvent},
+    light::Light,
+    resource::Mesh,
+    window::Window,
+};
+use rayon::prelude::*;
+use std::{cell::RefCell, io, io::Write, rc::Rc};
+//extern crate polyhedron_ops;
+use polyhedron_ops::prelude::*;
+
+#[cfg(feature = "nsi")]
+mod nsi_render;
+#[cfg(feature = "nsi")]
+use slice_as_array::*;
+#[cfg(feature = "nsi")]
+use std::path::Path;
+
+#[cfg(feature = "nsi")]
+use kiss3d::camera::Camera;
+use na::{Point3, Vector3};
+use nalgebra as na;
 
 pub enum RenderType {
     Normal,
     Cloud,
     Dump,
 }
-
-mod nsi_render;
-
-extern crate nalgebra;
-use na::{Point3, UnitQuaternion, Vector3};
-use nalgebra as na;
-
-extern crate kiss3d;
-use kiss3d::{
-    camera::{ArcBall, Camera, FirstPerson},
-    event::{Action, Key, Modifiers, WindowEvent},
-    light::Light,
-    resource::Mesh,
-    window::Window,
-};
-
-use rayon::prelude::*;
-use std::{cell::RefCell, io, io::Write, path::Path, rc::Rc};
-
-extern crate polyhedron_ops;
-use polyhedron_ops::prelude::*;
 
 #[inline]
 fn as_points<'a>(f: &[Index], points: &'a Points) -> PointsRef<'a> {
@@ -155,7 +155,7 @@ fn main() {
 
     let mut render_quality = 0;
 
-    print!(
+    println!(
         "Press one of:\n\
         ____________________________________________ Start Shapes (Reset) _____\n\
         [T]etrahedron\n\
@@ -186,12 +186,18 @@ fn main() {
         _______________________________________________________ Modifiers _____\n\
         (Shift)+⬆⬇︎ – modify the last operation marked with ↑↓ (10× w. [Shift])\n\
         [Delete]    – Undo last operation\n\
+        _______________________________________________________ Exporting _____");
+    #[cfg(feature = "nsi")]
+    print!("(Shift)+");
+    print!("[Space] – save as OBJ");
+    #[cfg(feature = "nsi")]
+    print!(" (dump to NSI w. [Shift])\n\
         _______________________________________________________ Rendering _____\n\
         (Shift)+[Enter] – Render (in the cloud w. [Shift])\n\
-        [0]..[9]        – Set render quality preview .. super high quality\n\
-        _______________________________________________________ Exporting _____\n\
-        (Shift)+[Space] – save as OBJ (dump to NSI w. [Shift])\n\
-        _______________________________________________________________________\n\
+        [0]..[9]        – Set render quality: [preview]..[super high quality]"
+    );
+    print!(
+        "\n_______________________________________________________________________\n\
         ❯ {} – render quality {:<80}\r", poly.name(), render_quality
     );
     io::stdout().flush().unwrap();
@@ -396,26 +402,29 @@ fn main() {
                         }
                         Key::Space => {
                             if modifiers.intersects(Modifiers::Shift) {
-                                let xform = arc_ball
-                                    .inverse_transformation()
-                                    .iter()
-                                    .map(|e| *e as f64)
-                                    .collect::<Vec<_>>();
+                                #[cfg(feature = "nsi")]
+                                {
+                                    let xform = arc_ball
+                                        .inverse_transformation()
+                                        .iter()
+                                        .map(|e| *e as f64)
+                                        .collect::<Vec<_>>();
 
-                                println!(
-                                    "Dumped to {}",
-                                    nsi_render::nsi_render(
-                                        &path,
-                                        &poly,
-                                        slice_as_array!(
-                                            xform.as_slice(),
-                                            [f64; 16]
+                                    println!(
+                                        "Dumped to {}",
+                                        nsi_render::nsi_render(
+                                            &path,
+                                            &poly,
+                                            slice_as_array!(
+                                                xform.as_slice(),
+                                                [f64; 16]
+                                            )
+                                            .unwrap(),
+                                            render_quality,
+                                            RenderType::Dump,
                                         )
-                                        .unwrap(),
-                                        render_quality,
-                                        RenderType::Dump,
-                                    )
-                                );
+                                    );
+                                }
                             } else {
                                 println!(
                                     "Exported to {}",
@@ -444,6 +453,7 @@ fn main() {
                         Key::Delete => {
                             poly = last_poly.clone();
                         }
+                        #[cfg(feature = "nsi")]
                         Key::Return => {
                             let xform = arc_ball
                                 .inverse_transformation()

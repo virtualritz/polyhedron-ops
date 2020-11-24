@@ -32,15 +32,15 @@
 //!
 //! The resulting shape is shown below.
 //!
-//! ![](https://raw.githubusercontent.com/virtualritz/polyhedron-operators/master/gapcD.jpg)
+//! ![](https://raw.githubusercontent.com/virtualritz/polyhedron-operators/HEAD/gapcD.jpg)
 //!
 //! ## Cargo Features
 //! The crate supports sending data to renderers implementing the
-//! [ɴsɪ](http://nsi.readthedocs.io/) API. The method is called
+//! [ɴsɪ](https://crates.io/crates/nsi/) API. The method is called
 //! `to_nsi()` and is enabled through the `"nsi"` feature:
 //! ```toml
 //! [dependencies]
-//! polyhedron-ops = { version = "0.1.0", features = [ "nsi" ] }
+//! polyhedron-ops = { version = "0.1.3", features = [ "nsi" ] }
 //! ```
 use clamped::Clamp;
 use itertools::Itertools;

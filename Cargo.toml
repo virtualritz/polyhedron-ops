@@ -1,6 +1,6 @@
 [package]
 name = "polyhedron-ops"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["Moritz Moeller <virtualritz@gmail.com>"]
 edition = "2018"
 keywords = ["3d", "creative", "geometry", "graphics", "rendering"]
@@ -20,17 +20,13 @@ ultraviolet = "0.7.5"
 itertools = "0.9.0"
 rayon = "1.5.0"
 # Add code to render polyhedra with NSI.
-nsi = { version = "0.5.4", optional = true }
+nsi = { version = "0.5.6", optional = true }
 
 [dev-dependencies]
 dirs = "3.0.1"
-nalgebra = "0.23.0"
+nalgebra = "0.23.1"
 kiss3d = "0.27.0"
 slice_as_array = "1.1.0"
-nsi = "0.5.4"
-
-[package.metadata.docs.rs]
-features = [ "nsi" ]
 
 [profile.release]
 lto = "on"
@@ -43,4 +39,7 @@ opt-level = 3
 [[example]]
 path = "examples/playground/playground.rs"
 name = "playground"
-required-features = [ "nsi" ]
+
+
+[package.metadata.docs.rs]
+features = [ "nsi" ]

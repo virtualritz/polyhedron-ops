@@ -46,6 +46,17 @@ This is in a rough shape. Probably buggy. Documentation sucks.
 
 In short: use at your own risk.
 
+## Cargo Features
+
+* `nsi` – Adds support for sending a polyhedron to an offline renderer
+          via the [ɴsɪ](https://crates.io/crates/nsi/) crate.
+
+## Base Shapes
+
+- [x] Platonic solids
+- [ ] Prisms
+- [ ] Antiprisms
+
 ## Supported Operators
 
 - [x] **a** - ambo
@@ -79,6 +90,15 @@ In short: use at your own risk.
 ## Playing
 
 There is a playground example app to test things & have fun:
+
+```
+cargo run --release --example playground"
+```
+
+If you want to produce images like the one above you need to
+[download the free version of the 3Delight renderer](https://www.3delight.com/download)
+and install that. After that, run the example with
+[ɴsɪ](https://crates.io/crates/nsi/) support:
 
 ```
 cargo run --release --example playground --features="nsi"
