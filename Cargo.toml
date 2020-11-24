@@ -25,7 +25,7 @@ nsi = { version = "0.5.6", optional = true }
 [dev-dependencies]
 dirs = "3.0.1"
 nalgebra = "0.23.1"
-kiss3d = "0.27.0"
+kiss3d = "0.28.0"
 slice_as_array = "1.1.0"
 
 [profile.release]
