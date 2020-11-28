@@ -42,7 +42,6 @@
 //! [dependencies]
 //! polyhedron-ops = { version = "0.1.3", features = [ "nsi" ] }
 //! ```
-#![feature(array_methods)]
 use clamped::Clamp;
 use itertools::Itertools;
 #[cfg(feature = "nsi")]
@@ -901,14 +900,14 @@ impl Polyhedron {
                         + face_normal(&fp).unwrap() * height_,
                 )
             })
-            .collect::<Vec<_>>();
+            .collect();
 
         let edges = self.edges();
 
         let reversed_edges: EdgeIndex =
             edges.par_iter().map(|edge| [edge[1], edge[0]]).collect();
 
-        let new_points2 = edges
+        let new_points2: Vec<(&FaceSlice, Point)> = edges
             .par_iter()
             .enumerate()
             .flat_map(|edge| {
@@ -916,18 +915,18 @@ impl Polyhedron {
                 // println!("{:?}", ep);
                 vec![
                     (
-                        edge.1.as_slice(),
+                        &edge.1[..],
                         *edge_points[0]
                             + ratio_ * (*edge_points[1] - *edge_points[0]),
                     ),
                     (
-                        reversed_edges[edge.0].as_slice(),
+                        &reversed_edges[edge.0][..],
                         *edge_points[1]
                             + ratio_ * (*edge_points[0] - *edge_points[1]),
                     ),
                 ]
             })
-            .collect::<Vec<_>>();
+            .collect();
 
         new_points.extend(new_points2);
         //  2 points per edge
