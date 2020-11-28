@@ -29,7 +29,7 @@ pub enum RenderType {
 }
 
 #[inline]
-fn as_points<'a>(f: &[Index], points: &'a Points) -> PointsRef<'a> {
+fn as_points<'a>(f: &[Index], points: &'a [Point]) -> Vec<&'a Point> {
     f.par_iter().map(|index| &points[*index as usize]).collect()
 }
 
@@ -88,7 +88,7 @@ fn into_mesh(mut polyhedron: Polyhedron) -> kiss3d::resource::Mesh {
         .collect::<Vec<_>>();
 
     Mesh::new(
-        // Dupliacate points per face so we can
+        // Duplicate points per face so we can
         // match the normals per face.
         polyhedron
             .face_index()
@@ -428,7 +428,7 @@ fn main() {
                             } else {
                                 println!(
                                     "Exported to {}",
-                                    poly.export_as_obj(&path, true)
+                                    poly.export_to_obj(&path, true)
                                         .unwrap()
                                         .display()
                                 );
