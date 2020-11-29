@@ -91,7 +91,7 @@ fn into_mesh(mut polyhedron: Polyhedron) -> kiss3d::resource::Mesh {
         // Duplicate points per face so we can
         // match the normals per face.
         polyhedron
-            .face_index()
+            .faces()
             .par_iter()
             .flat_map(|f| {
                 as_points(f, polyhedron.points())
@@ -428,7 +428,7 @@ fn main() {
                             } else {
                                 println!(
                                     "Exported to {}",
-                                    poly.export_to_obj(&path, true)
+                                    poly.write_to_obj(&path, true)
                                         .unwrap()
                                         .display()
                                 );

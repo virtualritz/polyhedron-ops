@@ -21,15 +21,16 @@ use polyhedron_ops::Polyhedron;
 use std::path::Path;
 
 // Conway notation: gapcD
-let mut polyhedron =
+let polyhedron =
     Polyhedron::dodecahedron()
         .chamfer(None, true)
         .propellor(None, true)
         .ambo(None, true)
         .gyro(None, None, true)
         .finalize();
+
 // Export as ./polyhedron-gapcD.obj
-polyhedron.export_as_obj(&Path::new("."), false);
+polyhedron.write_to_obj(&Path::new("."), false);
 ```
 
 The above code starts from a
