@@ -22,11 +22,11 @@ use std::path::Path;
 
 // Conway notation: gapcD
 let polyhedron =
-    Polyhedron::dodecahedron()
-        .chamfer(None, true)
-        .propellor(None, true)
-        .ambo(None, true)
-        .gyro(None, None, true)
+    Polyhedron::dodecahedron()  // D
+        .chamfer(None, true)    // c
+        .propellor(None, true)  // p
+        .ambo(None, true)       // a
+        .gyro(None, None, true) // g
         .finalize();
 
 // Export as ./polyhedron-gapcD.obj
@@ -52,11 +52,16 @@ In short: use at your own risk.
 * `nsi` – Adds support for sending a polyhedron to an offline renderer
           via the [ɴsɪ](https://crates.io/crates/nsi/) crate.
 
+* `obj` – Adds support form writing data out as
+          [Wavefront OBJ](https://en.wikipedia.org/wiki/Wavefront_.obj_file).
+
 ## Base Shapes
 
 - [x] Platonic solids
-- [ ] Prisms
+- [x] Prisms
 - [ ] Antiprisms
+- [ ] Pyramids
+- [ ] Johnson Solids
 
 ## Supported Operators
 

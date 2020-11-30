@@ -1,44 +1,52 @@
-#[cfg(test)]
-mod tests {
+use crate::*;
+#[test]
+fn tetrahedron_to_terahedron() {
+    // Tetrahedron
 
-    use crate::*;
-    #[test]
-    fn tetrahedron_to_terahedron() {
-        // Tetrahedron
+    let mut tetrahedron = Polyhedron::tetrahedron();
 
-        let mut tetrahedron = Polyhedron::tetrahedron();
+    //tetrahedron.dual();
+    tetrahedron.kis(Some(0.3), None, false, false);
 
-        //tetrahedron.dual();
-        tetrahedron.kis(0.3, None, false);
-
-        //let ctx = nsi::Context::new(&[nsi::string!("streamfilename",
-        // "stdout")]).unwrap(); tetrahedron.to_nsi(ctx,
-        // "terahedron");
-        tetrahedron.export_as_obj(
-            &std::path::PathBuf::from("/Users/moritz/tetrahedron.obj"),
-            true,
-        );
+    //let ctx = nsi::Context::new(&[nsi::string!("streamfilename",
+    // "stdout")]).unwrap(); tetrahedron.to_nsi(ctx,
+    // "terahedron");
+    if cfg!(feature = "obj") {
+        tetrahedron
+            .write_to_obj(&std::path::PathBuf::from("."), false)
+            .unwrap();
     }
+}
 
-    #[test]
-    fn cube_to_octahedron() {
-        let mut cube = Polyhedron::hexahedron();
+#[test]
+fn cube_to_octahedron() {
+    let mut cube = Polyhedron::hexahedron();
 
-        cube.dual();
-        cube.export_as_obj(
-            &std::path::PathBuf::from("/Users/moritz/octahedron.obj"),
-            true,
-        );
+    cube.dual(false);
+    if cfg!(feature = "obj") {
+        cube.write_to_obj(&std::path::PathBuf::from("."), false)
+            .unwrap();
     }
+}
 
-    #[test]
-    fn trinangulate_cube() {
-        let mut cube = Polyhedron::hexahedron();
+#[test]
+fn triangulate_cube() {
+    let mut cube = Polyhedron::hexahedron();
 
-        cube.triangulate(true);
-        cube.export_as_obj(
-            &std::path::PathBuf::from("/Users/moritz/triangulated_cube.obj"),
-            true,
-        );
+    cube.triangulate(true);
+    if cfg!(feature = "obj") {
+        cube.write_to_obj(&std::path::PathBuf::from("."), false)
+            .unwrap();
+    }
+}
+
+#[test]
+fn make_pentagonal_prism() {
+    let pentagonal_prism = Polyhedron::prism(5);
+
+    if cfg!(feature = "obj") {
+        pentagonal_prism
+            .write_to_obj(&std::path::PathBuf::from("."), false)
+            .unwrap();
     }
 }

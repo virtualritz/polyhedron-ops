@@ -29,7 +29,7 @@ pub enum RenderType {
 }
 
 #[inline]
-fn as_points<'a>(f: &[Index], points: &'a [Point]) -> Vec<&'a Point> {
+fn as_points<'a>(f: &[VertexKey], points: &'a [Point]) -> Vec<&'a Point> {
     f.par_iter().map(|index| &points[*index as usize]).collect()
 }
 
@@ -158,7 +158,7 @@ fn main() {
     println!(
         "Press one of:\n\
         ____________________________________________ Start Shapes (Reset) _____\n\
-        [T]etrahedron\n\
+        [T]etrahedron              [P]rism ↑↓\n\
         [C]ube (Hexahedron)\n\
         [O]ctahedron\n\
         [D]dodecahedron\n\
@@ -182,7 +182,7 @@ fn main() {
         [s]nub ↑↓\n\
         [t]runcate ↑↓\n\
         [w]hirl ↑↓\n\
-        [z]ip ↑↓\n\
+        [z]ip ↑↓                   quic[K] & dirty canonicalize\n\
         _______________________________________________________ Modifiers _____\n\
         (Shift)+⬆⬇︎ – modify the last operation marked with ↑↓ (10× w. [Shift])\n\
         [Delete]    – Undo last operation\n\
@@ -343,10 +343,17 @@ fn main() {
                         Key::P => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            last_op_value = 1. / 3.;
-                            poly.propellor(None, true);
-                            poly.normalize();
-                            last_op = 'p';
+                            if modifiers.intersects(Modifiers::Shift) {
+                                last_op_value = 0.03;
+                                poly = Polyhedron::prism(3);
+                                poly.normalize();
+                                last_op = 'P';
+                            } else {
+                                last_op_value = 1. / 3.;
+                                poly.propellor(None, true);
+                                poly.normalize();
+                                last_op = 'p';
+                            }
                         }
                         Key::Q => {
                             alter_last_op = false;
@@ -530,6 +537,12 @@ fn main() {
                             }
                             'p' => {
                                 poly.propellor(Some(last_op_value), true);
+                            }
+                            'P' => {
+                                poly = Polyhedron::prism(
+                                    (last_op_value * 100.) as _,
+                                );
+                                poly.normalize();
                             }
                             'q' => {
                                 poly.quinto(Some(last_op_value), true);
