@@ -52,7 +52,7 @@ In short: use at your own risk.
 * `nsi` – Adds support for sending a polyhedron to an offline renderer
           via the [ɴsɪ](https://crates.io/crates/nsi/) crate.
 
-* `obj` – Adds support form writing data out as
+* `obj` – Adds support for writing data out as
           [Wavefront OBJ](https://en.wikipedia.org/wiki/Wavefront_.obj_file).
 
 ## Base Shapes
@@ -101,7 +101,7 @@ There is a playground example app to test things & have fun:
 cargo run --release --example playground"
 ```
 
-If you want to produce images like the one above you need to
+If you want to produce images like the ones above you need to
 [download the free version of the 3Delight renderer](https://www.3delight.com/download)
 and install that. After that, run the example with
 [ɴsɪ](https://crates.io/crates/nsi/) support:

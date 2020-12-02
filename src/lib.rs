@@ -580,19 +580,20 @@ impl Polyhedron {
         let new_points: Vec<(&FaceSlice, Point)> = self
             .face_index
             .par_iter()
-            .filter(|face| {
-                selected_face(face, face_arity.as_ref()) && !regular_faces_only
-                    || ((face_irregular_faces_onlyity(face, &self.points)
-                        - 1.0)
-                        .abs()
-                        < 0.1)
-            })
-            .map(|face| {
-                let fp = as_points(face, &self.points);
-                (
-                    face.as_slice(),
-                    centroid_ref(&fp) + face_normal(&fp).unwrap() * height_,
-                )
+            .filter_map(|face| {
+                if selected_face(face, face_arity.as_ref()) && !regular_faces_only
+                || ((face_irregular_faces_onlyity(face, &self.points)
+                    - 1.0)
+                    .abs()
+                    < 0.1) {
+                    let fp = as_points(face, &self.points);
+                    Some((
+                        face.as_slice(),
+                        centroid_ref(&fp) + face_normal(&fp).unwrap() * height_,
+                    ))
+                } else {
+                    None
+                }
             })
             .collect();
 
@@ -1195,7 +1196,7 @@ impl Polyhedron {
         max_resize(&mut self.points, 1.);
     }
 
-    /// Computer the edges of the polyhedron.
+    /// Compute the edges of the polyhedron.
     #[inline]
     pub fn to_edges(&self) -> Edges {
         distinct_edges(&self.face_index)
@@ -1320,12 +1321,12 @@ impl Polyhedron {
     /// Sends the polyhedron to the specified
     /// [ɴsɪ](https:://crates.io/crates/nsi) context.
     /// # Arguments
-    /// * `crease_hardness` - The hardness of edges.
+    /// * `crease_hardness` - The hardness of edges (default: 10).
     ///
-    /// * `corner_hardness` - The hardness of vertices.
+    /// * `corner_hardness` - The hardness of vertices (default: 0).
     ///
-    /// * `smooth_corners` - Whether to keep corners where more than
-    ///     two edges meet smooth. When set to `false` these
+    /// * `smooth_corners` - Whether to keep corners smooth, where more
+    ///     than two edges meet. When set to `false` these
     ///     automatically form a hard corner with the same hardness
     ///     as `crease_hardness`..
     #[cfg(feature = "nsi")]
