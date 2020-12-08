@@ -98,7 +98,7 @@ fn nsi_globals_and_camera(
         "driver1",
         &[
             nsi::string!("drivername", "idisplay"),
-            nsi::string!("filename", name),
+            nsi::string!("filename", name.to_string() + ".exr"),
         ],
     );
 
@@ -230,14 +230,15 @@ pub fn nsi_render(
 
     nsi_globals_and_camera(
         &ctx,
-        &(polyhedron.name().to_string() + ".exr"),
+        &polyhedron.name(),
         camera_xform,
         render_quality,
     );
 
     nsi_environment(&ctx);
 
-    let name = polyhedron.to_nsi(&ctx, None, None, None);
+    let name = polyhedron.to_nsi(&ctx, Some(&(polyhedron.name().to_string() + "-mesh")), None, None, None);
+    ctx.connect(name.clone(), "", ".root", "objects", &[]);
 
     nsi_material(&ctx, &name);
 

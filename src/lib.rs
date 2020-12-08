@@ -1329,6 +1329,9 @@ impl Polyhedron {
     /// Sends the polyhedron to the specified
     /// [ɴsɪ](https:://crates.io/crates/nsi) context.
     /// # Arguments
+    /// * `handle` – Handle of the node being created. If omitted, the
+    ///     name of the polyhedron will be used as a handle.
+    ///
     /// * `crease_hardness` - The hardness of edges (default: 10).
     ///
     /// * `corner_hardness` - The hardness of vertices (default: 0).
@@ -1341,12 +1344,14 @@ impl Polyhedron {
     pub fn to_nsi(
         &self,
         ctx: &nsi::Context,
+        handle: Option<&str>,
         crease_hardness: Option<f32>,
         corner_hardness: Option<f32>,
         smooth_corners: Option<bool>,
     ) -> String {
+        let handle = handle.unwrap_or(self.name.as_str()).to_string();
         // Create a new mesh node.
-        ctx.create(self.name.clone(), nsi::NodeType::Mesh, &[]);
+        ctx.create(handle.clone(), nsi::NodeType::Mesh, &[]);
 
         // Flatten point vector.
         // Fast, unsafe version. May exploce on some platforms.
@@ -1375,7 +1380,7 @@ impl Polyhedron {
         let face_index = self.face_index.concat();
 
         ctx.set_attribute(
-            self.name.clone(),
+            handle.clone(),
             &[
                 // Positions.
                 nsi::points!("P", positions),
@@ -1399,7 +1404,7 @@ impl Polyhedron {
                 .flat_map(|edge| edge.to_vec())
                 .collect::<Vec<_>>();
             ctx.set_attribute(
-                self.name.clone(),
+                handle.clone(),
                 &[
                     nsi::unsigneds!("subdivision.creasevertices", &edges),
                     nsi::floats!(
@@ -1420,7 +1425,7 @@ impl Polyhedron {
                         .map(|(i, _)| i as u32)
                         .collect::<Vec<_>>();
                     ctx.set_attribute(
-                        self.name.clone(),
+                        handle.clone(),
                         &[
                             nsi::unsigneds!(
                                 "subdivision.cornervertices",
@@ -1437,7 +1442,7 @@ impl Polyhedron {
 
             // Have the renderer semi create sharp corners automagically.
             None => ctx.set_attribute(
-                self.name.clone(),
+                handle.clone(),
                 &[
                     // Disabling below flag activates the specific deRose
                     // extensions for the C-C creasing algorithm
@@ -1453,7 +1458,7 @@ impl Polyhedron {
             ),
         };
 
-        self.name.clone()
+        handle
     }
 
     /// Write the polyhedron to a
