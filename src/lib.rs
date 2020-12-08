@@ -163,24 +163,32 @@ impl Polyhedron {
         }
     }
 
-    #[inline]
-    fn points_to_faces(mesh: &Self) -> Faces {
-        mesh.points
-            .par_iter()
-            .enumerate()
-            .map(|vertex| {
-                // Each old vertex creates a new face.
-                ordered_vertex_faces(
-                    vertex.0 as VertexKey,
-                    &vertex_faces(vertex.0 as VertexKey, &mesh.face_index),
-                )
-                .iter()
-                .map(|original_face|
-                    // With vertex faces in left-hand order.
-                    index_of(original_face, &mesh.face_index).unwrap() as VertexKey)
-                .collect()
-            })
-            .collect()
+    /// Returns the axis-aligned bounding box of the polyhedron in the
+    /// format `[x_min, x_max, y_min, y_max, z_min, z_max]`.
+    pub fn bounds(&self) -> [Float; 6] {
+        let mut bounds = [0.0f32; 6];
+        self.points.iter().for_each(
+            |point| {
+                if bounds[0] > point.x {
+                    bounds[0] = point.x;
+                } else if bounds[1] < point.x {
+                    bounds[1] = point.x;
+                }
+
+                if bounds[2] > point.y {
+                    bounds[2] = point.y;
+                } else if bounds[3] < point.y {
+                    bounds[3] = point.y;
+                }
+
+                if bounds[4] > point.z {
+                    bounds[4] = point.z;
+                } else if bounds[5] < point.z {
+                    bounds[5] = point.z;
+                }
+            }
+        );
+        bounds
     }
 
     /// Appends indices for newly added faces
@@ -419,7 +427,7 @@ impl Polyhedron {
     /// Replaces each face with a vertex, and each vertex with a face.
     pub fn dual(&mut self, change_name: bool) -> &mut Self {
         let new_points = face_centers(&self.face_index, &self.points);
-        self.face_index = Self::points_to_faces(self);
+        self.face_index = points_to_faces(&self.points, &self.face_index);
         self.points = new_points;
         // FIXME: FaceSetIndex
 
