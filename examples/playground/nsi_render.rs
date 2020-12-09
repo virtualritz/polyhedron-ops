@@ -237,7 +237,13 @@ pub fn nsi_render(
 
     nsi_environment(&ctx);
 
-    let name = polyhedron.to_nsi(&ctx, Some(&(polyhedron.name().to_string() + "-mesh")), None, None, None);
+    let name = polyhedron.to_nsi(
+        &ctx,
+        Some(&(polyhedron.name().to_string() + "-mesh")),
+        None,
+        None,
+        None,
+    );
     ctx.connect(name.clone(), "", ".root", "objects", &[]);
 
     nsi_material(&ctx, &name);

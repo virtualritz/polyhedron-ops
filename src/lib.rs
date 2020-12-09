@@ -139,6 +139,24 @@ impl From<RegularTiling> for Polyhedron {
     }
 }
 
+#[cfg(feature = "tilings")]
+use tilings::SemiRegularTiling;
+#[cfg(feature = "tilings")]
+impl From<SemiRegularTiling> for Polyhedron {
+    fn from(rt: SemiRegularTiling) -> Polyhedron {
+        Polyhedron {
+            points: rt
+                .points()
+                .iter()
+                .map(|p| Point::new(p.x, 0.0, p.y))
+                .collect(),
+            face_index: rt.faces().clone(),
+            face_set_index: Vec::new(),
+            name: rt.name().to_string(),
+        }
+    }
+}
+
 impl Polyhedron {
     pub fn new() -> Self {
         Self {
@@ -167,27 +185,25 @@ impl Polyhedron {
     /// format `[x_min, x_max, y_min, y_max, z_min, z_max]`.
     pub fn bounds(&self) -> [Float; 6] {
         let mut bounds = [0.0f32; 6];
-        self.points.iter().for_each(
-            |point| {
-                if bounds[0] > point.x {
-                    bounds[0] = point.x;
-                } else if bounds[1] < point.x {
-                    bounds[1] = point.x;
-                }
-
-                if bounds[2] > point.y {
-                    bounds[2] = point.y;
-                } else if bounds[3] < point.y {
-                    bounds[3] = point.y;
-                }
-
-                if bounds[4] > point.z {
-                    bounds[4] = point.z;
-                } else if bounds[5] < point.z {
-                    bounds[5] = point.z;
-                }
+        self.points.iter().for_each(|point| {
+            if bounds[0] > point.x {
+                bounds[0] = point.x;
+            } else if bounds[1] < point.x {
+                bounds[1] = point.x;
             }
-        );
+
+            if bounds[2] > point.y {
+                bounds[2] = point.y;
+            } else if bounds[3] < point.y {
+                bounds[3] = point.y;
+            }
+
+            if bounds[4] > point.z {
+                bounds[4] = point.z;
+            } else if bounds[5] < point.z {
+                bounds[5] = point.z;
+            }
+        });
         bounds
     }
 
@@ -243,7 +259,7 @@ impl Polyhedron {
 
         let new_ids = vertex_ids_edge_ref_ref(&points, 0);
 
-        let mut face_index: Faces = self
+        let face_index: Faces = self
             .face_index
             .par_iter()
             .map(|face| {
@@ -254,29 +270,28 @@ impl Polyhedron {
                     .collect::<Vec<_>>();
                 result
             })
-            .collect::<Vec<_>>();
-
-        let mut new_face_index: Faces = self
-            .points
-            // Each old vertex creates a new face ...
-            .par_iter()
-            .enumerate()
-            .map(|polygon_vertex| {
-                let vertex_number = polygon_vertex.0 as VertexKey;
-                ordered_vertex_edges(
-                    vertex_number,
-                    &vertex_faces(vertex_number, &self.face_index),
-                )
-                .iter()
-                .map(|ve| {
-                    vertex_edge(&distinct_edge(ve), &new_ids).unwrap()
-                        as VertexKey
-                })
-                .collect::<Vec<_>>()
-            })
+            .chain(
+                self.points
+                    // Each old vertex creates a new face ...
+                    .par_iter()
+                    .enumerate()
+                    .map(|polygon_vertex| {
+                        let vertex_number = polygon_vertex.0 as VertexKey;
+                        ordered_vertex_edges(
+                            vertex_number,
+                            &vertex_faces(vertex_number, &self.face_index),
+                        )
+                        .iter()
+                        .map(|ve| {
+                            vertex_edge(&distinct_edge(ve), &new_ids).unwrap()
+                                as VertexKey
+                        })
+                        .collect::<Vec<_>>()
+                    }),
+            )
             .collect();
 
-        face_index.append(&mut new_face_index);
+        //face_index.append(&mut new_face_index);
 
         self.append_new_face_set(face_index.len());
 
@@ -589,11 +604,13 @@ impl Polyhedron {
             .face_index
             .par_iter()
             .filter_map(|face| {
-                if selected_face(face, face_arity.as_ref()) && !regular_faces_only
-                || ((face_irregular_faces_onlyity(face, &self.points)
-                    - 1.0)
-                    .abs()
-                    < 0.1) {
+                if selected_face(face, face_arity.as_ref())
+                    && !regular_faces_only
+                    || ((face_irregular_faces_onlyity(face, &self.points)
+                        - 1.0)
+                        .abs()
+                        < 0.1)
+                {
                     let fp = as_points(face, &self.points);
                     Some((
                         face.as_slice(),
