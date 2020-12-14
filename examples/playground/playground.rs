@@ -156,13 +156,13 @@ fn main() {
 
     println!(
         "Press one of:\n\
-        ____________________________________________ Start Shapes (Reset) _______\n\
+        ____________________________________________ Start Shapes (Reset) ______\n\
         [T]etrahedron              [P]rism ↑↓\n\
-        [C]ube (Hexahedron)        Trian[G]le tiling\n\
-        [O]ctahedron               [S]quare tiling\n\
-        [D]dodecahedron            [H]ex tiling\n\
-        [I]cosehedron              [1]..[8] regular tiling N\n\
-        ______________________________________________________ Operations _______\n\
+        [C]ube (Hexahedron)\n\
+        [O]ctahedron\n\
+        [D]dodecahedron\n\
+        [I]cosehedron\n\
+        ______________________________________________________ Operations ______\n\
         [a]mbo ↑↓\n\
         [b]evel ↑↓\n\
         [c]chamfer ↑↓\n\
@@ -182,21 +182,21 @@ fn main() {
         [t]runcate ↑↓\n\
         [w]hirl ↑↓\n\
         [z]ip ↑↓                   quic[K] & dirty canonicalize\n\
-        _______________________________________________________ Modifiers _______\n\
-        ([Shift])+⬆⬇︎ – modify the last operation marked with ↑↓ (10× w. [Shift])\n\
+        _______________________________________________________ Modifiers ______\n\
+        (Shift)+⬆⬇︎  – modify the last operation marked with ↑↓ (10× w. [Shift])\n\
         [Delete]      – Undo last operation\n\
-        _______________________________________________________ Exporting _______");
+        _______________________________________________________ Exporting ______");
     #[cfg(feature = "nsi")]
     print!("([Shift])+");
     print!("[Space] – save as OBJ");
     #[cfg(feature = "nsi")]
     print!(" (dump to NSI w. [Shift])\n\
-        _______________________________________________________ Rendering _______\n\
-        ([Shift])+[Enter] – Render (in the cloud w. [Shift])\n\
+        _______________________________________________________ Rendering ______\n\
+        (Shift)+[Enter]   – Render (in the cloud w. [Shift])\n\
         [Shift]+[0]..[9]  – Set render quality: [preview]..[super high quality]"
     );
     print!(
-        "\n_________________________________________________________________________\n\
+        "\n________________________________________________________________________\n\
         ❯ {} – render quality {:<80}\r", poly.name(), render_quality
     );
     io::stdout().flush().unwrap();
@@ -217,79 +217,48 @@ fn main() {
                         Key::Key1 => {
                             if modifiers.intersects(Modifiers::Shift) {
                                 render_quality = 1;
-                            } else {
-                                poly = tilings::SemiRegularTiling::one(10, 10)
-                                    .into();
-                                poly.normalize();
                             }
                         }
                         Key::Key2 => {
                             if modifiers.intersects(Modifiers::Shift) {
                                 render_quality = 2;
-                            } else {
-                                poly = tilings::SemiRegularTiling::two(10, 10)
-                                    .into();
-                                poly.normalize();
                             }
                         }
                         Key::Key3 => {
                             if modifiers.intersects(Modifiers::Shift) {
                                 render_quality = 3;
-                            } else {
-                                poly =
-                                    tilings::SemiRegularTiling::three(10, 10)
-                                        .into();
-                                poly.normalize();
                             }
                         }
                         Key::Key4 => {
                             if modifiers.intersects(Modifiers::Shift) {
                                 render_quality = 4;
-                            } else {
-                                poly = tilings::SemiRegularTiling::four(10, 10)
-                                    .into();
-                                poly.normalize();
                             }
                         }
                         Key::Key5 => {
                             if modifiers.intersects(Modifiers::Shift) {
                                 render_quality = 5;
-                            } else {
-                                poly = tilings::SemiRegularTiling::five(10, 10)
-                                    .into();
-                                poly.normalize();
                             }
                         }
                         Key::Key6 => {
                             if modifiers.intersects(Modifiers::Shift) {
                                 render_quality = 6;
-                            } else {
-                                poly = tilings::SemiRegularTiling::six(10, 10)
-                                    .into();
-                                poly.normalize();
                             }
                         }
                         Key::Key7 => {
                             if modifiers.intersects(Modifiers::Shift) {
                                 render_quality = 7;
-                            } else {
-                                poly =
-                                    tilings::SemiRegularTiling::seven(10, 10)
-                                        .into();
-                                poly.normalize();
                             }
                         }
                         Key::Key8 => {
                             if modifiers.intersects(Modifiers::Shift) {
                                 render_quality = 8;
-                            } else {
-                                poly =
-                                    tilings::SemiRegularTiling::eight(10, 10)
-                                        .into();
-                                poly.normalize();
                             }
                         }
-                        Key::Key9 => render_quality = 9,
+                        Key::Key9 => {
+                            if modifiers.intersects(Modifiers::Shift) {
+                                render_quality = 9;
+                            }
+                        }
                         Key::A => {
                             alter_last_op = false;
                             last_poly = poly.clone();

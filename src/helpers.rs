@@ -340,7 +340,7 @@ pub(crate) fn orthogonal(v0: &Point, v1: &Point, v2: &Point) -> Vector {
 
 #[inline]
 pub(crate) fn are_collinear(v0: &Point, v1: &Point, v2: &Point) -> bool {
-    orthogonal(&v0, &v1, &v2).mag_sq() < 0.0001
+    orthogonal(v0, v1, v2).mag_sq() < 0.0001
 }
 
 /// Computes the normal of a face.
@@ -368,6 +368,7 @@ pub(crate) fn face_normal(points: &PointRefSlice) -> Option<Vector> {
         normal /= num_considered_edges as f32;
         Some(normal)
     } else {
+        println!("No edges considered.");
         // Total degenerate or zero size face.
         // We just return the normalized vector
         // from the origin to the center of the face.

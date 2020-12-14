@@ -107,7 +107,7 @@ and install that. After that, run the example with
 [ɴsɪ](https://crates.io/crates/nsi/) support:
 
 ```
-cargo run --release --example playground --features="nsi"
+cargo run --release --example playground --features nsi,obj
 ```
 
 ### Keyboard Commands

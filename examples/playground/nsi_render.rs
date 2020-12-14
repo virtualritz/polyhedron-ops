@@ -196,8 +196,6 @@ fn nsi_material(c: &nsi::Context, name: &str) {
                 nsi::color!("sss_color", &[0.5f32, 0.5, 0.5]),
                 nsi::float!("sss_scale", 0.0f32),
                 nsi::color!("incandescence", &[0.0f32, 0.0, 0.0]),
-                nsi::float!("incandescence_intensity", 0.0f32),
-                //nsi::color!("incandescence_multiplier", &[1.0f32, 1.0, 1.0]),
             ],
         );
     }
@@ -218,7 +216,7 @@ pub fn nsi_render(
             RenderType::Normal => nsi::Context::new(&[]),
             RenderType::Cloud => nsi::Context::new(&[
                 nsi::integer!("cloud", 1),
-                nsi::string!("software", "HOUDINI"),
+                //nsi::string!("software", "RENDERDL"),
             ]),
             RenderType::Dump => nsi::Context::new(&[
                 nsi::string!("type", "apistream"),

@@ -182,26 +182,26 @@ impl Polyhedron {
     }
 
     /// Returns the axis-aligned bounding box of the polyhedron in the
-    /// format `[x_min, x_max, y_min, y_max, z_min, z_max]`.
-    pub fn bounds(&self) -> [Float; 6] {
-        let mut bounds = [0.0f32; 6];
+    /// format `[x_min, y_min, z_min, x_max, y_max, z_max]`.
+    pub fn bounding_box(&self) -> [f64; 6] {
+        let mut bounds = [0.0f64; 6];
         self.points.iter().for_each(|point| {
-            if bounds[0] > point.x {
-                bounds[0] = point.x;
-            } else if bounds[1] < point.x {
-                bounds[1] = point.x;
+            if bounds[0] > point.x as _ {
+                bounds[0] = point.x as _;
+            } else if bounds[3] < point.x as _ {
+                bounds[3] = point.x as _;
             }
 
-            if bounds[2] > point.y {
-                bounds[2] = point.y;
-            } else if bounds[3] < point.y {
-                bounds[3] = point.y;
+            if bounds[1] > point.y as _ {
+                bounds[1] = point.y as _;
+            } else if bounds[4] < point.y as _ {
+                bounds[4] = point.y as _;
             }
 
-            if bounds[4] > point.z {
-                bounds[4] = point.z;
-            } else if bounds[5] < point.z {
-                bounds[5] = point.z;
+            if bounds[2] > point.z as _ {
+                bounds[2] = point.z as _;
+            } else if bounds[5] < point.z as _ {
+                bounds[5] = point.z as _;
             }
         });
         bounds
