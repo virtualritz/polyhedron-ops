@@ -72,6 +72,7 @@ In short: use at your own risk.
 - [x] **e** - expand (a.k.a. explode, equiv. to **aa**)
 - [x] **g** - gyro
 - [x] **j** - join (equiv. to **dad**)
+- [x] **i** - inset
 - [x] **M** - medial (equiv. to **dta**)
 - [x] **m** - meta (equiv. to **k,,3j**)
 - [x] **o** - ortho (equiv. to **jj**)

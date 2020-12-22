@@ -314,7 +314,7 @@ pub(crate) fn _project_on_sphere(points: &mut Points, radius: Float) {
 }
 
 #[inline]
-pub(crate) fn face_irregular_faces_onlyity(
+pub(crate) fn face_irregularity(
     face: &FaceSlice,
     points: &PointSlice,
 ) -> Float {

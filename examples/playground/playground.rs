@@ -169,6 +169,7 @@ fn main() {
         [d]ual\n\
         [e]xpand ↑↓\n\
         [g]yro ↑↓\n\
+        [i]nset ↑↓\n\
         [j]oin ↑↓\n\
         [k]iss ↑↓\n\
         [M]edial ↑↓\n\
@@ -271,7 +272,7 @@ fn main() {
                             alter_last_op = false;
                             last_poly = poly.clone();
                             last_op_value = 0.;
-                            poly.bevel(None, None, None, false, true);
+                            poly.bevel(None, None, None, None, true);
                             poly.normalize();
                             last_op = 'b';
                         }
@@ -323,6 +324,13 @@ fn main() {
                                 last_poly = poly.clone();
                                 poly = Polyhedron::icosahedron();
                                 poly.normalize();
+                            } else {
+                                alter_last_op = false;
+                                last_poly = poly.clone();
+                                last_op_value = 0.3;
+                                poly.inset(None, None, None, true);
+                                poly.normalize();
+                                last_op = 'i';
                             }
                         }
                         Key::J => {
@@ -337,7 +345,7 @@ fn main() {
                             alter_last_op = false;
                             last_poly = poly.clone();
                             last_op_value = 0.;
-                            poly.kis(None, None, false, true);
+                            poly.kis(None, None, None, true);
                             poly.normalize();
                             last_op = 'k';
                         }
@@ -346,10 +354,10 @@ fn main() {
                             last_poly = poly.clone();
                             last_op_value = 0.;
                             if modifiers.intersects(Modifiers::Shift) {
-                                poly.medial(None, None, None, false, true);
+                                poly.medial(None, None, None, None, true);
                                 last_op = 'M';
                             } else {
-                                poly.meta(None, None, None, false, true);
+                                poly.meta(None, None, None, None, true);
                                 last_op = 'm';
                             }
                             poly.normalize();
@@ -358,7 +366,7 @@ fn main() {
                             alter_last_op = false;
                             last_poly = poly.clone();
                             last_op_value = 0.;
-                            poly.needle(None, None, false, true);
+                            poly.needle(None, None, None, true);
                             poly.normalize();
                             last_op = 'n';
                         }
@@ -421,7 +429,7 @@ fn main() {
                                 poly.normalize();
                             } else {
                                 last_op_value = 0.;
-                                poly.truncate(None, None, false, true);
+                                poly.truncate(None, None, None, true);
                                 poly.normalize();
                                 last_op = 't';
                             }
@@ -438,7 +446,7 @@ fn main() {
                             alter_last_op = false;
                             last_poly = poly.clone();
                             last_op_value = 0.;
-                            poly.zip(None, None, false, true);
+                            poly.zip(None, None, None, true);
                             poly.normalize();
                             last_op = 'z';
                         }
@@ -534,7 +542,7 @@ fn main() {
                                     Some(last_op_value),
                                     Some(last_op_value),
                                     None,
-                                    false,
+                                    None,
                                     true,
                                 );
                             }
@@ -547,23 +555,26 @@ fn main() {
                             'g' => {
                                 poly.gyro(None, Some(last_op_value), true);
                             }
+                            'i' => {
+                                poly.inset(
+                                    Some(last_op_value),
+                                    None,
+                                    None,
+                                    true,
+                                );
+                            }
                             'j' => {
                                 poly.join(Some(last_op_value), true);
                             }
                             'k' => {
-                                poly.kis(
-                                    Some(last_op_value),
-                                    None,
-                                    false,
-                                    true,
-                                );
+                                poly.kis(Some(last_op_value), None, None, true);
                             }
                             'm' => {
                                 poly.meta(
                                     Some(last_op_value),
                                     Some(last_op_value),
                                     None,
-                                    false,
+                                    None,
                                     true,
                                 );
                             }
@@ -587,7 +598,7 @@ fn main() {
                                     Some(last_op_value),
                                     Some(last_op_value),
                                     None,
-                                    false,
+                                    None,
                                     true,
                                 );
                             }
@@ -595,7 +606,7 @@ fn main() {
                                 poly.needle(
                                     Some(last_op_value),
                                     None,
-                                    false,
+                                    None,
                                     true,
                                 );
                             }
@@ -606,7 +617,7 @@ fn main() {
                                 poly.truncate(
                                     Some(last_op_value),
                                     None,
-                                    false,
+                                    None,
                                     true,
                                 );
                             }
@@ -614,12 +625,7 @@ fn main() {
                                 poly.whirl(None, Some(last_op_value), true);
                             }
                             'z' => {
-                                poly.zip(
-                                    Some(last_op_value),
-                                    None,
-                                    false,
-                                    true,
-                                );
+                                poly.zip(Some(last_op_value), None, None, true);
                             }
 
                             _ => (),

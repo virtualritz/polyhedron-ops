@@ -27,7 +27,7 @@ num-traits = "0.2.14"
 
 [dev-dependencies]
 dirs = "3.0.1"
-nalgebra = "0.23.1"
+nalgebra = "0.23.2"
 kiss3d = { git = "https://github.com/sebcrozet/kiss3d.git" }
 slice_as_array = "1.1.0"
 
