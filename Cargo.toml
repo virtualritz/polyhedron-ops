@@ -21,8 +21,7 @@ ultraviolet = "0.7.5"
 itertools = "0.9.0"
 rayon = "1.5.0"
 # Add code to render polyhedra with NSI.
-#nsi = { version = "0.5.6", optional = true }
-nsi = { path = "../nsi", optional = true }
+nsi = { version = "0.5.6", optional = true }
 num-traits = "0.2.14"
 
 [dev-dependencies]
