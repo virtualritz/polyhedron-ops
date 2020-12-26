@@ -6,7 +6,7 @@ fn tetrahedron_to_terahedron() {
     let mut tetrahedron = Polyhedron::tetrahedron();
 
     //tetrahedron.dual();
-    tetrahedron.kis(Some(0.3), None, false, false);
+    tetrahedron.kis(Some(0.3), None, None, false);
 
     //let ctx = nsi::Context::new(&[nsi::string!("streamfilename",
     // "stdout")]).unwrap(); tetrahedron.to_nsi(ctx,

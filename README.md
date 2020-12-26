@@ -75,6 +75,7 @@ In short: use at your own risk.
 - [x] **i** - inset
 - [x] **M** - medial (equiv. to **dta**)
 - [x] **m** - meta (equiv. to **k,,3j**)
+- [x] **n** - needle (equiv. to **dt**)
 - [x] **o** - ortho (equiv. to **jj**)
 - [x] **p** - propellor
 - [x] **k** - kis

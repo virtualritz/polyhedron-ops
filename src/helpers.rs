@@ -1,4 +1,5 @@
 use crate::*;
+use ultraviolet::DVec3;
 
 // Extend a vector with some element(s)
 // ```
@@ -35,7 +36,7 @@ pub(crate) fn format_vec<T: Display>(vector: &[T]) -> String {
 }
 
 #[inline]
-pub(crate) fn _to_vadd(points: &PointSlice, v: &Vector) -> Points {
+pub(crate) fn _to_vadd(points: &PointsSlice, v: &Vector) -> Points {
     points.par_iter().map(|p| *p + *v).collect()
 }
 
@@ -45,7 +46,7 @@ pub(crate) fn vadd(points: &mut Points, v: &Vector) {
 }
 
 #[inline]
-pub(crate) fn centroid(points: &PointSlice) -> Point {
+pub(crate) fn centroid(points: &PointsSlice) -> Point {
     points
         .iter()
         .fold(Point::zero(), |accumulate, point| accumulate + *point)
@@ -100,7 +101,10 @@ pub(crate) fn ordered_vertex_edges(v: u32, vfaces: &FacesSlice) -> Edges {
 }
 
 #[inline]
-pub(crate) fn points_to_faces(points: &Points, face_index: &Faces) -> Faces {
+pub(crate) fn points_to_faces(
+    points: &PointsSlice,
+    face_index: &FacesSlice,
+) -> Faces {
     points
         .par_iter()
         .enumerate()
@@ -145,7 +149,7 @@ pub(crate) fn distinct_face_edges(face: &FaceSlice) -> Edges {
 }
 
 #[inline]
-pub(crate) fn _to_centroid_points(points: &PointSlice) -> Points {
+pub(crate) fn _to_centroid_points(points: &PointsSlice) -> Points {
     _to_vadd(points, &-centroid(points))
 }
 
@@ -155,7 +159,7 @@ pub(crate) fn center_on_centroid(points: &mut Points) {
 }
 
 #[inline]
-pub(crate) fn vnorm(points: &PointSlice) -> Vec<Float> {
+pub(crate) fn vnorm(points: &PointsSlice) -> Vec<Float> {
     points
         .par_iter()
         .map(|v| Normal::new(v.x, v.y, v.z).mag())
@@ -163,12 +167,12 @@ pub(crate) fn vnorm(points: &PointSlice) -> Vec<Float> {
 }
 // Was: average_norm
 #[inline]
-pub(crate) fn _average_magnitude(points: &PointSlice) -> Float {
+pub(crate) fn _average_magnitude(points: &PointsSlice) -> Float {
     vnorm(points).par_iter().sum::<Float>() / points.len() as Float
 }
 
 #[inline]
-pub(crate) fn max_magnitude(points: &PointSlice) -> Float {
+pub(crate) fn max_magnitude(points: &PointsSlice) -> Float {
     vnorm(points)
         .into_par_iter()
         .reduce(|| Float::NAN, Float::max)
@@ -266,16 +270,16 @@ pub(crate) fn ordered_vertex_faces(
 }
 
 #[inline]
-pub(crate) fn edge_length(edge: &Edge, points: &PointSlice) -> Float {
+pub(crate) fn edge_length(edge: &Edge, points: &PointsSlice) -> Float {
     let edge = vec![edge[0], edge[1]];
-    let points = as_points(&edge, points);
+    let points = index_as_points(&edge, points);
     (*points[0] - *points[1]).mag()
 }
 
 #[inline]
 pub(crate) fn _edge_lengths(
     edges: &_EdgeSlice,
-    points: &PointSlice,
+    points: &PointsSlice,
 ) -> Vec<Float> {
     edges
         .par_iter()
@@ -284,7 +288,7 @@ pub(crate) fn _edge_lengths(
 }
 
 #[inline]
-pub(crate) fn face_edges(face: &FaceSlice, points: &PointSlice) -> Vec<Float> {
+pub(crate) fn face_edges(face: &FaceSlice, points: &PointsSlice) -> Vec<Float> {
     ordered_face_edges(face)
         .par_iter()
         .map(|edge| edge_length(edge, points))
@@ -316,7 +320,7 @@ pub(crate) fn _project_on_sphere(points: &mut Points, radius: Float) {
 #[inline]
 pub(crate) fn face_irregularity(
     face: &FaceSlice,
-    points: &PointSlice,
+    points: &PointsSlice,
 ) -> Float {
     let lengths = face_edges(face, points);
     // The largest value in lengths or NaN (0./0.) otherwise.
@@ -326,9 +330,9 @@ pub(crate) fn face_irregularity(
 }
 
 #[inline]
-pub(crate) fn as_points<'a>(
+pub(crate) fn index_as_points<'a>(
     f: &[VertexKey],
-    points: &'a PointSlice,
+    points: &'a PointsSlice,
 ) -> Vec<&'a Point> {
     f.par_iter().map(|index| &points[*index as usize]).collect()
 }
@@ -340,35 +344,80 @@ pub(crate) fn orthogonal(v0: &Point, v1: &Point, v2: &Point) -> Vector {
 
 #[inline]
 pub(crate) fn are_collinear(v0: &Point, v1: &Point, v2: &Point) -> bool {
-    orthogonal(v0, v1, v2).mag_sq() < 0.0001
+    orthogonal(v0, v1, v2).mag_sq() < 0.0000001
 }
 
 /// Computes the normal of a face.
 /// Tries to do the right thing if the face
 /// is non-planar or degenerate.
-#[allow(clippy::unnecessary_wraps)]
 #[inline]
-pub(crate) fn face_normal(points: &PointRefSlice) -> Option<Vector> {
-    let mut normal = Vector::zero();
-    let mut num_considered_edges = 0;
+pub(crate) fn face_normal(points: &PointRefSlice) -> Option<Normal> {
+    let mut considered_edges = 0;
 
-    points
+    let normal = points
         .iter()
         .cycle()
         .tuple_windows::<(_, _, _)>()
         .take(points.len())
-        // Filter out collinear edge pairs
+        // Filter out collinear edge pairs.
         .filter(|corner| !are_collinear(&corner.0, &corner.1, &corner.2))
-        .for_each(|corner| {
-            num_considered_edges += 1;
-            normal -= orthogonal(&corner.0, &corner.1, &corner.2).normalized();
+        .fold(Vector::zero(), |normal, corner| {
+            considered_edges += 1;
+            normal - orthogonal(&corner.0, &corner.1, &corner.2).normalized()
         });
 
-    if 0 != num_considered_edges {
-        normal /= num_considered_edges as f32;
-        Some(normal)
+    if considered_edges != 0 {
+        Some(normal / considered_edges as f32)
     } else {
-        println!("No edges considered.");
+        println!("P-ops] No edges considered.\nFace: {:?}", points);
+        // Total degenerate or zero size face.
+        // We just return the normalized vector
+        // from the origin to the center of the face.
+        Some(centroid_ref(points).normalized())
+
+        // FIXME: this branch should return None.
+        // We need a method to cleanup geometry
+        // of degenrate faces/edges instead.
+    }
+}
+
+#[inline]
+pub(crate) fn orthogonal_f64(v0: &Point, v1: &Point, v2: &Point) -> DVec3 {
+    (DVec3::new(v1.x as _, v1.y as _, v1.z as _)
+        - DVec3::new(v0.x as _, v0.y as _, v0.z as _))
+    .cross(
+        DVec3::new(v2.x as _, v2.y as _, v2.z as _)
+            - DVec3::new(v1.x as _, v1.y as _, v1.z as _),
+    )
+}
+
+#[inline]
+pub(crate) fn are_collinear_f64(v0: &Point, v1: &Point, v2: &Point) -> bool {
+    orthogonal_f64(v0, v1, v2).mag_sq() < 0.0000001
+}
+
+#[inline]
+pub(crate) fn face_normal_f64(points: &PointRefSlice) -> Option<Normal> {
+    let mut considered_edges = 0;
+
+    let normal = points
+        .iter()
+        .cycle()
+        .tuple_windows::<(_, _, _)>()
+        .take(points.len())
+        // Filter out collinear edge pairs.
+        .filter(|corner| !are_collinear_f64(&corner.0, &corner.1, &corner.2))
+        .fold(DVec3::zero(), |normal, corner| {
+            considered_edges += 1;
+            normal
+                - orthogonal_f64(&corner.0, &corner.1, &corner.2).normalized()
+        });
+
+    if considered_edges != 0 {
+        let n = normal / considered_edges as f64;
+        Some(Vector::new(n.x as _, n.y as _, n.z as _))
+    } else {
+        println!("P-ops] No edges considered.\nFace: {:?}", points);
         // Total degenerate or zero size face.
         // We just return the normalized vector
         // from the origin to the center of the face.
@@ -501,18 +550,18 @@ pub(crate) fn distinct_edges(faces: &FacesSlice) -> Edges {
 #[inline]
 pub(crate) fn face_centers(
     face_index: &FacesSlice,
-    points: &PointSlice,
+    points: &PointsSlice,
 ) -> Points {
     face_index
         .iter()
-        .map(|face| centroid_ref(&as_points(face, points)))
+        .map(|face| centroid_ref(&index_as_points(face, points)))
         .collect()
 }
 
 #[inline]
 pub(crate) fn reciprocate_face_centers(
     face_index: &FacesSlice,
-    points: &PointSlice,
+    points: &PointsSlice,
 ) -> Points {
     face_centers(face_index, points)
         .iter()

@@ -35,49 +35,10 @@ fn as_points<'a>(f: &[VertexKey], points: &'a [Point]) -> Vec<&'a Point> {
 
 fn into_mesh(mut polyhedron: Polyhedron) -> kiss3d::resource::Mesh {
     polyhedron.reverse();
-
-    /*
-    let mut normals_polyhedron = Polyhedron {
-        points: normals.clone(),
-        face_index: {
-            let mut index = 0u32;
-            polyhedron
-                .face_index
-                .par_iter()
-                .map(|f| {
-                    let face =
-                        (index..index + f.len() as u32).collect();
-                    index += f.len() as u32;
-                    face
-                })
-                .collect()
-        },
-    };
-
-    polyhedron.triangulate(false);
-    normals_polyhedron.triangulate(false);
-
-    // We now have two meshes with identical topology but different
-    // index arrays. We unify the mapping.
-    // FIXME: some points will be written to multiple
-    let mut normals = vec![
-        na::Vector3::new(0.0f32, 0., 0.);
-        polyhedron.points_len()
-    ];
-
-    for f in 0..polyhedron.face_index.len() {
-        for i in 0..polyhedron.face_index[f].len() {
-            let v = normals_polyhedron.points
-                [normals_polyhedron.face_index[f][i] as usize];
-
-            normals[polyhedron.face_index[f][i] as usize] =
-                na::Vector3::new(v.x, v.y, v.z);
-        }
-    }*/
-    polyhedron.triangulate(true);
+    polyhedron.triangulate(None);
 
     let normals = polyhedron
-        .normals(NormalType::Flat)
+        .normals_per_vertex_per_face(NormalType::Flat)
         .par_iter()
         .map(|n| na::Vector3::new(-n.x, -n.y, -n.z))
         .collect::<Vec<_>>();
@@ -95,7 +56,7 @@ fn into_mesh(mut polyhedron: Polyhedron) -> kiss3d::resource::Mesh {
             .par_iter()
             .flat_map(|f| {
                 as_points(f, polyhedron.points())
-                    .par_iter()
+                    .iter()
                     .map(|v| na::Point3::<f32>::new(v.x, v.y, v.z))
                     .collect::<Vec<_>>()
             })

@@ -54,6 +54,8 @@
 //! ```
 use clamped::Clamp;
 use itertools::Itertools;
+#[cfg(feature = "nsi")]
+use nsi_crate as nsi;
 use num_traits::FloatConst;
 use rayon::prelude::*;
 #[cfg(feature = "obj")]
@@ -84,7 +86,7 @@ pub type Normal = Vector;
 #[allow(dead_code)]
 pub type Normals = Vec<Normal>;
 pub type Points = Vec<Point>;
-pub(crate) type PointSlice = [Point];
+pub(crate) type PointsSlice = [Point];
 pub(crate) type PointRefSlice<'a> = [&'a Point];
 
 mod helpers;
@@ -249,7 +251,7 @@ impl Polyhedron {
         let points: Vec<(&Edge, Point)> = edges
             .par_iter()
             .map(|edge| {
-                let edge_points = as_points(edge, &self.points);
+                let edge_points = index_as_points(edge, &self.points);
                 (
                     edge,
                     ratio_ * *edge_points[0] + (1.0 - ratio_) * *edge_points[1],
@@ -290,8 +292,6 @@ impl Polyhedron {
                     }),
             )
             .collect();
-
-        //face_index.append(&mut new_face_index);
 
         self.append_new_face_set(face_index.len());
 
@@ -362,7 +362,7 @@ impl Polyhedron {
             .face_index
             .par_iter()
             .flat_map(|face| {
-                let face_points = as_points(face, &self.points);
+                let face_points = index_as_points(face, &self.points);
                 let centroid = centroid_ref(&face_points);
                 // println!("{:?}", ep);
                 let mut result = Vec::new();
@@ -505,7 +505,7 @@ impl Polyhedron {
             .face_index
             .par_iter()
             .map(|face| {
-                let fp = as_points(face, &self.points);
+                let fp = index_as_points(face, &self.points);
                 (
                     face.as_slice(),
                     centroid_ref(&fp).normalized()
@@ -513,7 +513,7 @@ impl Polyhedron {
                 )
             })
             .chain(edges.par_iter().enumerate().flat_map(|edge| {
-                let edge_points = as_points(edge.1, &self.points);
+                let edge_points = index_as_points(edge.1, &self.points);
                 vec![
                     (
                         &edge.1[..],
@@ -617,7 +617,7 @@ impl Polyhedron {
                     || ((face_irregularity(face, &self.points) - 1.0).abs()
                         < 0.1)
                 {
-                    let face_points = as_points(face, &self.points);
+                    let face_points = index_as_points(face, &self.points);
                     Some((
                         face.as_slice(),
                         centroid_ref(&face_points)
@@ -685,7 +685,7 @@ impl Polyhedron {
             .iter()
             .filter(|face| selected_face(face, face_arity.as_ref()))
             .flat_map(|face| {
-                let face_points = as_points(face, &self.points);
+                let face_points = index_as_points(face, &self.points);
                 let centroid = centroid_ref(&face_points);
                 face.iter()
                     .zip(&face_points)
@@ -721,14 +721,12 @@ impl Polyhedron {
                                 vertex(&extend![..face, b], &new_ids).unwrap();
                             vec![vec![a, b, inset_b, inset_a]]
                         })
-                        .chain(
-                            vec![face.iter()
-                                .map(|v| {
-                                    vertex(&extend![..face, *v], &new_ids)
-                                        .unwrap()
-                                })
-                                .collect::<Vec<_>>()],
-                        )
+                        .chain(vec![face
+                            .iter()
+                            .map(|v| {
+                                vertex(&extend![..face, *v], &new_ids).unwrap()
+                            })
+                            .collect::<Vec<_>>()])
                         .collect::<Vec<_>>()
                 } else {
                     vec![face.clone()]
@@ -913,7 +911,7 @@ impl Polyhedron {
             .iter()
             .zip(reversed_edges.iter())
             .flat_map(|(edge, reversed_edge)| {
-                let edge_points = as_points(edge, &self.points);
+                let edge_points = index_as_points(edge, &self.points);
                 vec![
                     (
                         edge,
@@ -996,7 +994,7 @@ impl Polyhedron {
             .to_edges()
             .par_iter()
             .map(|edge| {
-                let edge_points = as_points(edge, &self.points);
+                let edge_points = index_as_points(edge, &self.points);
                 (edge.to_vec(), height_ * (*edge_points[0] + *edge_points[1]))
             })
             .collect();
@@ -1005,7 +1003,7 @@ impl Polyhedron {
             self.face_index
                 .par_iter()
                 .flat_map(|face| {
-                    let edge_points = as_points(face, &self.points);
+                    let edge_points = index_as_points(face, &self.points);
                     let centroid = centroid_ref(&edge_points);
                     (0..face.len())
                         .map(|i| {
@@ -1167,7 +1165,7 @@ impl Polyhedron {
             .face_index
             .par_iter()
             .flat_map(|face| {
-                let face_points = as_points(face, &self.points);
+                let face_points = index_as_points(face, &self.points);
                 let center = centroid_ref(&face_points)
                     + face_normal(&face_points).unwrap() * height_;
                 face.iter()
@@ -1187,7 +1185,7 @@ impl Polyhedron {
                     .collect::<Vec<_>>()
             })
             .chain(self.to_edges().par_iter().flat_map(|edge| {
-                let edge_points = as_points(edge, &self.points);
+                let edge_points = index_as_points(edge, &self.points);
                 vec![
                     (
                         edge.to_vec(),
@@ -1323,9 +1321,11 @@ impl Polyhedron {
         &self.face_index
     }
 
+    // Resizes the polyhedron to fit inside a unit sphere.
     #[inline]
-    pub fn normalize(&mut self) {
+    pub fn normalize(&mut self) -> &mut Self {
         max_resize(&mut self.points, 1.);
+        self
     }
 
     /// Compute the edges of the polyhedron.
@@ -1334,7 +1334,120 @@ impl Polyhedron {
         distinct_edges(&self.face_index)
     }
 
-    pub fn normals(&self, normal_type: NormalType) -> Normals {
+    /// Returns a flat u32 trinagle index buffer and two matching point
+    /// and normal buffers.
+    ///
+    /// All the faces are disconnected. I.e. points & normals are
+    /// duplicated for each shared vertex.
+    pub fn to_triangle_mesh_buffers(&self) -> (Vec<u32>, Points, Normals) {
+        let (points, normals): (Vec<_>, Vec<_>) = self
+            .face_index
+            .par_iter()
+            .flat_map(|f| {
+                let average_normal =
+                    face_normal_f64(&index_as_points(f, self.points()))
+                        .unwrap();
+
+                f.iter()
+                    // Cycle forever.
+                    .cycle()
+                    // Start at 3-tuple belonging to the
+                    // face's last vertex.
+                    .skip(f.len() - 1)
+                    // Grab the next three vertex index
+                    // entries.
+                    .tuple_windows::<(_, _, _)>()
+                    // Create a normal from that
+                    .map(|t| {
+                        let point = self.points[*t.1 as usize];
+                        let normal = -orthogonal_f64(
+                            &self.points[*t.0 as usize],
+                            &point,
+                            &self.points[*t.2 as usize],
+                        )
+                        .normalized();
+                        let mag_sq = normal.mag_sq();
+
+                        (
+                            point,
+                            // If we can't calculate a normal for this
+                            // vertex we use the average face normal.
+                            if mag_sq < 0.0000001 {
+                                println!("Boo!");
+                                average_normal
+                            } else {
+                                let n = normal / mag_sq.sqrt();
+                                Vector::new(n.x as _, n.y as _, n.z as _,)
+                            },
+                        )
+                    })
+                    // For each vertex of the face.
+                    .take(f.len())
+                    .collect::<Vec<_>>()
+            })
+            .unzip();
+
+        // Build a new face index. Same topology as the old one, only
+        // with new keys.
+        let new_face_index: Faces = self
+            .face_index
+            .iter()
+            .scan(0.., |counter, face| {
+                Some(counter.take(face.len()).collect())
+            })
+            .collect();
+
+        // FIXME: combine with previous iterator.
+        let triangle_face_index = new_face_index
+            .par_iter()
+            .flat_map(|face| match face.len() {
+                // Bitriangulate quadrilateral faces
+                // use shortest diagonal so triangles are
+                // most nearly equilateral.
+                4 => {
+                    let p = index_as_points(face, &points);
+
+                    if (*p[0] - *p[2]).mag_sq() < (*p[1] - *p[3]).mag_sq() {
+                        vec![
+                            face[0], face[1], face[2], face[0], face[2],
+                            face[3],
+                        ]
+                    } else {
+                        vec![
+                            face[1], face[2], face[3], face[1], face[3],
+                            face[0],
+                        ]
+                    }
+                }
+                5 => vec![
+                    face[0], face[1], face[4], face[1], face[2], face[4],
+                    face[4], face[2], face[3],
+                ],
+                // FIXME: a nicer way to triangulate n-gons.
+                _ => {
+                    let a = face[0];
+                    let mut bb = face[1];
+                    face.iter()
+                        .skip(2)
+                        .flat_map(|c| {
+                            let b = bb;
+                            bb = *c;
+                            vec![a, b, *c]
+                        })
+                        .collect()
+                }
+            })
+            .collect();
+        // We now
+
+        (triangle_face_index, points, normals)
+    }
+
+    /// Returns normals per vertex per face.
+    pub fn normals_per_vertex_per_face(
+        &self,
+        normal_type: NormalType,
+    ) -> Normals {
         match normal_type {
             NormalType::Smooth(_angle) => vec![],
             NormalType::Flat => self
@@ -1397,7 +1510,7 @@ impl Polyhedron {
     }
 
     #[inline]
-    pub fn triangulate(&mut self, shortest: bool) -> &mut Self {
+    pub fn triangulate(&mut self, shortest: Option<bool>) -> &mut Self {
         self.face_index = self
             .face_index
             .par_iter()
@@ -1406,9 +1519,9 @@ impl Polyhedron {
                 // use shortest diagonal so triangles are
                 // most nearly equilateral.
                 4 => {
-                    let p = as_points(face, &self.points);
+                    let p = index_as_points(face, &self.points);
 
-                    if shortest
+                    if shortest.unwrap_or(true)
                         == ((*p[0] - *p[2]).mag_sq() < (*p[1] - *p[3]).mag_sq())
                     {
                         vec![
@@ -1427,6 +1540,7 @@ impl Polyhedron {
                     vec![face[1], face[2], face[4]],
                     vec![face[4], face[2], face[3]],
                 ],
+                // FIXME: a nicer way to triangulate n-gons.
                 _ => {
                     let a = face[0];
                     let mut bb = face[1];
@@ -1438,7 +1552,7 @@ impl Polyhedron {
                             vec![a, b, *c]
                         })
                         .collect()
-                } //_ => vec![face.clone()],
+                }
             })
             .collect();
 
@@ -1509,9 +1623,9 @@ impl Polyhedron {
                 // Positions.
                 nsi::points!("P", positions),
                 // VertexKey into the position array.
-                nsi::unsigneds!("P.indices", &face_index),
+                nsi::integers!("P.indices", bytemuck::cast_slice(&face_index)),
                 // Arity of each face.
-                nsi::unsigneds!("nvertices", &face_arity),
+                nsi::integers!("nvertices", bytemuck::cast_slice(&face_arity)),
                 // Render this as a C-C subdivison surface.
                 nsi::string!("subdivision.scheme", "catmull-clark"),
             ],
@@ -1530,7 +1644,10 @@ impl Polyhedron {
             ctx.set_attribute(
                 handle.clone(),
                 &[
-                    nsi::unsigneds!("subdivision.creasevertices", &edges),
+                    nsi::integers!(
+                        "subdivision.creasevertices",
+                        bytemuck::cast_slice(&edges)
+                    ),
                     nsi::floats!(
                         "subdivision.creasesharpness",
                         &vec![crease_hardness; edges.len()]
@@ -1551,9 +1668,9 @@ impl Polyhedron {
                     ctx.set_attribute(
                         handle.clone(),
                         &[
-                            nsi::unsigneds!(
+                            nsi::integers!(
                                 "subdivision.cornervertices",
-                                &corners
+                                bytemuck::cast_slice(&corners)
                             ),
                             nsi::floats!(
                                 "subdivision.cornersharpness",
@@ -1574,7 +1691,7 @@ impl Polyhedron {
                     // creased edges meet to forma a corner.
                     // See fig. 8c/d in this paper:
                     // http://graphics.pixar.com/people/derose/publications/Geri/paper.pdf
-                    nsi::unsigned!(
+                    nsi::integer!(
                         "subdivision.smoothcreasecorners",
                         smooth_corners.unwrap_or(false) as _
                     ),
@@ -1902,3 +2019,96 @@ impl Polyhedron {
        }
        */
 }
+
+#[cfg(feature = "bevy")]
+use bevy::render::{
+    mesh::{Indices, Mesh},
+    pipeline::PrimitiveTopology,
+};
+
+#[cfg(feature = "bevy")]
+impl From<Polyhedron> for Mesh {
+    fn from(mut polyhedron: Polyhedron) -> Self {
+        polyhedron.reverse();
+
+        let (index, points, normals) = polyhedron.to_triangle_mesh_buffers();
+
+        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+        mesh.set_indices(Some(Indices::U32(index)));
+        mesh.set_attribute(
+            Mesh::ATTRIBUTE_POSITION,
+            points
+                .par_iter()
+                .map(|p| [p.x, p.y, p.z])
+                .collect::<Vec<_>>(),
+        );
+        mesh.set_attribute(
+            Mesh::ATTRIBUTE_NORMAL,
+            normals
+                .par_iter()
+                .map(|n| [-n.x, -n.y, -n.z])
+                .collect::<Vec<_>>(),
+        );
+        mesh.set_attribute(
+            Mesh::ATTRIBUTE_UV_0,
+            points.par_iter().map(|_| [0.0, 0.0]).collect::<Vec<_>>(),
+        );
+
+        mesh
+    }
+}
+
+/*
+#[cfg(feature = "bevy")]
+impl From<Polyhedron> for Mesh {
+    fn from(mut polyhedron: Polyhedron) -> Self {
+        polyhedron.reverse();
+
+        let normals = polyhedron
+            .normals_per_vertex_per_face(NormalType::Flat)
+            .par_iter()
+            .map(|n| [-n.x, -n.y, -n.z])
+            .collect::<Vec<_>>();
+
+        polyhedron.triangulate(None);
+
+        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+        // Duplicate points per face so we can match the normals per
+        // face.
+
+        mesh.set_attribute(
+            Mesh::ATTRIBUTE_POSITION,
+            polyhedron
+                .faces()
+                .par_iter()
+                .flat_map(|f| {
+                    index_as_points(f, polyhedron.points())
+                        .iter()
+                        .map(|v| [v.x, v.y, v.z])
+                        .collect::<Vec<_>>()
+                })
+                .collect::<Vec<_>>(),
+        );
+        mesh.set_attribute(
+            Mesh::ATTRIBUTE_NORMAL,
+            polyhedron
+                .faces()
+                .par_iter()
+                .flat_map(|f| {
+                    index_as_points(f, polyhedron.normals())
+                        .iter()
+                        .map(|n| [n.x, n.y, n.z])
+                        .collect::<Vec<_>>()
+                })
+                .collect::<Vec<_>>(),
+        );
+        mesh.set_attribute(
+            Mesh::ATTRIBUTE_UV_0,
+            normals.par_iter().map(|_| [0.0, 0.0]).collect::<Vec<_>>(),
+        );
+        mesh.set_indices(Some(Indices::U32(
+            (0..normals.len() as u32).map(|i| i).collect::<Vec<_>>(),
+        )));
+        mesh
+    }
+}*/

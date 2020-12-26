@@ -1,5 +1,6 @@
-extern crate nsi;
+extern crate nsi_crate;
 pub use crate::*;
+use nsi_crate as nsi;
 use std::path::Path;
 use std::{env, path::PathBuf};
 
@@ -44,7 +45,7 @@ fn nsi_globals_and_camera(
         &[
             nsi::integer!("renderatlowpriority", 1),
             nsi::string!("bucketorder", "circle"),
-            nsi::unsigned!("quality.shadingsamples", 1 << (3 + render_quality)),
+            nsi::integer!("quality.shadingsamples", 1 << (3 + render_quality)),
             nsi::integer!("maximumraydepth.reflection", 6),
         ],
     );
