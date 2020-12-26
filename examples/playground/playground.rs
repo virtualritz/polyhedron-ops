@@ -33,54 +33,32 @@ fn as_points<'a>(f: &[VertexKey], points: &'a [Point]) -> Vec<&'a Point> {
     f.par_iter().map(|index| &points[*index as usize]).collect()
 }
 
-fn into_mesh(mut polyhedron: Polyhedron) -> kiss3d::resource::Mesh {
-    polyhedron.reverse();
-    polyhedron.triangulate(None);
+use itertools::Itertools;
 
-    let normals = polyhedron
-        .normals_per_vertex_per_face(NormalType::Flat)
-        .par_iter()
-        .map(|n| na::Vector3::new(-n.x, -n.y, -n.z))
-        .collect::<Vec<_>>();
-
-    let face_index = (0..normals.len() as u16)
-        .step_by(3)
-        .map(|i| na::Point3::new(i, i + 1, i + 2))
-        .collect::<Vec<_>>();
+fn into_mesh(mut polyhedron: Polyhedron) -> Mesh {
+    let (face_index, points, normals) = polyhedron.to_triangle_mesh_buffers();
 
     Mesh::new(
         // Duplicate points per face so we can
         // match the normals per face.
-        polyhedron
-            .faces()
+        points
             .par_iter()
-            .flat_map(|f| {
-                as_points(f, polyhedron.points())
-                    .iter()
-                    .map(|v| na::Point3::<f32>::new(v.x, v.y, v.z))
-                    .collect::<Vec<_>>()
-            })
+            .map(|p| na::Point3::<f32>::new(p.x, p.y, p.z))
             .collect::<Vec<_>>(),
-        face_index,
-        Some(normals),
+        face_index
+            .iter()
+            .tuples::<(_, _, _)>()
+            .map(|i| na::Point3::new(*i.0 as u16, *i.1 as _, *i.2 as _))
+            .collect::<Vec<_>>(),
+        Some(
+            normals
+                .par_iter()
+                .map(|n| na::Vector3::new(n.x, n.y, n.z))
+                .collect::<Vec<_>>(),
+        ),
         None,
         false,
     )
-
-    /* smooth shaded mesh
-    Mesh::new(
-        mesh.points
-            .par_iter()
-            .map(|v| na::Point3::<f32>::new(v.x, v.y, v.z))
-            .collect(),
-        mesh.face_index
-            .par_iter()
-            .map(|f| na::Point3::new(f[0] as u16, f[1] as u16, f[2] as u16))
-            .collect(),
-        None,
-        None,
-        false,
-    )*/
 }
 
 fn main() {

@@ -1377,7 +1377,7 @@ impl Polyhedron {
                                 average_normal
                             } else {
                                 let n = normal / mag_sq.sqrt();
-                                Vector::new(n.x as _, n.y as _, n.z as _,)
+                                Vector::new(n.x as _, n.y as _, n.z as _)
                             },
                         )
                     })
