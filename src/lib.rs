@@ -42,7 +42,11 @@
 //! ```
 //! * `bevy` – A polyhedro can be converted into a [`bevy`](https://bevyengine.org/)
 //!   [`Mesh`](https://docs.rs/bevy/latest/bevy/render/mesh/struct.Mesh.html).
-//!   See the `bevy` example. ```ignore Mesh::from(polyhedron) ```
+//!   See the `bevy` example.
+//!
+//!   ```ignore
+//!   Mesh::from(polyhedron)
+//!   ```
 //!
 //! * `nsi` – Add supports for sending data to renderers implementing the [ɴsɪ](https://crates.io/crates/nsi/)
 //!   API. The function is called [`to_nsi()`](Polyhedron::to_nsi()).
