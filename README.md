@@ -49,11 +49,15 @@ In short: use at your own risk.
 
 ## Cargo Features
 
-* `nsi` – Adds support for sending a polyhedron to an offline renderer
-          via the [ɴsɪ](https://crates.io/crates/nsi/) crate.
+* `bevy` – Add support for converting a polyhedron into a
+           [`bevy`](https://bevyengine.org/)
+           [`Mesh`](https://docs.rs/bevy/latest/bevy/render/mesh/struct.Mesh.html).
 
-* `obj` – Adds support for writing data out as
-          [Wavefront OBJ](https://en.wikipedia.org/wiki/Wavefront_.obj_file).
+* `nsi`  – Adds support for sending a polyhedron to an offline renderer
+           via the [ɴsɪ](https://crates.io/crates/nsi/) crate.
+
+* `obj`  – Adds support for writing data out as
+           [Wavefront OBJ](https://en.wikipedia.org/wiki/Wavefront_.obj_file).
 
 ## Base Shapes
 

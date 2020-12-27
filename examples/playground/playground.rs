@@ -123,19 +123,23 @@ fn main() {
         _______________________________________________________ Modifiers ______\n\
         (Shift)+⬆⬇︎  – modify the last operation marked with ↑↓ (10× w. [Shift])\n\
         [Delete]    – Undo last operation\n\
-        _______________________________________________________ Exporting ______");
+        _______________________________________________________ Exporting ______"
+    );
     #[cfg(feature = "nsi")]
     print!("([Shift])+");
     print!("[Space] – save as OBJ");
     #[cfg(feature = "nsi")]
-    print!(" (dump to NSI w. [Shift])\n\
+    print!(
+        " (dump to NSI w. [Shift])\n\
         _______________________________________________________ Rendering ______\n\
         (Shift)+[Enter]   – Render (in the cloud w. [Shift])\n\
         [Shift]+[0]..[9]  – Set render quality: [preview]..[super high quality]"
     );
     print!(
         "\n________________________________________________________________________\n\
-        ❯ {} – render quality {:<80}\r", poly.name(), render_quality
+        ❯ {} – render quality {:<80}\r",
+        poly.name(),
+        render_quality
     );
     io::stdout().flush().unwrap();
 
@@ -408,11 +412,7 @@ fn main() {
                                         nsi_render::nsi_render(
                                             &path,
                                             &poly,
-                                            slice_as_array!(
-                                                xform.as_slice(),
-                                                [f64; 16]
-                                            )
-                                            .unwrap(),
+                                            slice_as_array!(xform.as_slice(), [f64; 16]).unwrap(),
                                             render_quality,
                                             RenderType::Dump,
                                         )
@@ -421,9 +421,7 @@ fn main() {
                             } else {
                                 println!(
                                     "Exported to {}",
-                                    poly.write_to_obj(&path, true)
-                                        .unwrap()
-                                        .display()
+                                    poly.write_to_obj(&path, true).unwrap().display()
                                 );
                             }
                         }
@@ -457,8 +455,7 @@ fn main() {
                             nsi_render::nsi_render(
                                 Path::new(""),
                                 &poly,
-                                slice_as_array!(xform.as_slice(), [f64; 16])
-                                    .unwrap(),
+                                slice_as_array!(xform.as_slice(), [f64; 16]).unwrap(),
                                 render_quality,
                                 if modifiers.intersects(Modifiers::Shift) {
                                     RenderType::Cloud
@@ -499,12 +496,7 @@ fn main() {
                                 poly.gyro(None, Some(last_op_value), true);
                             }
                             'i' => {
-                                poly.inset(
-                                    Some(last_op_value),
-                                    None,
-                                    None,
-                                    true,
-                                );
+                                poly.inset(Some(last_op_value), None, None, true);
                             }
                             'j' => {
                                 poly.join(Some(last_op_value), true);
@@ -528,9 +520,7 @@ fn main() {
                                 poly.propellor(Some(last_op_value), true);
                             }
                             'P' => {
-                                poly = Polyhedron::prism(
-                                    (last_op_value * 100.) as _,
-                                );
+                                poly = Polyhedron::prism((last_op_value * 100.) as _);
                                 poly.normalize();
                             }
                             'q' => {
@@ -546,12 +536,7 @@ fn main() {
                                 );
                             }
                             'n' => {
-                                poly.needle(
-                                    Some(last_op_value),
-                                    None,
-                                    None,
-                                    true,
-                                );
+                                poly.needle(Some(last_op_value), None, None, true);
                             }
                             's' => {
                                 poly.snub(None, Some(last_op_value), true);
@@ -560,12 +545,7 @@ fn main() {
                                 poly.spherize(Some(last_op_value), true);
                             }
                             't' => {
-                                poly.truncate(
-                                    Some(last_op_value),
-                                    None,
-                                    None,
-                                    true,
-                                );
+                                poly.truncate(Some(last_op_value), None, None, true);
                             }
                             'w' => {
                                 poly.whirl(None, Some(last_op_value), true);

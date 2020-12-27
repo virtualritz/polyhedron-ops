@@ -5,6 +5,7 @@ use ultraviolet::DVec3;
 // ```
 // extend![..foo, 4, 5, 6]
 // ```
+#[doc(hidden)]
 #[macro_export]
 macro_rules! extend {
     (..$v:expr, $($new:expr),*) => {{
@@ -64,21 +65,18 @@ pub(crate) fn centroid_ref(points: &PointRefSlice) -> Point {
         / points.len() as Float
 }
 
-// Centroid projected onto the spherical surface that passes to the average of the
-// given points with the center at the origin.
+// Centroid projected onto the spherical surface that passes to the average of
+// the given points with the center at the origin.
 #[inline]
-pub(crate) fn _centroid_spherical_ref(
-    points: &PointRefSlice,
-    spherical: Float,
-) -> Point {
+pub(crate) fn _centroid_spherical_ref(points: &PointRefSlice, spherical: Float) -> Point {
     let point: Point = points
         .iter()
         .fold(Point::zero(), |sum, point| sum + **point)
         / points.len() as Float;
 
     if spherical != 0.0 {
-        let avg_mag = points.iter().fold(0.0, |sum, point| sum + point.mag())
-            / points.len() as Float;
+        let avg_mag =
+            points.iter().fold(0.0, |sum, point| sum + point.mag()) / points.len() as Float;
 
         point * ((1.0 - spherical) + spherical * (point.mag() / avg_mag))
     } else {
@@ -123,10 +121,7 @@ pub(crate) fn ordered_vertex_edges(v: u32, vfaces: &FacesSlice) -> Edges {
 }
 
 #[inline]
-pub(crate) fn points_to_faces(
-    points: &PointsSlice,
-    face_index: &FacesSlice,
-) -> Faces {
+pub(crate) fn points_to_faces(points: &PointsSlice, face_index: &FacesSlice) -> Faces {
     points
         .par_iter()
         .enumerate()
@@ -203,10 +198,7 @@ pub(crate) fn max_magnitude(points: &PointsSlice) -> Float {
 /// Returns a [`Faces`] of faces
 /// containing `vertex_number`.
 #[inline]
-pub(crate) fn vertex_faces(
-    vertex_number: VertexKey,
-    face_index: &FacesSlice,
-) -> Faces {
+pub(crate) fn vertex_faces(vertex_number: VertexKey, face_index: &FacesSlice) -> Faces {
     face_index
         .par_iter()
         .filter(|face| face.contains(&vertex_number))
@@ -276,10 +268,7 @@ pub(crate) fn ordered_vertex_faces_recurse(
 }
 
 #[inline]
-pub(crate) fn ordered_vertex_faces(
-    vertex_number: VertexKey,
-    face_index: &FacesSlice,
-) -> Faces {
+pub(crate) fn ordered_vertex_faces(vertex_number: VertexKey, face_index: &FacesSlice) -> Faces {
     let mut result = vec![face_index[0].clone()];
     result.extend(ordered_vertex_faces_recurse(
         vertex_number,
@@ -299,10 +288,7 @@ pub(crate) fn edge_length(edge: &Edge, points: &PointsSlice) -> Float {
 }
 
 #[inline]
-pub(crate) fn _edge_lengths(
-    edges: &_EdgeSlice,
-    points: &PointsSlice,
-) -> Vec<Float> {
+pub(crate) fn _edge_lengths(edges: &_EdgeSlice, points: &PointsSlice) -> Vec<Float> {
     edges
         .par_iter()
         .map(|edge| edge_length(edge, points))
@@ -340,10 +326,7 @@ pub(crate) fn _project_on_sphere(points: &mut Points, radius: Float) {
 }
 
 #[inline]
-pub(crate) fn face_irregularity(
-    face: &FaceSlice,
-    points: &PointsSlice,
-) -> Float {
+pub(crate) fn face_irregularity(face: &FaceSlice, points: &PointsSlice) -> Float {
     let lengths = face_edges(face, points);
     // The largest value in lengths or NaN (0./0.) otherwise.
     lengths.par_iter().cloned().reduce(|| Float::NAN, Float::max)
@@ -352,10 +335,7 @@ pub(crate) fn face_irregularity(
 }
 
 #[inline]
-pub(crate) fn index_as_points<'a>(
-    f: &[VertexKey],
-    points: &'a PointsSlice,
-) -> Vec<&'a Point> {
+pub(crate) fn index_as_points<'a>(f: &[VertexKey], points: &'a PointsSlice) -> Vec<&'a Point> {
     f.par_iter().map(|index| &points[*index as usize]).collect()
 }
 
@@ -411,12 +391,11 @@ pub(crate) fn face_normal(points: &PointRefSlice) -> Option<Normal> {
 
 #[inline]
 pub(crate) fn _orthogonal_f64(v0: &Point, v1: &Point, v2: &Point) -> DVec3 {
-    (DVec3::new(v1.x as _, v1.y as _, v1.z as _)
-        - DVec3::new(v0.x as _, v0.y as _, v0.z as _))
-    .cross(
-        DVec3::new(v2.x as _, v2.y as _, v2.z as _)
-            - DVec3::new(v1.x as _, v1.y as _, v1.z as _),
-    )
+    (DVec3::new(v1.x as _, v1.y as _, v1.z as _) - DVec3::new(v0.x as _, v0.y as _, v0.z as _))
+        .cross(
+            DVec3::new(v2.x as _, v2.y as _, v2.z as _)
+                - DVec3::new(v1.x as _, v1.y as _, v1.z as _),
+        )
 }
 
 #[inline]
@@ -506,10 +485,7 @@ pub(crate) fn vertex_ids_ref<'a>(
 }
 
 #[inline]
-pub(crate) fn _vertex_ids(
-    entries: &[(Face, Point)],
-    offset: VertexKey,
-) -> Vec<(Face, VertexKey)> {
+pub(crate) fn _vertex_ids(entries: &[(Face, Point)], offset: VertexKey) -> Vec<(Face, VertexKey)> {
     entries
         .par_iter()
         .enumerate()
@@ -520,10 +496,7 @@ pub(crate) fn _vertex_ids(
 }
 
 #[inline]
-pub(crate) fn vertex(
-    key: &FaceSlice,
-    entries: &[(&FaceSlice, VertexKey)],
-) -> Option<VertexKey> {
+pub(crate) fn vertex(key: &FaceSlice, entries: &[(&FaceSlice, VertexKey)]) -> Option<VertexKey> {
     match entries.par_iter().find_first(|f| key == f.0) {
         Some(entry) => Some(entry.1),
         None => None,
@@ -531,10 +504,7 @@ pub(crate) fn vertex(
 }
 
 #[inline]
-pub(crate) fn vertex_edge(
-    key: &Edge,
-    entries: &[(&Edge, VertexKey)],
-) -> Option<VertexKey> {
+pub(crate) fn vertex_edge(key: &Edge, entries: &[(&Edge, VertexKey)]) -> Option<VertexKey> {
     match entries.par_iter().find_first(|f| key == f.0) {
         Some(entry) => Some(entry.1),
         None => None,
@@ -551,10 +521,7 @@ pub(crate) fn vertex_values<T>(entries: &[(T, Point)]) -> Points {
 }
 
 #[inline]
-pub(crate) fn selected_face(
-    face: &FaceSlice,
-    face_arity: Option<&Vec<usize>>,
-) -> bool {
+pub(crate) fn selected_face(face: &FaceSlice, face_arity: Option<&Vec<usize>>) -> bool {
     match face_arity {
         None => true,
         Some(arity) => arity.contains(&face.len()),
@@ -581,10 +548,7 @@ pub(crate) fn distinct_edges(faces: &FacesSlice) -> Edges {
 }
 
 #[inline]
-pub(crate) fn face_centers(
-    face_index: &FacesSlice,
-    points: &PointsSlice,
-) -> Points {
+pub(crate) fn face_centers(face_index: &FacesSlice, points: &PointsSlice) -> Points {
     face_index
         .iter()
         .map(|face| centroid_ref(&index_as_points(face, points)))
@@ -592,10 +556,7 @@ pub(crate) fn face_centers(
 }
 
 #[inline]
-pub(crate) fn reciprocate_face_centers(
-    face_index: &FacesSlice,
-    points: &PointsSlice,
-) -> Points {
+pub(crate) fn reciprocate_face_centers(face_index: &FacesSlice, points: &PointsSlice) -> Points {
     face_centers(face_index, points)
         .iter()
         .map(|center| *center / center.mag_sq())

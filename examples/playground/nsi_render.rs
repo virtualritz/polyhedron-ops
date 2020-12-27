@@ -1,6 +1,8 @@
 pub use crate::*;
-use std::path::Path;
-use std::{env, path::PathBuf};
+use std::{
+    env,
+    path::{Path, PathBuf},
+};
 
 fn nsi_globals_and_camera(
     c: &nsi::Context,
@@ -207,8 +209,7 @@ pub fn nsi_render(
     render_quality: u32,
     render_type: crate::RenderType,
 ) -> String {
-    let destination =
-        path.join(format!("polyhedron-{}.nsi", polyhedron.name()));
+    let destination = path.join(format!("polyhedron-{}.nsi", polyhedron.name()));
 
     let ctx = {
         match render_type {
@@ -225,12 +226,7 @@ pub fn nsi_render(
     }
     .unwrap();
 
-    nsi_globals_and_camera(
-        &ctx,
-        &polyhedron.name(),
-        camera_xform,
-        render_quality,
-    );
+    nsi_globals_and_camera(&ctx, &polyhedron.name(), camera_xform, render_quality);
 
     nsi_environment(&ctx);
 
