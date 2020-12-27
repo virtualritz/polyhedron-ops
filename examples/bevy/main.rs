@@ -8,6 +8,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(OrbitCameraPlugin)
         .add_startup_system(startup.system())
+        .add_system(bevy::input::system::exit_on_esc_system.system())
         .run();
 }
 

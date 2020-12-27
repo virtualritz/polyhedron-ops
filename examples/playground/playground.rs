@@ -12,13 +12,17 @@ use polyhedron_ops::prelude::*;
 
 #[cfg(feature = "nsi")]
 mod nsi_render;
+
 #[cfg(feature = "nsi")]
 use slice_as_array::*;
+
 #[cfg(feature = "nsi")]
 use std::path::Path;
 
 #[cfg(feature = "nsi")]
 use kiss3d::camera::Camera;
+
+use itertools::Itertools;
 use na::{Point3, Vector3};
 use nalgebra as na;
 
@@ -28,14 +32,7 @@ pub enum RenderType {
     Dump,
 }
 
-#[inline]
-fn as_points<'a>(f: &[VertexKey], points: &'a [Point]) -> Vec<&'a Point> {
-    f.par_iter().map(|index| &points[*index as usize]).collect()
-}
-
-use itertools::Itertools;
-
-fn into_mesh(mut polyhedron: Polyhedron) -> Mesh {
+fn into_mesh(polyhedron: Polyhedron) -> Mesh {
     let (face_index, points, normals) = polyhedron.to_triangle_mesh_buffers();
 
     Mesh::new(
@@ -48,7 +45,7 @@ fn into_mesh(mut polyhedron: Polyhedron) -> Mesh {
         face_index
             .iter()
             .tuples::<(_, _, _)>()
-            .map(|i| na::Point3::new(*i.0 as u16, *i.1 as _, *i.2 as _))
+            .map(|i| na::Point3::<u16>::new(*i.0 as _, *i.1 as _, *i.2 as _))
             .collect::<Vec<_>>(),
         Some(
             normals
@@ -119,12 +116,13 @@ fn main() {
         [q]uinto ↑↓\n\
         [r]eflect\n\
         [s]nub ↑↓\n\
+        [S]pherize ↑↓\n\
         [t]runcate ↑↓\n\
         [w]hirl ↑↓\n\
-        [z]ip ↑↓                   quic[K] & dirty canonicalize\n\
+        [z]ip ↑↓\n\
         _______________________________________________________ Modifiers ______\n\
         (Shift)+⬆⬇︎  – modify the last operation marked with ↑↓ (10× w. [Shift])\n\
-        [Delete]      – Undo last operation\n\
+        [Delete]    – Undo last operation\n\
         _______________________________________________________ Exporting ______");
     #[cfg(feature = "nsi")]
     print!("([Shift])+");
@@ -355,10 +353,16 @@ fn main() {
                         Key::S => {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            last_op_value = 0.;
-                            poly.snub(None, None, true);
-                            poly.normalize();
-                            last_op = 's';
+                            if modifiers.intersects(Modifiers::Shift) {
+                                last_op_value = 1.0;
+                                poly.spherize(None, true);
+                                last_op = 'S';
+                            } else {
+                                last_op_value = 0.;
+                                poly.snub(None, None, true);
+                                poly.normalize();
+                                last_op = 's';
+                            }
                         }
                         Key::T => {
                             alter_last_op = false;
@@ -551,6 +555,9 @@ fn main() {
                             }
                             's' => {
                                 poly.snub(None, Some(last_op_value), true);
+                            }
+                            'S' => {
+                                poly.spherize(Some(last_op_value), true);
                             }
                             't' => {
                                 poly.truncate(

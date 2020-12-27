@@ -1,6 +1,4 @@
-extern crate nsi_crate;
 pub use crate::*;
-use nsi_crate as nsi;
 use std::path::Path;
 use std::{env, path::PathBuf};
 

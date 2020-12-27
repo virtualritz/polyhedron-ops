@@ -54,8 +54,6 @@
 //! ```
 use clamped::Clamp;
 use itertools::Itertools;
-#[cfg(feature = "nsi")]
-use nsi_crate as nsi;
 use num_traits::FloatConst;
 use rayon::prelude::*;
 #[cfg(feature = "obj")]
@@ -101,6 +99,9 @@ pub mod prelude {
     //! Importing the contents of this module is recommended.
     pub use crate::*;
 }
+
+static EPSILON: f32 = 0.00000001;
+
 pub enum NormalType {
     Smooth(Float),
     Flat,
@@ -1118,6 +1119,35 @@ impl Polyhedron {
         self
     }
 
+    /// Projects all points on the unit sphere (at `strength` `1.0`).
+    ///
+    /// If `strength` is zero this is a no-op and will neither change
+    /// the geometry nor the name. Even if `change_name` is `true`.
+    pub fn spherize(
+        &mut self,
+        strength: Option<Float>,
+        change_name: bool,
+    ) -> &mut Self {
+        let strength_ = strength.unwrap_or(1.0);
+
+        if 0.0 != strength_ {
+            self.points.par_iter_mut().for_each(|point| {
+                *point =
+                    (1.0 - strength_) * *point + strength_ * point.normalized();
+            });
+
+            if change_name {
+                let mut params = String::new();
+                if let Some(strength) = strength {
+                    write!(&mut params, "{:.2}", strength).unwrap();
+                }
+                self.name = format!("S{}{}", params, self.name);
+            }
+        }
+
+        self
+    }
+
     pub fn truncate(
         &mut self,
         height: Option<Float>,
@@ -1345,8 +1375,7 @@ impl Polyhedron {
             .par_iter()
             .flat_map(|f| {
                 let average_normal =
-                    face_normal_f64(&index_as_points(f, self.points()))
-                        .unwrap();
+                    face_normal(&index_as_points(f, self.points())).unwrap();
 
                 f.iter()
                     // Cycle forever.
@@ -1357,27 +1386,24 @@ impl Polyhedron {
                     // Grab the next three vertex index
                     // entries.
                     .tuple_windows::<(_, _, _)>()
-                    // Create a normal from that
                     .map(|t| {
+                        // The middle point of out tuple
                         let point = self.points[*t.1 as usize];
-                        let normal = -orthogonal_f64(
+                        // Create a normal from that
+                        let normal = -orthogonal(
                             &self.points[*t.0 as usize],
                             &point,
                             &self.points[*t.2 as usize],
-                        )
-                        .normalized();
+                        );
                         let mag_sq = normal.mag_sq();
 
                         (
                             point,
-                            // If we can't calculate a normal for this
-                            // vertex we use the average face normal.
-                            if mag_sq < 0.0000001 {
-                                println!("Boo!");
+                            // Check for collinearity:
+                            if mag_sq < EPSILON as _ {
                                 average_normal
                             } else {
-                                let n = normal / mag_sq.sqrt();
-                                Vector::new(n.x as _, n.y as _, n.z as _)
+                                normal / mag_sq.sqrt()
                             },
                         )
                     })
@@ -1389,23 +1415,21 @@ impl Polyhedron {
 
         // Build a new face index. Same topology as the old one, only
         // with new keys.
-        let new_face_index: Faces = self
+        let triangle_face_index = self
             .face_index
             .iter()
+            // Build a new index where each face has the original arity
+            // and the new numbering.
             .scan(0.., |counter, face| {
-                Some(counter.take(face.len()).collect())
+                Some(counter.take(face.len()).collect::<Vec<u32>>())
             })
-            .collect();
-
-        // FIXME: combine with previous iterator.
-        let triangle_face_index = new_face_index
-            .par_iter()
+            // Now split each of these faces into triangles.
             .flat_map(|face| match face.len() {
                 // Bitriangulate quadrilateral faces
                 // use shortest diagonal so triangles are
                 // most nearly equilateral.
                 4 => {
-                    let p = index_as_points(face, &points);
+                    let p = index_as_points(&face, &points);
 
                     if (*p[0] - *p[2]).mag_sq() < (*p[1] - *p[3]).mag_sq() {
                         vec![
@@ -1438,75 +1462,8 @@ impl Polyhedron {
                 }
             })
             .collect();
-        // We now
 
         (triangle_face_index, points, normals)
-    }
-
-    /// Returns normals per vertex per face.
-    pub fn normals_per_vertex_per_face(
-        &self,
-        normal_type: NormalType,
-    ) -> Normals {
-        match normal_type {
-            NormalType::Smooth(_angle) => vec![],
-            NormalType::Flat => self
-                .face_index
-                .par_iter()
-                .flat_map(|f| {
-                    f.iter()
-                        // Cycle forever.
-                        .cycle()
-                        // Start at 3-tuple belonging to the
-                        // face's last vertex.
-                        .skip(f.len() - 1)
-                        // Grab the next three vertex index
-                        // entries.
-                        .tuple_windows::<(_, _, _)>()
-                        // Create a normal from that
-                        .map(|t| {
-                            -orthogonal(
-                                &self.points[*t.0 as usize],
-                                &self.points[*t.1 as usize],
-                                &self.points[*t.2 as usize],
-                            )
-                            .normalized()
-                        })
-                        .take(f.len())
-                        .collect::<Normals>()
-                })
-                .collect(),
-            /*NormalType::Flat => self
-            .face_index
-            .par_iter()
-            .for_each(|f| {
-                normals.extend(
-                    f.par_iter()
-                        // Cycle forever.
-                        .cycle()
-                        // Start at 3-tuple belonging to the
-                        // face's last vertex.
-                        .skip(f.len() - 1)
-                        // Grab the next three vertex index
-                        // entries.
-                        .tuple_windows::<(_, _, _)>()
-                        // Create a normal from that
-                        .for_each(|t| {
-                            -orthogonal(
-                                &self.points[*t.0 as usize],
-                                &self.points[*t.1 as usize],
-                                &self.points[*t.2 as usize],
-                            )
-                            .normalize()
-                        })
-                        .take(f.len())
-                        .collect::<Normals>(),
-                );
-                face_index.extend(f.par_iter())
-            })
-            .flatten()
-            .collect(),*/
-        }
     }
 
     #[inline]
@@ -1587,7 +1544,7 @@ impl Polyhedron {
         corner_hardness: Option<f32>,
         smooth_corners: Option<bool>,
     ) -> String {
-        let handle = handle.unwrap_or(self.name.as_str()).to_string();
+        let handle = handle.unwrap_or_else(|| self.name.as_str()).to_string();
         // Create a new mesh node.
         ctx.create(handle.clone(), nsi::NodeType::Mesh, &[]);
 
@@ -1602,10 +1559,10 @@ impl Polyhedron {
         };
 
         /*
-        let positions: FlatPoints = self
+        let positions: Vec<f32> = self
             .points
             .into_par_iter()
-            .flat_map(|p3| once(p3.x).chain(once(p3.y)).chain(once(p3.z)))
+            .flat_map(|p3| once(p3.x as _).chain(once(p3.y as _)).chain(once(p3.z as _)))
             .collect();
         */
 
@@ -1974,50 +1931,6 @@ impl Polyhedron {
             face_set_index: Vec::new(),
         }
     }
-
-    /*
-    function antiprism(n) {
-       var theta = 6.283185/n;        // pie angle
-       var h = Math.sqrt(1-4/(4+2*Math.cos(theta/2)-2*Math.cos(theta))); // half-height
-       var r = Math.sqrt(1-h*h);      // radius of face circle
-       var f = Math.sqrt(h*h + Math.pow(r*Math.cos(theta/2), 2));
-       r=r/f;  // correction so edge midpoints (not vertices) on unit sphere
-       h=h/f;
-       var ans = new polyhedron();
-       ans.name = "A" + n;
-
-       for (var i=0; i<n; i++)     // vertex #'s 0...n-1 around one face
-         ans.xyz[ans.xyz.length] = new Array(r*Math.cos(i*theta), r*Math.sin(i*theta), h);
-       for (var i=0; i<n; i++)     // vertex #'s n...2n-1 around other
-         ans.xyz[ans.xyz.length] = new Array(r*Math.cos((i+0.5)*theta), r*Math.sin((i+0.5)*theta), -h);
-
-       ans.face[ans.face.length] = sequence(n-1, 0);      // top
-       ans.face[ans.face.length] = sequence(n, 2*n-1);    // bottom
-       for (var i=0; i<n; i++) {                          // 2n triangular sides:
-         ans.face[ans.face.length] = new Array (i, (i+1)%n, i+n);
-         ans.face[ans.face.length] = new Array (i, i+n, ((n+i-1)%n+n));
-         }
-       ans.xyz = adjustXYZ(ans, 1);
-       return (ans);
-       }
-
-    function pyramid(n) {
-       var theta = 6.283185/n;        // pie angle
-       var ans = new polyhedron();
-       ans.name = "Y" + n;
-
-       for (var i=0; i<n; i++)     // vertex #'s 0...n-1 around base
-         ans.xyz[ans.xyz.length] = new Array(Math.cos(i*theta), Math.sin(i*theta), .2);
-       ans.xyz[ans.xyz.length] = new Array(0, 0, -2);    // apex
-
-       ans.face[ans.face.length] = sequence(n-1, 0);      // base
-       for (var i=0; i<n; i++)                            // n triangular sides:
-         ans.face[ans.face.length] = new Array (i, (i+1)%n, n);
-
-       ans.xyz = canonicalXYZ(ans, 3);
-       return (ans);
-       }
-       */
 }
 
 #[cfg(feature = "bevy")]
@@ -2049,66 +1962,13 @@ impl From<Polyhedron> for Mesh {
                 .map(|n| [-n.x, -n.y, -n.z])
                 .collect::<Vec<_>>(),
         );
+        // Bevy forces UVs. So we create some fake UVs by just
+        // projecting through, onto the XY plane.
         mesh.set_attribute(
             Mesh::ATTRIBUTE_UV_0,
-            points.par_iter().map(|_| [0.0, 0.0]).collect::<Vec<_>>(),
+            points.par_iter().map(|p| [p.x, p.y]).collect::<Vec<_>>(),
         );
 
         mesh
     }
 }
-
-/*
-#[cfg(feature = "bevy")]
-impl From<Polyhedron> for Mesh {
-    fn from(mut polyhedron: Polyhedron) -> Self {
-        polyhedron.reverse();
-
-        let normals = polyhedron
-            .normals_per_vertex_per_face(NormalType::Flat)
-            .par_iter()
-            .map(|n| [-n.x, -n.y, -n.z])
-            .collect::<Vec<_>>();
-
-        polyhedron.triangulate(None);
-
-        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
-        // Duplicate points per face so we can match the normals per
-        // face.
-
-        mesh.set_attribute(
-            Mesh::ATTRIBUTE_POSITION,
-            polyhedron
-                .faces()
-                .par_iter()
-                .flat_map(|f| {
-                    index_as_points(f, polyhedron.points())
-                        .iter()
-                        .map(|v| [v.x, v.y, v.z])
-                        .collect::<Vec<_>>()
-                })
-                .collect::<Vec<_>>(),
-        );
-        mesh.set_attribute(
-            Mesh::ATTRIBUTE_NORMAL,
-            polyhedron
-                .faces()
-                .par_iter()
-                .flat_map(|f| {
-                    index_as_points(f, polyhedron.normals())
-                        .iter()
-                        .map(|n| [n.x, n.y, n.z])
-                        .collect::<Vec<_>>()
-                })
-                .collect::<Vec<_>>(),
-        );
-        mesh.set_attribute(
-            Mesh::ATTRIBUTE_UV_0,
-            normals.par_iter().map(|_| [0.0, 0.0]).collect::<Vec<_>>(),
-        );
-        mesh.set_indices(Some(Indices::U32(
-            (0..normals.len() as u32).map(|i| i).collect::<Vec<_>>(),
-        )));
-        mesh
-    }
-}*/

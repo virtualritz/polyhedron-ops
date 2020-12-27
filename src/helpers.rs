@@ -64,6 +64,28 @@ pub(crate) fn centroid_ref(points: &PointRefSlice) -> Point {
         / points.len() as Float
 }
 
+// Centroid projected onto the spherical surface that passes to the average of the
+// given points with the center at the origin.
+#[inline]
+pub(crate) fn _centroid_spherical_ref(
+    points: &PointRefSlice,
+    spherical: Float,
+) -> Point {
+    let point: Point = points
+        .iter()
+        .fold(Point::zero(), |sum, point| sum + **point)
+        / points.len() as Float;
+
+    if spherical != 0.0 {
+        let avg_mag = points.iter().fold(0.0, |sum, point| sum + point.mag())
+            / points.len() as Float;
+
+        point * ((1.0 - spherical) + spherical * (point.mag() / avg_mag))
+    } else {
+        point
+    }
+}
+
 #[inline]
 pub(crate) fn ordered_vertex_edges_recurse(
     v: u32,
@@ -343,8 +365,8 @@ pub(crate) fn orthogonal(v0: &Point, v1: &Point, v2: &Point) -> Vector {
 }
 
 #[inline]
-pub(crate) fn are_collinear(v0: &Point, v1: &Point, v2: &Point) -> bool {
-    orthogonal(v0, v1, v2).mag_sq() < 0.0000001
+pub(crate) fn _are_collinear(v0: &Point, v1: &Point, v2: &Point) -> bool {
+    orthogonal(v0, v1, v2).mag_sq() < EPSILON
 }
 
 /// Computes the normal of a face.
@@ -359,30 +381,36 @@ pub(crate) fn face_normal(points: &PointRefSlice) -> Option<Normal> {
         .cycle()
         .tuple_windows::<(_, _, _)>()
         .take(points.len())
-        // Filter out collinear edge pairs.
-        .filter(|corner| !are_collinear(&corner.0, &corner.1, &corner.2))
         .fold(Vector::zero(), |normal, corner| {
             considered_edges += 1;
-            normal - orthogonal(&corner.0, &corner.1, &corner.2).normalized()
+            let ortho_normal = orthogonal(&corner.0, &corner.1, &corner.2);
+            let mag_sq = ortho_normal.mag_sq();
+            // Filter out collinear edge pairs.
+            if mag_sq < EPSILON as _ {
+                normal
+            } else {
+                // Subtract normalized ortho_normal.
+                normal - ortho_normal / mag_sq.sqrt()
+            }
         });
 
     if considered_edges != 0 {
         Some(normal / considered_edges as f32)
     } else {
-        println!("P-ops] No edges considered.\nFace: {:?}", points);
         // Total degenerate or zero size face.
         // We just return the normalized vector
         // from the origin to the center of the face.
-        Some(centroid_ref(points).normalized())
+        //Some(centroid_ref(points).normalized())
 
         // FIXME: this branch should return None.
         // We need a method to cleanup geometry
         // of degenrate faces/edges instead.
+        None
     }
 }
 
 #[inline]
-pub(crate) fn orthogonal_f64(v0: &Point, v1: &Point, v2: &Point) -> DVec3 {
+pub(crate) fn _orthogonal_f64(v0: &Point, v1: &Point, v2: &Point) -> DVec3 {
     (DVec3::new(v1.x as _, v1.y as _, v1.z as _)
         - DVec3::new(v0.x as _, v0.y as _, v0.z as _))
     .cross(
@@ -392,12 +420,12 @@ pub(crate) fn orthogonal_f64(v0: &Point, v1: &Point, v2: &Point) -> DVec3 {
 }
 
 #[inline]
-pub(crate) fn are_collinear_f64(v0: &Point, v1: &Point, v2: &Point) -> bool {
-    orthogonal_f64(v0, v1, v2).mag_sq() < 0.0000001
+pub(crate) fn _are_collinear_f64(v0: &Point, v1: &Point, v2: &Point) -> bool {
+    _orthogonal_f64(v0, v1, v2).mag_sq() < EPSILON as _
 }
 
 #[inline]
-pub(crate) fn face_normal_f64(points: &PointRefSlice) -> Option<Normal> {
+pub(crate) fn _face_normal_f64(points: &PointRefSlice) -> Option<Normal> {
     let mut considered_edges = 0;
 
     let normal = points
@@ -405,27 +433,32 @@ pub(crate) fn face_normal_f64(points: &PointRefSlice) -> Option<Normal> {
         .cycle()
         .tuple_windows::<(_, _, _)>()
         .take(points.len())
-        // Filter out collinear edge pairs.
-        .filter(|corner| !are_collinear_f64(&corner.0, &corner.1, &corner.2))
         .fold(DVec3::zero(), |normal, corner| {
             considered_edges += 1;
-            normal
-                - orthogonal_f64(&corner.0, &corner.1, &corner.2).normalized()
+            let ortho_normal = _orthogonal_f64(&corner.0, &corner.1, &corner.2);
+            let mag_sq = ortho_normal.mag_sq();
+            // Filter out collinear edge pairs.
+            if mag_sq < EPSILON as _ {
+                normal
+            } else {
+                // Subtract normalized ortho_normal.
+                normal - ortho_normal / mag_sq.sqrt()
+            }
         });
 
     if considered_edges != 0 {
         let n = normal / considered_edges as f64;
         Some(Vector::new(n.x as _, n.y as _, n.z as _))
     } else {
-        println!("P-ops] No edges considered.\nFace: {:?}", points);
         // Total degenerate or zero size face.
         // We just return the normalized vector
         // from the origin to the center of the face.
-        Some(centroid_ref(points).normalized())
+        //Some(centroid_ref(points).normalized())
 
         // FIXME: this branch should return None.
         // We need a method to cleanup geometry
         // of degenrate faces/edges instead.
+        None
     }
 }
 
