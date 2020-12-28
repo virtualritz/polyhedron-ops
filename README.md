@@ -49,7 +49,7 @@ In short: use at your own risk.
 
 ## Cargo Features
 
-* `bevy` – Add support for converting a polyhedron into a
+* `bevy` – Adds support for converting a polyhedron into a
            [`bevy`](https://bevyengine.org/)
            [`Mesh`](https://docs.rs/bevy/latest/bevy/render/mesh/struct.Mesh.html).
 

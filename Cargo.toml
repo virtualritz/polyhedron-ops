@@ -1,6 +1,6 @@
 [package]
 name = "polyhedron-ops"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Moritz Moeller <virtualritz@gmail.com>"]
 edition = "2018"
 keywords = ["3d", "creative", "geometry", "graphics", "rendering"]
@@ -25,7 +25,7 @@ rayon = "1.5.0"
 ultraviolet = { version = "0.7.5", features = [ "f64" ] }
 # Optional deps.
 # Add support to render polyhedra with NSI.
-nsi = { version = "0.5.6", optional = true }
+nsi = { version = "0.6.0", optional = true }
 # Add support to convert a Polyhedron into a bevy Mesh.
 bevy = { version = "0.4.0", optional = true }
 
@@ -50,7 +50,7 @@ name = "playground"
 required-features = [ "obj" ]
 
 [[example]]
-path = "examples/bevy/main.rs"
+path = "examples/bevy/bevy.rs"
 name = "bevy"
 required-features = [ "bevy" ]
 
