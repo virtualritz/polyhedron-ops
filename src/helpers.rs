@@ -84,6 +84,20 @@ pub(crate) fn _centroid_spherical_ref(points: &PointRefSlice, spherical: Float) 
     }
 }
 
+/// Return the ordered edges containing v
+pub(crate) fn vertex_edges(v: VertexKey, edges: &EdgesSlice) -> Edges {
+    edges
+        .iter()
+        .filter_map(|edge| {
+            if edge[0] == v || edge[1] == v {
+                Some(*edge)
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
 #[inline]
 pub(crate) fn ordered_vertex_edges_recurse(
     v: u32,
@@ -377,15 +391,12 @@ pub(crate) fn face_normal(points: &PointRefSlice) -> Option<Normal> {
     if considered_edges != 0 {
         Some(normal / considered_edges as f32)
     } else {
-        // Total degenerate or zero size face.
+        // Degenerate/zero size face.
+        None
+
         // We just return the normalized vector
         // from the origin to the center of the face.
         //Some(centroid_ref(points).normalized())
-
-        // FIXME: this branch should return None.
-        // We need a method to cleanup geometry
-        // of degenrate faces/edges instead.
-        None
     }
 }
 
@@ -504,9 +515,31 @@ pub(crate) fn vertex(key: &FaceSlice, entries: &[(&FaceSlice, VertexKey)]) -> Op
 }
 
 #[inline]
+pub(crate) fn vertex_point<'a>(
+    key: &FaceSlice,
+    entries: &'a [(&FaceSlice, Point)],
+) -> Option<&'a Point> {
+    match entries.par_iter().find_first(|f| key == f.0) {
+        Some(entry) => Some(&entry.1),
+        None => None,
+    }
+}
+
+#[inline]
 pub(crate) fn vertex_edge(key: &Edge, entries: &[(&Edge, VertexKey)]) -> Option<VertexKey> {
     match entries.par_iter().find_first(|f| key == f.0) {
         Some(entry) => Some(entry.1),
+        None => None,
+    }
+}
+
+#[inline]
+pub(crate) fn vertex_edge_point<'a>(
+    key: &Edge,
+    entries: &'a [(&Edge, Point)],
+) -> Option<&'a Point> {
+    match entries.par_iter().find_first(|f| key == f.0) {
+        Some(entry) => Some(&entry.1),
         None => None,
     }
 }

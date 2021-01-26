@@ -79,6 +79,7 @@ pub(crate) type FacesSlice = [Face];
 pub type FaceSet = Vec<VertexKey>;
 pub type Edge = [VertexKey; 2];
 pub type Edges = Vec<Edge>;
+pub type EdgesSlice = [Edge];
 pub(crate) type _EdgeSlice = [Edge];
 pub type Point = ultraviolet::vec::Vec3;
 pub type Vector = ultraviolet::vec::Vec3;
@@ -329,6 +330,103 @@ impl Polyhedron {
         self
     }
 
+    /// Performs Catmull-Clark subdivision.
+    ///
+    /// Each face is replaced with *n* quadralaterals based on edge midpoints
+    /// vertices and centroid edge midpoints are average of edge endpoints
+    /// and adjacent centroids original vertices replaced by weighted
+    /// average of original vertex, face centroids and edge midpoints.
+    pub fn catmull_clark_subdivide(&mut self, change_name: bool) -> &mut Self {
+        let new_face_vertices = self
+            .face_index
+            .par_iter()
+            .map(|face| {
+                let face_points = index_as_points(face, &self.points);
+                (face.as_slice(), centroid_ref(&face_points))
+            })
+            .collect::<Vec<_>>();
+
+        let edges = self.to_edges();
+
+        let new_edge_vertices = edges
+            .par_iter()
+            .map(|edge| {
+                let ep = index_as_points(edge, &self.points);
+                let af1 = face_with_edge(edge, &self.face_index);
+                let af2 = face_with_edge(&[edge[1], edge[0]], &self.face_index);
+                let fc1 = vertex_point(&af1, new_face_vertices.as_slice()).unwrap();
+                let fc2 = vertex_point(&af2, new_face_vertices.as_slice()).unwrap();
+                (edge, (*ep[0] + *ep[1] + *fc1 + *fc2) * 0.25)
+            })
+            .collect::<Vec<_>>();
+
+        let new_face_vertex_ids =
+            vertex_ids_ref_ref(new_face_vertices.as_slice(), self.points.len() as _);
+        let new_edge_vertex_ids = vertex_ids_edge_ref_ref(
+            new_edge_vertices.as_slice(),
+            (self.points.len() + new_face_vertices.len()) as _,
+        );
+
+        let new_face_index = self
+            .face_index
+            .par_iter()
+            .flat_map(|face| {
+                let centroid = vertex(face, &new_face_vertex_ids).unwrap();
+
+                face.iter()
+                    .circular_tuple_windows::<(_, _, _)>()
+                    .map(|triplet| {
+                        let mid1 = vertex_edge(
+                            &distinct_edge(&[*triplet.0, *triplet.1]),
+                            new_edge_vertex_ids.as_slice(),
+                        )
+                        .unwrap();
+                        let mid2 = vertex_edge(
+                            &distinct_edge(&[*triplet.1, *triplet.2]),
+                            new_edge_vertex_ids.as_slice(),
+                        )
+                        .unwrap();
+                        vec![centroid, mid1, *triplet.1, mid2]
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>();
+
+        let new_points = self
+            .points
+            .par_iter()
+            .enumerate()
+            .map(|point| {
+                let i = point.0 as u32;
+                let v = point.1;
+                let vertex_faces = vertex_faces(i, &self.face_index)
+                    .iter()
+                    .map(|face| vertex_point(face, new_face_vertices.as_slice()).unwrap())
+                    .collect::<Vec<_>>();
+                let n = vertex_faces.len() as Float;
+                let f = centroid_ref(&vertex_faces);
+                let r = centroid_ref(
+                    &vertex_edges(i, &edges)
+                        .iter()
+                        .map(|edge| vertex_edge_point(edge, new_edge_vertices.as_slice()).unwrap())
+                        .collect::<Vec<_>>(),
+                );
+                (f + 2.0 * r + (n - 3.0) * *v) / n
+            })
+            .chain(vertex_values(new_face_vertices.as_slice()))
+            .chain(vertex_values(new_edge_vertices.as_slice()))
+            .collect::<Points>();
+
+        self.points = new_points;
+        self.face_index = new_face_index;
+
+        if change_name {
+            self.name = format!("v{}", self.name);
+        }
+
+        self
+    }
+
     pub fn chamfer(&mut self, ratio: Option<Float>, change_name: bool) -> &mut Self {
         let ratio_ = match ratio {
             Some(r) => r.clamped(0.0, 1.0),
@@ -372,11 +470,14 @@ impl Polyhedron {
                 new_face
             })
             .chain(self.face_index.par_iter().flat_map(|face| {
-                (0..face.len())
-                    .filter_map(|j| {
-                        if face[j] < face[(j + 1) % face.len()] {
-                            let a: VertexKey = face[j];
-                            let b: VertexKey = face[(j + 1) % face.len()];
+                face.iter()
+                    .cycle()
+                    .tuple_windows::<(_, _, _)>()
+                    .take(face.len())
+                    .filter_map(|v| {
+                        if v.0 < v.1 {
+                            let a: VertexKey = *v.0;
+                            let b: VertexKey = *v.1;
                             let opposite_face = face_with_edge(&[b, a], &self.face_index);
 
                             Some(vec![
@@ -502,17 +603,21 @@ impl Polyhedron {
             .face_index
             .par_iter()
             .flat_map(|face| {
-                (0..face.len())
-                    .map(|j| {
-                        let a = face[j];
-                        let b = face[(j + 1) % face.len()];
-                        let z = face[(j + face.len() - 1) % face.len()];
+                face.iter()
+                    .cycle()
+                    .skip(face.len() - 1)
+                    .tuple_windows::<(_, _, _)>()
+                    .map(|v| {
+                        let a = *v.1;
+                        let b = *v.2;
+                        let z = *v.0;
                         let eab = vertex(&[a, b], &new_ids).unwrap();
                         let eza = vertex(&[z, a], &new_ids).unwrap();
                         let eaz = vertex(&[a, z], &new_ids).unwrap();
                         let centroid = vertex(face, &new_ids).unwrap();
                         vec![a, eab, centroid, eza, eaz]
                     })
+                    .take(face.len())
                     .collect::<Faces>()
             })
             .collect();
@@ -594,8 +699,12 @@ impl Polyhedron {
             .face_index
             .par_iter()
             .flat_map(|face: &Face| match vertex(face, &new_ids) {
-                Some(centroid) => (0..face.len())
-                    .map(|j| vec![face[j], face[(j + 1) % face.len()], centroid as VertexKey])
+                Some(centroid) => face
+                    .iter()
+                    .cycle()
+                    .tuple_windows::<(&VertexKey, _)>()
+                    .map(|v| vec![*v.0, *v.1, centroid as VertexKey])
+                    .take(face.len())
                     .collect(),
                 None => vec![face.clone()],
             })
@@ -631,7 +740,7 @@ impl Polyhedron {
 
         let new_points = self
             .face_index
-            .iter()
+            .par_iter()
             .filter(|face| selected_face(face, face_arity.as_ref()))
             .flat_map(|face| {
                 let face_points = index_as_points(face, &self.points);
@@ -654,7 +763,7 @@ impl Polyhedron {
 
         self.face_index = self
             .face_index
-            .iter()
+            .par_iter()
             .flat_map(|face| {
                 if selected_face(face, face_arity.as_ref()) {
                     face.iter()
@@ -1115,22 +1224,22 @@ impl Polyhedron {
             .face_index
             .par_iter()
             .flat_map(|face| {
-                (0..face.len())
-                    .map(|j| {
-                        let a = face[j];
-                        let b = face[(j + 1) % face.len()];
-                        let c = face[(j + 2) % face.len()];
-                        let eab = vertex(&[a, b], &new_ids).unwrap();
-                        let eba = vertex(&[b, a], &new_ids).unwrap();
-                        let ebc = vertex(&[b, c], &new_ids).unwrap();
+                face.iter()
+                    .cycle()
+                    .tuple_windows::<(_, _, _)>()
+                    .map(|v| {
+                        let edeg_ab = vertex(&[*v.0, *v.1], &new_ids).unwrap();
+                        let edeg_ba = vertex(&[*v.1, *v.0], &new_ids).unwrap();
+                        let edeg_bc = vertex(&[*v.1, *v.2], &new_ids).unwrap();
                         let mut mid = face.clone();
-                        mid.push(a);
-                        let mida = vertex(&mid, &new_ids).unwrap();
+                        mid.push(*v.0);
+                        let mid_a = vertex(&mid, &new_ids).unwrap();
                         mid.pop();
-                        mid.push(b);
-                        let midb = vertex(&mid, &new_ids).unwrap();
-                        vec![eab, eba, b, ebc, midb, mida]
+                        mid.push(*v.1);
+                        let mid_b = vertex(&mid, &new_ids).unwrap();
+                        vec![edeg_ab, edeg_ba, *v.1, edeg_bc, mid_b, mid_a]
                     })
+                    .take(face.len())
                     .collect::<Faces>()
             })
             .chain(self.face_index.par_iter().map(|face| {
@@ -1245,15 +1354,15 @@ impl Polyhedron {
         let (points, normals): (Vec<_>, Vec<_>) = self
             .face_index
             .par_iter()
-            .flat_map(|f| {
-                let average_normal = face_normal(&index_as_points(f, self.points())).unwrap();
+            .flat_map(|face| {
+                let average_normal = face_normal(&index_as_points(face, self.points())).unwrap();
 
-                f.iter()
+                face.iter()
                     // Cycle forever.
                     .cycle()
                     // Start at 3-tuple belonging to the
                     // face's last vertex.
-                    .skip(f.len() - 1)
+                    .skip(face.len() - 1)
                     // Grab the next three vertex index
                     // entries.
                     .tuple_windows::<(_, _, _)>()
@@ -1279,7 +1388,7 @@ impl Polyhedron {
                         )
                     })
                     // For each vertex of the face.
-                    .take(f.len())
+                    .take(face.len())
                     .collect::<Vec<_>>()
             })
             .unzip();
@@ -1441,6 +1550,7 @@ impl Polyhedron {
                 nsi::integers!("nvertices", bytemuck::cast_slice(&face_arity)),
                 // Render this as a C-C subdivison surface.
                 nsi::string!("subdivision.scheme", "catmull-clark"),
+                nsi::integer!("clockwisewinding", 1),
             ],
         );
 
@@ -1742,11 +1852,11 @@ impl Polyhedron {
         // Half-edge.
         let h = (theta * 0.5).sin();
 
-        let mut face_index = Vec::new();
+        let mut face_index = vec![
+            (0..n).map(|i| i as VertexKey).collect::<Vec<_>>(),
+            (n..2 * n).rev().map(|i| i as VertexKey).collect::<Vec<_>>(),
+        ];
 
-        // Top- & bottom faces
-        face_index.push((0..n).map(|i| i as VertexKey).collect::<Vec<_>>());
-        face_index.push((n..2 * n).rev().map(|i| i as VertexKey).collect::<Vec<_>>());
         // Sides.
         face_index.extend((0..n).map(|i| {
             vec![
