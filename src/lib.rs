@@ -1550,7 +1550,8 @@ impl Polyhedron {
                 nsi::integers!("nvertices", bytemuck::cast_slice(&face_arity)),
                 // Render this as a C-C subdivison surface.
                 nsi::string!("subdivision.scheme", "catmull-clark"),
-                nsi::integer!("clockwisewinding", 1),
+                // This saves us from having to reverse the mesh ourselves.
+                nsi::integer!("clockwisewinding", true as _),
             ],
         );
 
