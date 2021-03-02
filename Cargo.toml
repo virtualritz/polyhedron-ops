@@ -31,7 +31,7 @@ bevy = { version = "0.4.0", optional = true }
 
 [dev-dependencies]
 dirs = "3.0.1"
-nalgebra = "0.23.2"
+nalgebra = "0.25.0"
 kiss3d = { git = "https://github.com/sebcrozet/kiss3d.git" }
 slice_as_array = "1.1.0"
 bevy-orbit-controls = "1.0.1"
