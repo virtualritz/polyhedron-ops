@@ -25,7 +25,7 @@ rayon = "1.5.0"
 ultraviolet = { version = "0.8.0", features = ["f64"] }
 # Optional deps.
 # Add support to render polyhedra with NSI.
-nsi = { path = "../nsi", optional = true, features = ["toolbelt"] }
+nsi = { version = "0.6.0", optional = true, features = ["toolbelt"] }
 # Add support to convert a Polyhedron into a bevy Mesh.
 bevy = { version = "0.5.0", optional = true, default-features = false, features = ["render", "bevy_wgpu", "bevy_winit"] }
 

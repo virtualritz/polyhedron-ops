@@ -500,10 +500,7 @@ pub(crate) fn _vertex_ids(entries: &[(Face, Point)], offset: VertexKey) -> Vec<(
 
 #[inline]
 pub(crate) fn vertex(key: &FaceSlice, entries: &[(&FaceSlice, VertexKey)]) -> Option<VertexKey> {
-    match entries.par_iter().find_first(|f| key == f.0) {
-        Some(entry) => Some(entry.1),
-        None => None,
-    }
+    entries.par_iter().find_first(|f| key == f.0).map(|entry| entry.1)
 }
 
 #[inline]
@@ -511,18 +508,12 @@ pub(crate) fn vertex_point<'a>(
     key: &FaceSlice,
     entries: &'a [(&FaceSlice, Point)],
 ) -> Option<&'a Point> {
-    match entries.par_iter().find_first(|f| key == f.0) {
-        Some(entry) => Some(&entry.1),
-        None => None,
-    }
+    entries.par_iter().find_first(|f| key == f.0).map(|entry| &entry.1)
 }
 
 #[inline]
 pub(crate) fn vertex_edge(key: &Edge, entries: &[(&Edge, VertexKey)]) -> Option<VertexKey> {
-    match entries.par_iter().find_first(|f| key == f.0) {
-        Some(entry) => Some(entry.1),
-        None => None,
-    }
+    entries.par_iter().find_first(|f| key == f.0).map(|entry| entry.1)
 }
 
 #[inline]
@@ -530,10 +521,7 @@ pub(crate) fn vertex_edge_point<'a>(
     key: &Edge,
     entries: &'a [(&Edge, Point)],
 ) -> Option<&'a Point> {
-    match entries.par_iter().find_first(|f| key == f.0) {
-        Some(entry) => Some(&entry.1),
-        None => None,
-    }
+    entries.par_iter().find_first(|f| key == f.0).map(|entry| &entry.1)
 }
 
 #[inline]

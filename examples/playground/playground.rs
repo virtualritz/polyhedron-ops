@@ -297,14 +297,6 @@ fn main() {
                             poly.normalize();
                             last_op = 'k';
                         }
-                        Key::I => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            last_op_value = 0.3;
-                            poly.inset(None, None, true);
-                            poly.normalize();
-                            last_op = 'l';
-                        }
                         Key::M => {
                             alter_last_op = false;
                             last_poly = poly.clone();

@@ -1,3 +1,4 @@
+#![allow(clippy::many_single_char_names)]
 //! # Conway-Hart Polyhedron Operations
 //!
 //! This crate implements the [Conway Polyhedron
