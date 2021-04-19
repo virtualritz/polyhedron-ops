@@ -3,6 +3,7 @@ use std::{
     env,
     path::{Path, PathBuf},
 };
+use ultraviolet as uv;
 
 fn nsi_globals_and_camera(
     c: &nsi::Context,
@@ -93,10 +94,10 @@ fn nsi_globals_and_camera(
     c.connect(name, "", "screen", "outputlayers", &[]);
 
     // Setup an output driver.
-    c.create("driver1", nsi::NodeType::OutputDriver, &[]);
-    c.connect("driver1", "", name, "outputdrivers", &[]);
+    c.create("driver", nsi::NodeType::OutputDriver, &[]);
+    c.connect("driver", "", name, "outputdrivers", &[]);
     c.set_attribute(
-        "driver1",
+        "driver",
         &[
             nsi::string!("drivername", "idisplay"),
             nsi::string!("filename", name.to_string() + ".exr"),
@@ -176,6 +177,7 @@ fn nsi_material(c: &nsi::Context, name: &str) {
             &[],
         );
 
+        /*
         c.set_attribute(
             shader_name,
             &[
@@ -196,7 +198,41 @@ fn nsi_material(c: &nsi::Context, name: &str) {
                 nsi::float!("sss_weight", 0.0f32),
                 nsi::color!("sss_color", &[0.5f32, 0.5, 0.5]),
                 nsi::float!("sss_scale", 0.0f32),
-                nsi::color!("incandescence", &[0.0f32, 0.0, 0.0]),
+                //nsi::color!("incandescence", &[0.0f32, 0.0, 0.0]),
+            ],
+        );
+
+        c.set_attribute(
+            shader_name,
+            &[
+                nsi::string!(
+                    "shaderfilename",
+                    PathBuf::from(path)
+                        .join("osl")
+                        .join("dlGlass")
+                        .to_string_lossy()
+                        .into_owned()
+                ),
+                nsi::float!("refract_roughness", 0.666f32),
+            ],
+        );*/
+
+        c.set_attribute(
+            shader_name,
+            &[
+                nsi::string!(
+                    "shaderfilename",
+                    PathBuf::from(path)
+                        .join("osl")
+                        .join("dlMetal")
+                        .to_string_lossy()
+                        .into_owned()
+                ),
+                nsi::color!("i_color", &[1.0f32, 0.6, 0.3]),
+                nsi::float!("roughness", 0.3),
+                nsi::float!("anisotropy", 0.9f32),
+                nsi::float!("thin_film_thickness", 0.6),
+                nsi::float!("thin_film_ior", 3.0),
             ],
         );
     }
@@ -208,16 +244,14 @@ pub fn nsi_render(
     camera_xform: &[f64; 16],
     render_quality: u32,
     render_type: crate::RenderType,
+    turntable: bool,
 ) -> String {
     let destination = path.join(format!("polyhedron-{}.nsi", polyhedron.name()));
 
     let ctx = {
         match render_type {
             RenderType::Normal => nsi::Context::new(&[]),
-            RenderType::Cloud => nsi::Context::new(&[
-                nsi::integer!("cloud", 1),
-                //nsi::string!("software", "RENDERDL"),
-            ]),
+            RenderType::Cloud => nsi::Context::new(&[nsi::integer!("cloud", 1)]),
             RenderType::Dump => nsi::Context::new(&[
                 nsi::string!("type", "apistream"),
                 nsi::string!("streamfilename", destination.to_str().unwrap()),
@@ -237,15 +271,68 @@ pub fn nsi_render(
         None,
         None,
     );
-    ctx.connect(name.clone(), "", ".root", "objects", &[]);
 
     nsi_material(&ctx, &name);
 
-    // And now, render it!
-    ctx.render_control(&[nsi::string!("action", "start")]);
+    /*
+    ctx.append(
+        ".root",
+        None,
+        ctx.append(
+            &ctx.rotation(Some("mesh-rotation"), (frame * 5) as f64, &[0., 1., 0.]),
+            None,
+            &name,
+        )
+        .0,
+    );
 
-    // And now, render it!
+    ctx.append(
+        &polyhedron.name(),
+        Some("outputdrivers"),
+        &ctx.node(
+            Some("exr-driver"),
+            nsi::NodeType::OutputDriver,
+            &[
+                nsi::string!("drivername", "r-display"),
+                nsi::string!("imagefilename", format!("{}-{:02}.exr", name, frame)),
+            ],
+        ),
+    );*/
+
+    if turntable {
+        ctx.create("rotation", nsi::NodeType::Transform, &[]);
+        ctx.connect("rotation", "", ".root", "objects", &[]);
+        ctx.connect(name.clone(), "", "rotation", "objects", &[]);
+
+        for frame in 0..72 {
+            ctx.set_attribute(
+                "rotation",
+                &[nsi::double_matrix!(
+                    "transformationmatrix",
+                    uv::DMat4::from_angle_plane(
+                        (frame as f64 * 5.0 * core::f64::consts::TAU / 90.0) as _,
+                        uv::DBivec3::from_normalized_axis(uv::DVec3::new(0., 1., 0.))
+                    )
+                    .transposed()
+                    .as_array()
+                )],
+            );
+
+            ctx.render_control(&[nsi::string!("action", "synchronize")]);
+            ctx.render_control(&[nsi::string!("action", "start")]);
+            ctx.render_control(&[nsi::string!("action", "wait")]);
+        }
+    } else {
+        ctx.connect(name.clone(), "", ".root", "objects", &[]);
+
+        //if RenderType::Dump != render_type {
+        ctx.render_control(&[nsi::string!("action", "start")]);
+        //}
+    }
+
+    //if RenderType::Dump != render_type {
     ctx.render_control(&[nsi::string!("action", "wait")]);
+    //}
 
     destination.to_string_lossy().to_string()
 }

@@ -2,9 +2,11 @@ use kiss3d::{
     camera::{ArcBall, FirstPerson},
     event::{Action, Key, Modifiers, WindowEvent},
     light::Light,
+    nalgebra as na,
     resource::Mesh,
     window::Window,
 };
+use na::{Point3, Vector3};
 use rayon::prelude::*;
 use std::{cell::RefCell, io, io::Write, rc::Rc};
 //extern crate polyhedron_ops;
@@ -23,9 +25,8 @@ use std::path::Path;
 use kiss3d::camera::Camera;
 
 use itertools::Itertools;
-use na::{Point3, Vector3};
-use nalgebra as na;
 
+#[derive(PartialEq)]
 pub enum RenderType {
     Normal,
     Cloud,
@@ -90,11 +91,13 @@ fn main() {
     let path = dirs::home_dir().unwrap();
     let mut render_quality = 0;
 
+    let mut turntable = false;
+
     println!(
         "Press one of:\n\
         ____________________________________________ Start Shapes (Reset) ______\n\
         [T]etrahedron              [P]rism ↑↓\n\
-        [C]ube (Hexahedron)\n\
+        [C]ube (hexahedron)\n\
         [O]ctahedron\n\
         [D]dodecahedron\n\
         [I]cosehedron\n\
@@ -112,13 +115,15 @@ fn main() {
         [m]eta ↑↓\n\
         [n]eedle ↑↓\n\
         [o]rtho ↑↓\n\
-        [p]propellor ↑↓\n\
+        [p]propeller ↑↓\n\
         [q]uinto ↑↓\n\
         [r]eflect\n\
         [s]nub ↑↓\n\
         [S]pherize ↑↓\n\
         [t]runcate ↑↓\n\
+        Catmull-Clark subdi[v]ide\n\
         [w]hirl ↑↓\n\
+        e[x]trude ↑↓\n\
         [z]ip ↑↓\n\
         _______________________________________________________ Modifiers ______\n\
         (Shift)+⬆⬇︎  – modify the last operation marked with ↑↓ (10× w. [Shift])\n\
@@ -133,13 +138,15 @@ fn main() {
         " (dump to NSI w. [Shift])\n\
         _______________________________________________________ Rendering ______\n\
         (Shift)+[Enter]   – Render (in the cloud w. [Shift])\n\
-        [Shift]+[0]..[9]  – Set render quality: [preview]..[super high quality]"
+        [Shift]+[0]..[9]  – Set render quality: [preview]..[super high quality]\n\
+        [Ctrl]+[T]        – Toggle turntable rendering (72 frames)"
     );
     print!(
         "\n________________________________________________________________________\n\
-        ❯ {} – render quality {:<80}\r",
+        ❯ {} – render quality {} {:<80}\r",
         poly.name(),
-        render_quality
+        render_quality,
+        if turntable { "(turntable)" } else { "" },
     );
     io::stdout().flush().unwrap();
 
@@ -269,7 +276,7 @@ fn main() {
                                 alter_last_op = false;
                                 last_poly = poly.clone();
                                 last_op_value = 0.3;
-                                poly.inset(None, None, None, true);
+                                poly.inset(None, None, true);
                                 poly.normalize();
                                 last_op = 'i';
                             }
@@ -289,6 +296,14 @@ fn main() {
                             poly.kis(None, None, None, true);
                             poly.normalize();
                             last_op = 'k';
+                        }
+                        Key::I => {
+                            alter_last_op = false;
+                            last_poly = poly.clone();
+                            last_op_value = 0.3;
+                            poly.inset(None, None, true);
+                            poly.normalize();
+                            last_op = 'l';
                         }
                         Key::M => {
                             alter_last_op = false;
@@ -334,7 +349,7 @@ fn main() {
                                 last_op = 'P';
                             } else {
                                 last_op_value = 1. / 3.;
-                                poly.propellor(None, true);
+                                poly.propeller(None, true);
                                 poly.normalize();
                                 last_op = 'p';
                             }
@@ -369,17 +384,29 @@ fn main() {
                             }
                         }
                         Key::T => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
                             if modifiers.intersects(Modifiers::Shift) {
+                                alter_last_op = false;
+                                last_poly = poly.clone();
                                 poly = Polyhedron::tetrahedron();
                                 poly.normalize();
+                            } else if modifiers.intersects(Modifiers::Control) {
+                                turntable = !turntable;
                             } else {
+                                alter_last_op = false;
+                                last_poly = poly.clone();
                                 last_op_value = 0.;
                                 poly.truncate(None, None, None, true);
                                 poly.normalize();
                                 last_op = 't';
                             }
+                        }
+                        Key::V => {
+                            alter_last_op = false;
+                            last_poly = poly.clone();
+                            last_op_value = 0.;
+                            poly.catmull_clark_subdivide(true);
+                            poly.normalize();
+                            last_op = 'v';
                         }
                         Key::W => {
                             alter_last_op = false;
@@ -388,6 +415,14 @@ fn main() {
                             poly.whirl(None, None, true);
                             poly.normalize();
                             last_op = 'w';
+                        }
+                        Key::X => {
+                            alter_last_op = false;
+                            last_poly = poly.clone();
+                            last_op_value = 0.3;
+                            poly.extrude(None, None, None, true);
+                            poly.normalize();
+                            last_op = 'j';
                         }
                         Key::Z => {
                             alter_last_op = false;
@@ -415,6 +450,7 @@ fn main() {
                                             slice_as_array!(xform.as_slice(), [f64; 16]).unwrap(),
                                             render_quality,
                                             RenderType::Dump,
+                                            turntable,
                                         )
                                     );
                                 }
@@ -462,6 +498,7 @@ fn main() {
                                 } else {
                                     RenderType::Normal
                                 },
+                                turntable,
                             );
                         }
                         _ => {
@@ -496,7 +533,7 @@ fn main() {
                                 poly.gyro(None, Some(last_op_value), true);
                             }
                             'i' => {
-                                poly.inset(Some(last_op_value), None, None, true);
+                                poly.inset(Some(last_op_value), None, true);
                             }
                             'j' => {
                                 poly.join(Some(last_op_value), true);
@@ -517,7 +554,7 @@ fn main() {
                                 poly.ortho(Some(last_op_value), true);
                             }
                             'p' => {
-                                poly.propellor(Some(last_op_value), true);
+                                poly.propeller(Some(last_op_value), true);
                             }
                             'P' => {
                                 poly = Polyhedron::prism((last_op_value * 100.) as _);
@@ -550,6 +587,9 @@ fn main() {
                             'w' => {
                                 poly.whirl(None, Some(last_op_value), true);
                             }
+                            'x' => {
+                                poly.extrude(Some(last_op_value), None, None, true);
+                            }
                             'z' => {
                                 poly.zip(Some(last_op_value), None, None, true);
                             }
@@ -568,9 +608,10 @@ fn main() {
                     c.set_points_size(10.);
 
                     print!(
-                        "❯ {} – render quality {:<80}\r",
+                        "❯ {} – render quality {} {:<80}\r",
                         poly.name(),
-                        render_quality
+                        render_quality,
+                        if turntable { "(turntable)" } else { "" },
                     );
                     io::stdout().flush().unwrap();
                 }

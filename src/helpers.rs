@@ -166,8 +166,7 @@ pub(crate) fn distinct_edge(edge: &Edge) -> Edge {
 #[inline]
 pub(crate) fn distinct_face_edges(face: &FaceSlice) -> Edges {
     face.iter()
-        .cycle()
-        .tuple_windows::<(_, _)>()
+        .circular_tuple_windows::<(_, _)>()
         .map(|t| {
             if t.0 < t.1 {
                 [*t.0, *t.1]
@@ -175,7 +174,6 @@ pub(crate) fn distinct_face_edges(face: &FaceSlice) -> Edges {
                 [*t.1, *t.0]
             }
         })
-        .take(face.len())
         .collect()
 }
 
@@ -224,10 +222,8 @@ pub(crate) fn vertex_faces(vertex_number: VertexKey, face_index: &FacesSlice) ->
 /// ordered edges.
 pub(crate) fn _ordered_face_edges_(face: &FaceSlice) -> Edges {
     face.iter()
-        .cycle()
-        .tuple_windows::<(_, _)>()
+        .circular_tuple_windows::<(_, _)>()
         .map(|edge| [*edge.0, *edge.1])
-        .take(face.len())
         .collect()
 }
 
@@ -372,9 +368,7 @@ pub(crate) fn face_normal(points: &PointRefSlice) -> Option<Normal> {
 
     let normal = points
         .iter()
-        .cycle()
-        .tuple_windows::<(_, _, _)>()
-        .take(points.len())
+        .circular_tuple_windows::<(_, _, _)>()
         .fold(Vector::zero(), |normal, corner| {
             considered_edges += 1;
             let ortho_normal = orthogonal(&corner.0, &corner.1, &corner.2);
@@ -420,9 +414,7 @@ pub(crate) fn _face_normal_f64(points: &PointRefSlice) -> Option<Normal> {
 
     let normal = points
         .iter()
-        .cycle()
-        .tuple_windows::<(_, _, _)>()
-        .take(points.len())
+        .circular_tuple_windows::<(_, _, _)>()
         .fold(DVec3::zero(), |normal, corner| {
             considered_edges += 1;
             let ortho_normal = _orthogonal_f64(&corner.0, &corner.1, &corner.2);
@@ -562,18 +554,16 @@ pub(crate) fn selected_face(face: &FaceSlice, face_arity: Option<&Vec<usize>>) -
 }
 
 #[inline]
-pub(crate) fn distinct_edges(faces: &FacesSlice) -> Edges {
+pub(crate) fn _distinct_edges(faces: &FacesSlice) -> Edges {
     faces
         .iter()
         .flat_map(|face| {
             face.iter()
-                .cycle()
                 // Grab two index entries.
-                .tuple_windows::<(_, _)>()
+                .circular_tuple_windows::<(_, _)>()
                 .filter(|t| t.0 < t.1)
                 // Create an edge from them.
                 .map(|t| [*t.0, *t.1])
-                .take(face.len())
                 .collect::<Vec<_>>()
         })
         .unique()

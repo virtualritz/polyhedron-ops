@@ -53,8 +53,6 @@
 //!
 //! * `obj` – Add support for output to [Wavefront OBJ](https://en.wikipedia.org/wiki/Wavefront_.obj_file)
 //!   via the [`write_to_obj()`](Polyhedron::write_to_obj()) function.
-
-use clamped::Clamp;
 use itertools::Itertools;
 use num_traits::FloatConst;
 use rayon::prelude::*;
@@ -69,26 +67,7 @@ use std::{
     fmt::{Display, Write},
     iter::Iterator,
 };
-
-pub type Float = f32;
-pub type VertexKey = u32;
-pub type Face = Vec<VertexKey>;
-pub(crate) type FaceSlice = [VertexKey];
-pub type Faces = Vec<Face>;
-pub(crate) type FacesSlice = [Face];
-pub type FaceSet = Vec<VertexKey>;
-pub type Edge = [VertexKey; 2];
-pub type Edges = Vec<Edge>;
-pub type EdgesSlice = [Edge];
-pub(crate) type _EdgeSlice = [Edge];
-pub type Point = ultraviolet::vec::Vec3;
-pub type Vector = ultraviolet::vec::Vec3;
-pub type Normal = Vector;
-#[allow(dead_code)]
-pub type Normals = Vec<Normal>;
-pub type Points = Vec<Point>;
-pub(crate) type PointsSlice = [Point];
-pub(crate) type PointRefSlice<'a> = [&'a Point];
+use ultraviolet as uv;
 
 mod helpers;
 use helpers::*;
@@ -104,6 +83,26 @@ pub mod prelude {
 }
 
 static EPSILON: f32 = 0.00000001;
+
+pub type Float = f32;
+pub type VertexKey = u32;
+pub type Face = Vec<VertexKey>;
+pub(crate) type FaceSlice = [VertexKey];
+pub type Faces = Vec<Face>;
+pub(crate) type FacesSlice = [Face];
+pub type FaceSet = Vec<VertexKey>;
+pub type Edge = [VertexKey; 2];
+pub type Edges = Vec<Edge>;
+pub type EdgesSlice = [Edge];
+pub(crate) type _EdgeSlice = [Edge];
+pub type Point = uv::vec::Vec3;
+pub type Vector = uv::vec::Vec3;
+pub type Normal = Vector;
+#[allow(dead_code)]
+pub type Normals = Vec<Normal>;
+pub type Points = Vec<Point>;
+pub(crate) type PointsSlice = [Point];
+pub(crate) type PointRefSlice<'a> = [&'a Point];
 
 #[derive(Clone, Debug)]
 pub struct Polyhedron {
@@ -233,11 +232,11 @@ impl Polyhedron {
     #[inline]
     pub fn ambo(&mut self, ratio: Option<Float>, change_name: bool) -> &mut Self {
         let ratio_ = match ratio {
-            Some(r) => r.clamped(0.0, 1.0),
+            Some(r) => r.clamp(0.0, 1.0),
             None => 1. / 2.,
         };
 
-        let edges = distinct_edges(&self.face_index);
+        let edges = self.to_edges();
 
         let points: Vec<(&Edge, Point)> = edges
             .par_iter()
@@ -314,16 +313,23 @@ impl Polyhedron {
                 write!(&mut params, "{:.2}", ratio).unwrap();
             }
             if let Some(height) = height {
-                write!(&mut params, "{:.2}", height).unwrap();
+                write!(&mut params, ",{:.2}", height).unwrap();
+            } else {
+                write!(&mut params, ",").unwrap();
             }
             if let Some(vertex_valence) = vertex_valence {
                 write!(&mut params, ",{}", format_vec(&vertex_valence)).unwrap();
+            } else {
+                write!(&mut params, ",").unwrap();
             }
             if let Some(regular_faces_only) = regular_faces_only {
                 if regular_faces_only {
                     params.push_str(",{t}");
                 }
+            } else {
+                write!(&mut params, ",").unwrap();
             }
+            params = params.trim_end_matches(',').to_string();
             self.name = format!("b{}{}", params, self.name);
         }
 
@@ -429,7 +435,7 @@ impl Polyhedron {
 
     pub fn chamfer(&mut self, ratio: Option<Float>, change_name: bool) -> &mut Self {
         let ratio_ = match ratio {
-            Some(r) => r.clamped(0.0, 1.0),
+            Some(r) => r.clamp(0.0, 1.0),
             None => 1. / 2.,
         };
 
@@ -471,14 +477,19 @@ impl Polyhedron {
             })
             .chain(self.face_index.par_iter().flat_map(|face| {
                 face.iter()
-                    .cycle()
-                    .tuple_windows::<(_, _, _)>()
-                    .take(face.len())
+                    .circular_tuple_windows::<(_, _, _)>()
                     .filter_map(|v| {
                         if v.0 < v.1 {
                             let a: VertexKey = *v.0;
                             let b: VertexKey = *v.1;
                             let opposite_face = face_with_edge(&[b, a], &self.face_index);
+
+                            /*once(a)
+                            .chain(once(vertex(&extend![..opposite_face, a], &new_ids).unwrap()))
+                            .chain(once(vertex(&extend![..opposite_face, b], &new_ids).unwrap()))
+                            .chain(once(b))
+                            .chain(once(vertex(&extend![..face, b], &new_ids).unwrap()))
+                            .chain(once(vertex(&extend![..face, a], &new_ids).unwrap()))*/
 
                             Some(vec![
                                 a,
@@ -560,7 +571,7 @@ impl Polyhedron {
         change_name: bool,
     ) -> &mut Self {
         let ratio_ = match ratio {
-            Some(r) => r.clamped(0.0, 1.0),
+            Some(r) => r.clamp(0.0, 1.0),
             None => 1. / 3.,
         };
         let height_ = height.unwrap_or(0.);
@@ -607,6 +618,7 @@ impl Polyhedron {
                     .cycle()
                     .skip(face.len() - 1)
                     .tuple_windows::<(_, _, _)>()
+                    .take(face.len())
                     .map(|v| {
                         let a = *v.1;
                         let b = *v.2;
@@ -617,7 +629,6 @@ impl Polyhedron {
                         let centroid = vertex(face, &new_ids).unwrap();
                         vec![a, eab, centroid, eza, eaz]
                     })
-                    .take(face.len())
                     .collect::<Faces>()
             })
             .collect();
@@ -717,26 +728,55 @@ impl Polyhedron {
             }
             if let Some(face_arity) = face_arity {
                 write!(&mut params, ",{:.2}", format_vec(&face_arity)).unwrap();
+            } else {
+                write!(&mut params, ",").unwrap();
             }
             if let Some(regular_faces_only) = regular_faces_only {
                 if regular_faces_only {
                     params.push_str(",{t}");
                 }
+            } else {
+                write!(&mut params, ",").unwrap();
             }
+            params = params.trim_end_matches(',').to_string();
             self.name = format!("k{}{}", params, self.name);
         }
 
         self
     }
 
+    // Inset faces by `distance` from the original edges.
     pub fn inset(
         &mut self,
         distance: Option<Float>,
-        height: Option<Float>,
         face_arity: Option<Vec<usize>>,
         change_name: bool,
     ) -> &mut Self {
-        let distance = distance.unwrap_or(0.3);
+        if change_name {
+            let mut params = String::new();
+            if let Some(distance) = distance {
+                write!(&mut params, "{:.2}", distance).unwrap();
+            }
+            if let Some(face_arity) = &face_arity {
+                write!(&mut params, ",{}", format_vec(&face_arity)).unwrap();
+            }
+            self.name = format!("i{}{}", params, self.name);
+        }
+
+        self.extrude(Some(0.0), Some(distance.unwrap_or(0.3)), face_arity, false);
+
+        self
+    }
+
+    // Extrudes faces by `height` and shrinks the extruded faces by `distance` from
+    // the original edges.
+    pub fn extrude(
+        &mut self,
+        height: Option<Float>,
+        distance: Option<Float>,
+        face_arity: Option<Vec<usize>>,
+        change_name: bool,
+    ) -> &mut Self {
 
         let new_points = self
             .face_index
@@ -751,8 +791,8 @@ impl Polyhedron {
                         (
                             extend![..face, *face_vertex_point.0],
                             **face_vertex_point.1
-                                + distance * (centroid - **face_vertex_point.1)
-                                + face_normal(&face_points).unwrap() * height.unwrap_or(0.),
+                                + distance.unwrap_or(0.0) * (centroid - **face_vertex_point.1)
+                                + face_normal(&face_points).unwrap() * height.unwrap_or(0.3),
                         )
                     })
                     .collect::<Vec<_>>()
@@ -790,21 +830,24 @@ impl Polyhedron {
 
         if change_name {
             let mut params = String::new();
-            write!(&mut params, "{:.2}", distance).unwrap();
             if let Some(height) = height {
                 write!(&mut params, "{:.2}", height).unwrap();
             }
+            if let Some(distance) = distance {
+                write!(&mut params, ",{:.2}", distance).unwrap();
+            } else {
+                write!(&mut params, ",").unwrap();
+            }
             if let Some(face_arity) = face_arity {
                 write!(&mut params, ",{}", format_vec(&face_arity)).unwrap();
+            } else {
+                write!(&mut params, ",").unwrap();
             }
-            self.name = format!("i{}{}", params, self.name);
+            params = params.trim_end_matches(',').to_string();
+            self.name = format!("x{}{}", params, self.name);
         }
 
         self
-    }
-
-    fn _loft(&self) {
-        // FIXME
     }
 
     pub fn medial(
@@ -825,16 +868,23 @@ impl Polyhedron {
                 write!(&mut params, "{:.2}", ratio).unwrap();
             }
             if let Some(height) = height {
-                write!(&mut params, "{:.2}", height).unwrap();
+                write!(&mut params, ",{:.2}", height).unwrap();
+            } else {
+                write!(&mut params, ",").unwrap();
             }
             if let Some(vertex_valence) = vertex_valence {
                 write!(&mut params, ",{}", format_vec(&vertex_valence)).unwrap();
+            } else {
+                write!(&mut params, ",").unwrap();
             }
             if let Some(regular_faces_only) = regular_faces_only {
                 if regular_faces_only {
                     params.push_str(",{t}");
                 }
+            } else {
+                write!(&mut params, ",").unwrap();
             }
+            params = params.trim_end_matches(',').to_string();
             self.name = format!("M{}{}", params, self.name);
         }
 
@@ -867,16 +917,23 @@ impl Polyhedron {
                 write!(&mut params, "{:.2}", ratio).unwrap();
             }
             if let Some(height) = height {
-                write!(&mut params, "{:.2}", height).unwrap();
+                write!(&mut params, ",{:.2}", height).unwrap();
+            } else {
+                write!(&mut params, ",").unwrap();
             }
             if let Some(vertex_valence) = vertex_valence {
                 write!(&mut params, ",{}", format_vec(&vertex_valence)).unwrap();
+            } else {
+                write!(&mut params, ",").unwrap();
             }
             if let Some(regular_faces_only) = regular_faces_only {
                 if regular_faces_only {
                     params.push_str(",{t}");
                 }
+            } else {
+                write!(&mut params, ",").unwrap();
             }
+            params = params.trim_end_matches(',').to_string();
             self.name = format!("m{}{}", params, self.name);
         }
 
@@ -900,12 +957,17 @@ impl Polyhedron {
             }
             if let Some(vertex_valence) = vertex_valence {
                 write!(&mut params, ",{}", format_vec(&vertex_valence)).unwrap();
+            } else {
+                write!(&mut params, ",").unwrap();
             }
             if let Some(regular_faces_only) = regular_faces_only {
                 if regular_faces_only {
                     params.push_str(",{t}");
                 }
+            } else {
+                write!(&mut params, ",").unwrap();
             }
+            params = params.trim_end_matches(',').to_string();
             self.name = format!("n{}{}", params, self.name);
         }
 
@@ -927,9 +989,9 @@ impl Polyhedron {
         self
     }
 
-    pub fn propellor(&mut self, ratio: Option<Float>, change_name: bool) -> &mut Self {
+    pub fn propeller(&mut self, ratio: Option<Float>, change_name: bool) -> &mut Self {
         let ratio_ = match ratio {
-            Some(r) => r.clamped(0.0, 1.0),
+            Some(r) => r.clamp(0.0, 1.0),
             None => 1. / 3.,
         };
 
@@ -960,9 +1022,15 @@ impl Polyhedron {
             .face_index
             .par_iter()
             .map(|face| {
-                (0..face.len())
-                    .map(|j| vertex_edge(&[face[j], face[(j + 1) % face.len()]], &new_ids).unwrap())
+                face
+                    .iter()
+                    .circular_tuple_windows::<(_, _)>()
+                    .map(|f| vertex_edge(&[*f.0, *f.1], &new_ids).unwrap())
                     .collect()
+
+                /*(0..face.len())
+                    .map(|j| vertex_edge(&[face[j], face[(j + 1) % face.len()]], &new_ids).unwrap())
+                    .collect()*/
             })
             .chain(self.face_index.par_iter().flat_map(|face| {
                 (0..face.len())
@@ -973,7 +1041,8 @@ impl Polyhedron {
                         let eab = vertex_edge(&[a, b], &new_ids).unwrap();
                         let eba = vertex_edge(&[b, a], &new_ids).unwrap();
                         let eza = vertex_edge(&[z, a], &new_ids).unwrap();
-                        vec![a, eba, eab, eza]
+                        vec![eba, eab, eza, a]
+                        //vec![eza, eab, eba, a]
                     })
                     .collect::<Faces>()
             }))
@@ -1158,12 +1227,17 @@ impl Polyhedron {
             }
             if let Some(vertex_valence) = vertex_valence {
                 write!(&mut params, ",{}", format_vec(&vertex_valence)).unwrap();
+            } else {
+                write!(&mut params, ",").unwrap();
             }
             if let Some(regular_faces_only) = regular_faces_only {
                 if regular_faces_only {
                     params.push_str(",{t}");
                 }
+            } else {
+                write!(&mut params, ",").unwrap();
             }
+            params = params.trim_end_matches(',').to_string();
             self.name = format!("t{}{}", params, self.name);
         }
 
@@ -1177,7 +1251,7 @@ impl Polyhedron {
         change_name: bool,
     ) -> &mut Self {
         let ratio_ = match ratio {
-            Some(r) => r.clamped(0.0, 1.0),
+            Some(r) => r.clamp(0.0, 1.0),
             None => 1. / 3.,
         };
         let height_ = height.unwrap_or(0.);
@@ -1193,7 +1267,7 @@ impl Polyhedron {
                     .enumerate()
                     .map(|v| {
                         let edge_points = [face_points[v.0], face_points[(v.0 + 1) % face.len()]];
-                        let middle: ultraviolet::vec::Vec3 =
+                        let middle: Point =
                             *edge_points[0] + ratio_ * (*edge_points[1] - *edge_points[0]);
                         (extend![..face, *v.1], middle + ratio_ * (center - middle))
                     })
@@ -1225,8 +1299,7 @@ impl Polyhedron {
             .par_iter()
             .flat_map(|face| {
                 face.iter()
-                    .cycle()
-                    .tuple_windows::<(_, _, _)>()
+                    .circular_tuple_windows::<(_, _, _)>()
                     .map(|v| {
                         let edeg_ab = vertex(&[*v.0, *v.1], &new_ids).unwrap();
                         let edeg_ba = vertex(&[*v.1, *v.0], &new_ids).unwrap();
@@ -1239,7 +1312,6 @@ impl Polyhedron {
                         let mid_b = vertex(&mid, &new_ids).unwrap();
                         vec![edeg_ab, edeg_ba, *v.1, edeg_bc, mid_b, mid_a]
                     })
-                    .take(face.len())
                     .collect::<Faces>()
             })
             .chain(self.face_index.par_iter().map(|face| {
@@ -1288,12 +1360,17 @@ impl Polyhedron {
             }
             if let Some(vertex_valence) = vertex_valence {
                 write!(&mut params, ",{}", format_vec(&vertex_valence)).unwrap();
+            } else {
+                write!(&mut params, ",").unwrap();
             }
             if let Some(regular_faces_only) = regular_faces_only {
                 if regular_faces_only {
                     params.push_str(",{t}");
                 }
+            } else {
+                write!(&mut params, ",").unwrap();
             }
+            params = params.trim_end_matches(',').to_string();
             self.name = format!("z{}{}", params, self.name);
         }
 
@@ -1342,7 +1419,21 @@ impl Polyhedron {
     /// Compute the edges of the polyhedron.
     #[inline]
     pub fn to_edges(&self) -> Edges {
-        distinct_edges(&self.face_index)
+        let edges = self.face_index
+            .par_iter()
+            .map(|face| {
+                face.iter()
+                    // Grab two index entries.
+                    .circular_tuple_windows::<(_, _)>()
+                    .filter(|t| t.0 < t.1)
+                    // Create an edge from them.
+                    .map(|t| [*t.0, *t.1])
+                    .collect::<Vec<_>>()
+            })
+            .flatten()
+            .collect::<Vec<_>>();
+
+        edges.into_iter().unique().collect()
     }
 
     /// Returns a flat [`u32`] triangle index buffer and two matching point and
@@ -1355,8 +1446,6 @@ impl Polyhedron {
             .face_index
             .par_iter()
             .flat_map(|face| {
-                let average_normal = face_normal(&index_as_points(face, self.points())).unwrap();
-
                 face.iter()
                     // Cycle forever.
                     .cycle()
@@ -1366,6 +1455,7 @@ impl Polyhedron {
                     // Grab the next three vertex index
                     // entries.
                     .tuple_windows::<(_, _, _)>()
+                    .take(face.len())
                     .map(|t| {
                         // The middle point of out tuple
                         let point = self.points[*t.1 as usize];
@@ -1381,14 +1471,13 @@ impl Polyhedron {
                             point,
                             // Check for collinearity:
                             if mag_sq < EPSILON as _ {
-                                average_normal
+                                face_normal(&index_as_points(face, self.points())).unwrap()
                             } else {
                                 normal / mag_sq.sqrt()
                             },
                         )
                     })
                     // For each vertex of the face.
-                    .take(face.len())
                     .collect::<Vec<_>>()
             })
             .unzip();
@@ -1531,23 +1620,31 @@ impl Polyhedron {
             .collect();
         */
 
-        let face_arity = self
-            .face_index
-            .par_iter()
-            .map(|face| face.len() as u32)
-            .collect::<Vec<_>>();
-
-        let face_index = self.face_index.concat();
-
         ctx.set_attribute(
             handle.clone(),
             &[
                 // Positions.
                 nsi::points!("P", positions),
                 // VertexKey into the position array.
-                nsi::integers!("P.indices", bytemuck::cast_slice(&face_index)),
+                nsi::integers!(
+                    "P.indices",
+                    bytemuck::cast_slice(
+                        &self
+                            .face_index
+                            .par_iter()
+                            .flat_map(|face| face.clone())
+                            .collect::<Vec<_>>()
+                    )
+                ),
                 // Arity of each face.
-                nsi::integers!("nvertices", bytemuck::cast_slice(&face_arity)),
+                nsi::integers!(
+                    "nvertices",
+                    &self
+                        .face_index
+                        .par_iter()
+                        .map(|face| face.len() as i32)
+                        .collect::<Vec<_>>()
+                ),
                 // Render this as a C-C subdivison surface.
                 nsi::string!("subdivision.scheme", "catmull-clark"),
                 // This saves us from having to reverse the mesh ourselves.
@@ -1571,7 +1668,7 @@ impl Polyhedron {
                     nsi::integers!("subdivision.creasevertices", bytemuck::cast_slice(&edges)),
                     nsi::floats!(
                         "subdivision.creasesharpness",
-                        &vec![crease_hardness; edges.len()]
+                        &vec![crease_hardness; edges.len() / 2]
                     ),
                 ],
             );

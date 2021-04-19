@@ -2,21 +2,22 @@ use bevy::prelude::*;
 use bevy_orbit_controls::*;
 use polyhedron_ops as p_ops;
 
-#[bevy_main]
 fn main() {
     App::build()
+        .insert_resource(Msaa { samples: 4 })
         .add_plugins(DefaultPlugins)
         .add_plugin(OrbitCameraPlugin)
-        .add_startup_system(startup.system())
+        .add_startup_system(setup.system())
         .add_system(bevy::input::system::exit_on_esc_system.system())
         .run();
 }
 
-fn startup(
-    commands: &mut Commands,
+fn setup(
+    mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
+    // chamfered_tetrahedron
     let polyhedron = p_ops::Polyhedron::tetrahedron() // D
         .kis(None, None, None, true)
         .normalize()
@@ -28,22 +29,25 @@ fn startup(
         .normalize()
         .finalize();
 
+    commands.spawn_bundle(PbrBundle {
+        mesh: meshes.add(Mesh::from(polyhedron)),
+        material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
+        ..Default::default()
+    });
+
     commands
-        .spawn(PbrBundle {
-            mesh: meshes.add(Mesh::from(polyhedron)),
-            material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
-            ..Default::default()
-        })
         // light
-        .spawn(LightBundle {
+        .spawn_bundle(LightBundle {
             transform: Transform::from_translation(Vec3::new(4.0, 8.0, 4.0)),
             ..Default::default()
-        })
+        });
+
+    commands
         // camera
-        .spawn(Camera3dBundle {
+        .spawn_bundle(PerspectiveCameraBundle {
             transform: Transform::from_translation(Vec3::new(-3.0, 3.0, 5.0))
-                .looking_at(Vec3::default(), Vec3::unit_y()),
+                .looking_at(Vec3::default(), Vec3::Y),
             ..Default::default()
         })
-        .with(OrbitCamera::default());
+        .insert(OrbitCamera::default());
 }

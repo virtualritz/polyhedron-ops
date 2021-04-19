@@ -75,36 +75,36 @@ In short: use at your own risk.
 - [x] **d** - dual
 - [x] **e** - expand (a.k.a. explode, equiv. to **aa**)
 - [x] **g** - gyro
+- [x] **i** - inset/loft (equiv. to **x,N**)
 - [x] **j** - join (equiv. to **dad**)
-- [x] **i** - inset
+- [x] **k** - kis
 - [x] **M** - medial (equiv. to **dta**)
 - [x] **m** - meta (equiv. to **k,,3j**)
 - [x] **n** - needle (equiv. to **dt**)
 - [x] **o** - ortho (equiv. to **jj**)
-- [x] **p** - propellor
-- [x] **k** - kis
+- [x] **p** - propeller
 - [x] **q** - quinto
 - [x] **r** - reflect
 - [x] **s** - snub (equiv. to **dgd**)
-- [x] **t** - truncate vertices (equiv. to *dkNd*)
+- [x] **t** - truncate (equiv. to **dkd**)
+- [x] **v** - subdivide (Catmull-Clark)
 - [x] **w** - whirl
+- [x] **x** - extrude
 - [x] **z** - zip (equiv. to **dk**)
 
-### Other Operators (TBD)
+### Other Operators
 
-- [ ] **i** - inset/loft
+- [ ] **H** - hollow (called ’intrude‘ in Wings3D)
 - [ ] **h** - hexpropellor
 - [ ] **l** - stellate
-- [ ] **x** - extrude
 - [ ] **z** - triangulate
-- [ ] **H** - hollow (called ’intrude‘ in Wings3D)
 
 ## Playing
 
 There is a playground example app to test things & have fun:
 
 ```
-cargo run --release --example playground"
+cargo run --release --example playground --features obj,nsi
 ```
 
 If you want to produce images like the ones above you need to
@@ -132,12 +132,9 @@ registration).
 
 Press `Space` to save as `$HOME/polyhedron-<type>.obj`.
 
-I use `kiss3d` for realtime preview which is close to the metal enough
-to limit meshes to 64k vertices. This means the preview will be broken
-if your mesh hits this limit.
-
-The app may crash though if your graphics driver doesn't handle such
-ill-defined meshes gracefully. :)
+I use `kiss3d` for realtime preview which, [for now](https://github.com/sebcrozet/kiss3d/issues/263),
+limits meshes to 64k vertices. This means the preview will be broken/missing bits
+once your mesh hits this limit.
 
 Export & render will always yield a correct OBJ though. Which you can
 view in Wings, Blender or another DCC app.
