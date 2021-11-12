@@ -31,7 +31,7 @@ bevy = { version = "0.5.0", optional = true, default-features = false, features 
 
 [dev-dependencies]
 dirs = "3.0.1"
-kiss3d = "0.31.0"
+kiss3d = "0.32.0"
 slice_as_array = "1.1.0"
 bevy-orbit-controls = "2.0.0"
 
