@@ -2,7 +2,7 @@
 name = "polyhedron-ops"
 version = "0.2.3"
 authors = ["Moritz Moeller <virtualritz@gmail.com>"]
-edition = "2018"
+edition = "2021"
 keywords = ["3d", "creative", "geometry", "graphics", "rendering"]
 categories = ["graphics", "mathematics", "multimedia", "rendering"]
 license = "MIT OR Apache-2.0 OR Zlib"
@@ -15,25 +15,29 @@ resolver = "2"
 [features]
 default = []
 # Add support for writing a mesh out as a Wavefront OBJ.
-obj = []
+obj = ["tobj"]
 
 [dependencies]
-bytemuck = "1.5.1"
-itertools = "0.10.0"
+bytemuck = "1.7.2"
+itertools = "0.10.1"
 num-traits = "0.2.14"
-rayon = "1.5.0"
-ultraviolet = { version = "0.8.0", features = ["f64"] }
+rayon = "1.5.1"
+ultraviolet = { version = "0.8.1", features = ["f64"] }
 # Optional deps.
 # Add support to render polyhedra with NSI.
-nsi = { version = "0.6.0", optional = true, features = ["toolbelt"] }
+nsi = { path = "../nsi", optional = true, features = ["toolbelt"] }
 # Add support to convert a Polyhedron into a bevy Mesh.
 bevy = { version = "0.5.0", optional = true, default-features = false, features = ["render", "bevy_wgpu", "bevy_winit"] }
+# The following are dev-dependency used for examples.But if we move that there
+# we get hundreds of their depedencies pulled in for a regular build.
+# Which is not what we want – the limits of Cargo ...
+bevy-orbit-controls = { version = "2.0.0", optional = true }
+kiss3d = { version = "0.32.0", optional = true }
+tobj = { version = "3.2.0", optional = true }
 
 [dev-dependencies]
-dirs = "3.0.1"
-kiss3d = "0.31.0"
+dirs = "4.0.0"
 slice_as_array = "1.1.0"
-bevy-orbit-controls = "2.0.0"
 
 [profile.release]
 lto = "on"
@@ -47,12 +51,17 @@ opt-level = 3
 [[example]]
 path = "examples/playground/playground.rs"
 name = "playground"
-required-features = [ "obj" ]
+required-features = [ "obj", "kiss3d" ]
 
 [[example]]
 path = "examples/bevy/bevy.rs"
 name = "bevy"
-required-features = [ "bevy" ]
+required-features = [ "bevy", "bevy-orbit-controls" ]
+
+[[example]]
+path = "examples/bevy-playground/bevy.rs"
+name = "bevy-playground"
+required-features = [ "bevy", "bevy-orbit-controls" ]
 
 [package.metadata.docs.rs]
 features = [ "nsi", "obj" ]

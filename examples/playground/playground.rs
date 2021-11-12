@@ -110,6 +110,7 @@ fn main() {
         [g]yro ↑↓\n\
         [i]nset ↑↓\n\
         [j]oin ↑↓\n\
+        Quic[K] & dirty canonicalization\n\
         [k]iss ↑↓\n\
         [M]edial ↑↓\n\
         [m]eta ↑↓\n\
@@ -157,457 +158,484 @@ fn main() {
 
         // update the current camera.
         for event in window.events().iter() {
-            match event.value {
-                WindowEvent::Key(key, Action::Release, modifiers) => {
-                    match key {
-                        Key::Numpad1 => use_arc_ball = true,
-                        Key::Numpad2 => use_arc_ball = false,
-                        Key::Key0 => render_quality = 0,
-                        Key::Key1 => {
-                            if modifiers.intersects(Modifiers::Shift) {
-                                render_quality = 1;
-                            }
+            if let WindowEvent::Key(key, Action::Release, modifiers) =
+                event.value
+            {
+                match key {
+                    Key::Numpad1 => use_arc_ball = true,
+                    Key::Numpad2 => use_arc_ball = false,
+                    Key::Key0 => render_quality = 0,
+                    Key::Key1 => {
+                        if modifiers.intersects(Modifiers::Shift) {
+                            render_quality = 1;
                         }
-                        Key::Key2 => {
-                            if modifiers.intersects(Modifiers::Shift) {
-                                render_quality = 2;
-                            }
+                    }
+                    Key::Key2 => {
+                        if modifiers.intersects(Modifiers::Shift) {
+                            render_quality = 2;
                         }
-                        Key::Key3 => {
-                            if modifiers.intersects(Modifiers::Shift) {
-                                render_quality = 3;
-                            }
+                    }
+                    Key::Key3 => {
+                        if modifiers.intersects(Modifiers::Shift) {
+                            render_quality = 3;
                         }
-                        Key::Key4 => {
-                            if modifiers.intersects(Modifiers::Shift) {
-                                render_quality = 4;
-                            }
+                    }
+                    Key::Key4 => {
+                        if modifiers.intersects(Modifiers::Shift) {
+                            render_quality = 4;
                         }
-                        Key::Key5 => {
-                            if modifiers.intersects(Modifiers::Shift) {
-                                render_quality = 5;
-                            }
+                    }
+                    Key::Key5 => {
+                        if modifiers.intersects(Modifiers::Shift) {
+                            render_quality = 5;
                         }
-                        Key::Key6 => {
-                            if modifiers.intersects(Modifiers::Shift) {
-                                render_quality = 6;
-                            }
+                    }
+                    Key::Key6 => {
+                        if modifiers.intersects(Modifiers::Shift) {
+                            render_quality = 6;
                         }
-                        Key::Key7 => {
-                            if modifiers.intersects(Modifiers::Shift) {
-                                render_quality = 7;
-                            }
+                    }
+                    Key::Key7 => {
+                        if modifiers.intersects(Modifiers::Shift) {
+                            render_quality = 7;
                         }
-                        Key::Key8 => {
-                            if modifiers.intersects(Modifiers::Shift) {
-                                render_quality = 8;
-                            }
+                    }
+                    Key::Key8 => {
+                        if modifiers.intersects(Modifiers::Shift) {
+                            render_quality = 8;
                         }
-                        Key::Key9 => {
-                            if modifiers.intersects(Modifiers::Shift) {
-                                render_quality = 9;
-                            }
+                    }
+                    Key::Key9 => {
+                        if modifiers.intersects(Modifiers::Shift) {
+                            render_quality = 9;
                         }
-                        Key::A => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
+                    }
+                    Key::A => {
+                        alter_last_op = false;
+                        last_poly = poly.clone();
+                        last_op_value = 0.5;
+                        poly.ambo(None, true);
+                        poly.normalize();
+                        last_op = 'a';
+                    }
+                    Key::B => {
+                        alter_last_op = false;
+                        last_poly = poly.clone();
+                        last_op_value = 0.;
+                        poly.bevel(None, None, None, None, true);
+                        poly.normalize();
+                        last_op = 'b';
+                    }
+                    Key::C => {
+                        alter_last_op = false;
+                        last_poly = poly.clone();
+                        if modifiers.intersects(Modifiers::Shift) {
+                            poly = Polyhedron::hexahedron();
+                            poly.normalize();
+                        } else {
                             last_op_value = 0.5;
-                            poly.ambo(None, true);
+                            poly.chamfer(None, true);
                             poly.normalize();
-                            last_op = 'a';
+                            last_op = 'c';
                         }
-                        Key::B => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
+                    }
+                    Key::D => {
+                        alter_last_op = false;
+                        last_poly = poly.clone();
+                        if modifiers.intersects(Modifiers::Shift) {
+                            poly = Polyhedron::dodecahedron();
+                        } else {
                             last_op_value = 0.;
-                            poly.bevel(None, None, None, None, true);
-                            poly.normalize();
-                            last_op = 'b';
+                            poly.dual(true);
                         }
-                        Key::C => {
+                        poly.normalize();
+                        last_op = '_';
+                    }
+                    Key::E => {
+                        alter_last_op = false;
+                        last_poly = poly.clone();
+                        last_op_value = 0.5;
+                        poly.expand(None, true);
+                        poly.normalize();
+                        last_op = 'e';
+                    }
+                    Key::G => {
+                        alter_last_op = false;
+                        last_poly = poly.clone();
+                        last_op_value = 0.;
+                        poly.gyro(None, None, true);
+                        poly.normalize();
+                        last_op = 'g';
+                    }
+                    Key::I => {
+                        alter_last_op = false;
+                        last_poly = poly.clone();
+                        if modifiers.intersects(Modifiers::Shift) {
+                            poly = Polyhedron::icosahedron();
+                        } else {
                             alter_last_op = false;
                             last_poly = poly.clone();
-                            if modifiers.intersects(Modifiers::Shift) {
-                                poly = Polyhedron::hexahedron();
-                                poly.normalize();
-                            } else {
-                                last_op_value = 0.5;
-                                poly.chamfer(None, true);
-                                poly.normalize();
-                                last_op = 'c';
-                            }
+                            last_op_value = 0.3;
+                            poly.inset(None, None, true);
+                            last_op = 'i';
                         }
-                        Key::D => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            if modifiers.intersects(Modifiers::Shift) {
-                                poly = Polyhedron::dodecahedron();
-                                poly.normalize();
-                            } else {
-                                last_op_value = 0.;
-                                poly.dual(true);
-                                poly.normalize();
-                            }
-                            last_op = '_';
-                        }
-                        Key::E => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            last_op_value = 0.5;
-                            poly.expand(None, true);
-                            poly.normalize();
-                            last_op = 'e';
-                        }
-                        Key::G => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            last_op_value = 0.;
-                            poly.gyro(None, None, true);
-                            poly.normalize();
-                            last_op = 'g';
-                        }
-                        Key::I => {
-                            if modifiers.intersects(Modifiers::Shift) {
-                                alter_last_op = false;
-                                last_poly = poly.clone();
-                                poly = Polyhedron::icosahedron();
-                                poly.normalize();
-                            } else {
-                                alter_last_op = false;
-                                last_poly = poly.clone();
-                                last_op_value = 0.3;
-                                poly.inset(None, None, true);
-                                poly.normalize();
-                                last_op = 'i';
-                            }
-                        }
-                        Key::J => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            last_op_value = 0.5;
-                            poly.join(None, true);
-                            poly.normalize();
-                            last_op = 'j';
-                        }
-                        Key::K => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            last_op_value = 0.;
-                            poly.kis(None, None, None, true);
-                            poly.normalize();
+                        poly.normalize();
+                    }
+                    Key::J => {
+                        alter_last_op = false;
+                        last_poly = poly.clone();
+                        last_op_value = 0.5;
+                        poly.join(None, true);
+                        poly.normalize();
+                        last_op = 'j';
+                    }
+                    Key::K => {
+                        alter_last_op = false;
+                        last_poly = poly.clone();
+                        last_op_value = 0.;
+                        if modifiers.intersects(Modifiers::Shift) {
+                            poly.planarize(Some(100), true);
+                            last_op = 'K';
+                        } else {
+                            poly.kis(None, None, None, None, true);
                             last_op = 'k';
                         }
-                        Key::M => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            last_op_value = 0.;
-                            if modifiers.intersects(Modifiers::Shift) {
-                                poly.medial(None, None, None, None, true);
-                                last_op = 'M';
-                            } else {
-                                poly.meta(None, None, None, None, true);
-                                last_op = 'm';
-                            }
-                            poly.normalize();
+                        poly.normalize();
+                    }
+                    Key::M => {
+                        alter_last_op = false;
+                        last_poly = poly.clone();
+                        last_op_value = 0.;
+                        if modifiers.intersects(Modifiers::Shift) {
+                            poly.medial(None, None, None, None, true);
+                            last_op = 'M';
+                        } else {
+                            poly.meta(None, None, None, None, true);
+                            last_op = 'm';
                         }
-                        Key::N => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            last_op_value = 0.;
+                        poly.normalize();
+                    }
+                    Key::N => {
+                        alter_last_op = false;
+                        last_poly = poly.clone();
+                        last_op_value = 0.;
+                        /*if modifiers.intersects(Modifiers::Shift) {
+                            poly.canonicalize(Some(1), true);
+                            poly.normalize();
+                            last_op = 'N';
+                        } else*/
+                        {
                             poly.needle(None, None, None, true);
                             poly.normalize();
                             last_op = 'n';
                         }
-                        Key::O => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            if modifiers.intersects(Modifiers::Shift) {
-                                poly = Polyhedron::octahedron();
-                                poly.normalize();
-                            } else {
-                                last_op_value = 0.5;
-                                poly.ortho(None, true);
-                                poly.normalize();
-                                last_op = 'o';
-                            }
-                        }
-                        Key::P => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            if modifiers.intersects(Modifiers::Shift) {
-                                last_op_value = 0.03;
-                                poly = Polyhedron::prism(3);
-                                poly.normalize();
-                                last_op = 'P';
-                            } else {
-                                last_op_value = 1. / 3.;
-                                poly.propeller(None, true);
-                                poly.normalize();
-                                last_op = 'p';
-                            }
-                        }
-                        Key::Q => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            last_op_value = 0.5;
-                            poly.quinto(None, true);
-                            poly.normalize();
-                            last_op = 'q';
-                        }
-                        Key::R => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            poly.reflect(true);
-                            poly.normalize();
-                            last_op = '_';
-                        }
-                        Key::S => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            if modifiers.intersects(Modifiers::Shift) {
-                                last_op_value = 1.0;
-                                poly.spherize(None, true);
-                                last_op = 'S';
-                            } else {
-                                last_op_value = 0.;
-                                poly.snub(None, None, true);
-                                poly.normalize();
-                                last_op = 's';
-                            }
-                        }
-                        Key::T => {
-                            if modifiers.intersects(Modifiers::Shift) {
-                                alter_last_op = false;
-                                last_poly = poly.clone();
-                                poly = Polyhedron::tetrahedron();
-                                poly.normalize();
-                            } else if modifiers.intersects(Modifiers::Control) {
-                                turntable = !turntable;
-                            } else {
-                                alter_last_op = false;
-                                last_poly = poly.clone();
-                                last_op_value = 0.;
-                                poly.truncate(None, None, None, true);
-                                poly.normalize();
-                                last_op = 't';
-                            }
-                        }
-                        Key::V => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            last_op_value = 0.;
-                            poly.catmull_clark_subdivide(true);
-                            poly.normalize();
-                            last_op = 'v';
-                        }
-                        Key::W => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            last_op_value = 0.;
-                            poly.whirl(None, None, true);
-                            poly.normalize();
-                            last_op = 'w';
-                        }
-                        Key::X => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            last_op_value = 0.3;
-                            poly.extrude(None, None, None, true);
-                            poly.normalize();
-                            last_op = 'j';
-                        }
-                        Key::Z => {
-                            alter_last_op = false;
-                            last_poly = poly.clone();
-                            last_op_value = 0.;
-                            poly.zip(None, None, None, true);
-                            poly.normalize();
-                            last_op = 'z';
-                        }
-                        Key::Space => {
-                            if modifiers.intersects(Modifiers::Shift) {
-                                #[cfg(feature = "nsi")]
-                                {
-                                    let xform = arc_ball
-                                        .inverse_transformation()
-                                        .iter()
-                                        .map(|e| *e as f64)
-                                        .collect::<Vec<_>>();
-
-                                    println!(
-                                        "Dumped to {}",
-                                        nsi_render::nsi_render(
-                                            &path,
-                                            &poly,
-                                            slice_as_array!(xform.as_slice(), [f64; 16]).unwrap(),
-                                            render_quality,
-                                            RenderType::Dump,
-                                            turntable,
-                                        )
-                                    );
-                                }
-                            } else {
-                                println!(
-                                    "Exported to {}",
-                                    poly.write_to_obj(&path, true).unwrap().display()
-                                );
-                            }
-                        }
-                        Key::Up => {
-                            alter_last_op = true;
-                            if modifiers.intersects(Modifiers::Shift) {
-                                last_op_value += 0.1;
-                            } else {
-                                last_op_value += 0.01;
-                            }
-                        }
-                        Key::Down => {
-                            alter_last_op = true;
-                            if modifiers.intersects(Modifiers::Shift) {
-                                last_op_value -= 0.1;
-                            } else {
-                                last_op_value -= 0.01;
-                            }
-                        }
-                        Key::Delete => {
-                            poly = last_poly.clone();
-                        }
-                        #[cfg(feature = "nsi")]
-                        Key::Return => {
-                            let xform = arc_ball
-                                .inverse_transformation()
-                                .iter()
-                                .map(|e| *e as f64)
-                                .collect::<Vec<_>>();
-
-                            nsi_render::nsi_render(
-                                Path::new(""),
-                                &poly,
-                                slice_as_array!(xform.as_slice(), [f64; 16]).unwrap(),
-                                render_quality,
-                                if modifiers.intersects(Modifiers::Shift) {
-                                    RenderType::Cloud
-                                } else {
-                                    RenderType::Normal
-                                },
-                                turntable,
-                            );
-                        }
-                        _ => {
-                            break;
-                        }
-                    };
-                    if alter_last_op {
+                    }
+                    Key::O => {
                         alter_last_op = false;
-                        if '_' != last_op {
-                            poly = last_poly.clone();
-                        }
-                        match last_op {
-                            'a' => {
-                                poly.ambo(Some(last_op_value), true);
-                            }
-                            'b' => {
-                                poly.bevel(
-                                    Some(last_op_value),
-                                    Some(last_op_value),
-                                    None,
-                                    None,
-                                    true,
-                                );
-                            }
-                            'c' => {
-                                poly.chamfer(Some(last_op_value), true);
-                            }
-                            'e' => {
-                                poly.expand(Some(last_op_value), true);
-                            }
-                            'g' => {
-                                poly.gyro(None, Some(last_op_value), true);
-                            }
-                            'i' => {
-                                poly.inset(Some(last_op_value), None, true);
-                            }
-                            'j' => {
-                                poly.join(Some(last_op_value), true);
-                            }
-                            'k' => {
-                                poly.kis(Some(last_op_value), None, None, true);
-                            }
-                            'm' => {
-                                poly.meta(
-                                    Some(last_op_value),
-                                    Some(last_op_value),
-                                    None,
-                                    None,
-                                    true,
-                                );
-                            }
-                            'o' => {
-                                poly.ortho(Some(last_op_value), true);
-                            }
-                            'p' => {
-                                poly.propeller(Some(last_op_value), true);
-                            }
-                            'P' => {
-                                poly = Polyhedron::prism((last_op_value * 100.) as _);
-                                poly.normalize();
-                            }
-                            'q' => {
-                                poly.quinto(Some(last_op_value), true);
-                            }
-                            'M' => {
-                                poly.medial(
-                                    Some(last_op_value),
-                                    Some(last_op_value),
-                                    None,
-                                    None,
-                                    true,
-                                );
-                            }
-                            'n' => {
-                                poly.needle(Some(last_op_value), None, None, true);
-                            }
-                            's' => {
-                                poly.snub(None, Some(last_op_value), true);
-                            }
-                            'S' => {
-                                poly.spherize(Some(last_op_value), true);
-                            }
-                            't' => {
-                                poly.truncate(Some(last_op_value), None, None, true);
-                            }
-                            'w' => {
-                                poly.whirl(None, Some(last_op_value), true);
-                            }
-                            'x' => {
-                                poly.extrude(Some(last_op_value), None, None, true);
-                            }
-                            'z' => {
-                                poly.zip(Some(last_op_value), None, None, true);
-                            }
-
-                            _ => (),
-                        }
-                        if '_' != last_op {
+                        last_poly = poly.clone();
+                        if modifiers.intersects(Modifiers::Shift) {
+                            poly = Polyhedron::octahedron();
                             poly.normalize();
+                        } else {
+                            last_op_value = 0.5;
+                            poly.ortho(None, true);
+                            poly.normalize();
+                            last_op = 'o';
                         }
                     }
-                    c.unlink();
-                    let mesh = Rc::new(RefCell::new(into_mesh(poly.clone())));
-                    c = window.add_mesh(mesh, Vector3::new(1.0, 1.0, 1.0));
-                    c.set_color(0.9, 0.8, 0.7);
-                    c.enable_backface_culling(false);
-                    c.set_points_size(10.);
+                    Key::P => {
+                        alter_last_op = false;
+                        last_poly = poly.clone();
+                        if modifiers.intersects(Modifiers::Shift) {
+                            last_op_value = 0.03;
+                            poly = Polyhedron::prism(3);
+                            poly.normalize();
+                            last_op = 'P';
+                        } else {
+                            last_op_value = 1. / 3.;
+                            poly.propeller(None, true);
+                            poly.normalize();
+                            last_op = 'p';
+                        }
+                    }
+                    Key::Q => {
+                        alter_last_op = false;
+                        last_poly = poly.clone();
+                        last_op_value = 0.5;
+                        poly.quinto(None, true);
+                        poly.normalize();
+                        last_op = 'q';
+                    }
+                    Key::R => {
+                        alter_last_op = false;
+                        last_poly = poly.clone();
+                        poly.reflect(true);
+                        poly.normalize();
+                        last_op = '_';
+                    }
+                    Key::S => {
+                        alter_last_op = false;
+                        last_poly = poly.clone();
+                        if modifiers.intersects(Modifiers::Shift) {
+                            last_op_value = 1.0;
+                            poly.spherize(None, true);
+                            last_op = 'S';
+                        } else {
+                            last_op_value = 0.;
+                            poly.snub(None, None, true);
+                            poly.normalize();
+                            last_op = 's';
+                        }
+                    }
+                    Key::T => {
+                        if modifiers.intersects(Modifiers::Shift) {
+                            alter_last_op = false;
+                            last_poly = poly.clone();
+                            poly = Polyhedron::tetrahedron();
+                            poly.normalize();
+                        } else if modifiers.intersects(Modifiers::Control) {
+                            turntable = !turntable;
+                        } else {
+                            alter_last_op = false;
+                            last_poly = poly.clone();
+                            last_op_value = 0.;
+                            poly.truncate(None, None, None, true);
+                            poly.normalize();
+                            last_op = 't';
+                        }
+                    }
+                    Key::V => {
+                        alter_last_op = false;
+                        last_poly = poly.clone();
+                        last_op_value = 0.;
+                        poly.catmull_clark_subdivide(true);
+                        poly.normalize();
+                        last_op = 'v';
+                    }
+                    Key::W => {
+                        alter_last_op = false;
+                        last_poly = poly.clone();
+                        last_op_value = 0.;
+                        poly.whirl(None, None, true);
+                        poly.normalize();
+                        last_op = 'w';
+                    }
+                    Key::X => {
+                        alter_last_op = false;
+                        last_poly = poly.clone();
+                        last_op_value = 0.3;
+                        poly.extrude(None, None, None, true);
+                        poly.normalize();
+                        last_op = 'x';
+                    }
+                    Key::Z => {
+                        alter_last_op = false;
+                        last_poly = poly.clone();
+                        last_op_value = 0.;
+                        poly.zip(None, None, None, true);
+                        poly.normalize();
+                        last_op = 'z';
+                    }
+                    Key::Space => {
+                        if modifiers.intersects(Modifiers::Shift) {
+                            #[cfg(feature = "nsi")]
+                            {
+                                let xform = arc_ball
+                                    .inverse_transformation()
+                                    .iter()
+                                    .map(|e| *e as f64)
+                                    .collect::<Vec<_>>();
 
-                    print!(
-                        "❯ {} – render quality {} {:<80}\r",
-                        poly.name(),
-                        render_quality,
-                        if turntable { "(turntable)" } else { "" },
-                    );
-                    io::stdout().flush().unwrap();
+                                println!(
+                                    "Dumped to {}",
+                                    nsi_render::nsi_render(
+                                        &path,
+                                        &poly,
+                                        slice_as_array!(
+                                            xform.as_slice(),
+                                            [f64; 16]
+                                        )
+                                        .unwrap(),
+                                        render_quality,
+                                        RenderType::Dump,
+                                        turntable,
+                                    )
+                                );
+                            }
+                        } else {
+                            println!(
+                                "Exported to {}",
+                                poly.write_to_obj(&path, true)
+                                    .unwrap()
+                                    .display()
+                            );
+                        }
+                    }
+                    Key::Up => {
+                        alter_last_op = true;
+                        if modifiers.intersects(Modifiers::Shift) {
+                            last_op_value += 0.1;
+                        } else {
+                            last_op_value += 0.01;
+                        }
+                    }
+                    Key::Down => {
+                        alter_last_op = true;
+                        if modifiers.intersects(Modifiers::Shift) {
+                            last_op_value -= 0.1;
+                        } else {
+                            last_op_value -= 0.01;
+                        }
+                    }
+                    Key::Delete => {
+                        poly = last_poly.clone();
+                    }
+                    #[cfg(feature = "nsi")]
+                    Key::Return => {
+                        let xform = arc_ball
+                            .inverse_transformation()
+                            .iter()
+                            .map(|e| *e as f64)
+                            .collect::<Vec<_>>();
+
+                        nsi_render::nsi_render(
+                            Path::new(""),
+                            &poly,
+                            slice_as_array!(xform.as_slice(), [f64; 16])
+                                .unwrap(),
+                            render_quality,
+                            if modifiers.intersects(Modifiers::Shift) {
+                                RenderType::Cloud
+                            } else {
+                                RenderType::Normal
+                            },
+                            turntable,
+                        );
+                    }
+                    _ => {
+                        break;
+                    }
                 }
-                _ => {}
+                if alter_last_op {
+                    alter_last_op = false;
+                    if '_' != last_op {
+                        poly = last_poly.clone();
+                    }
+                    match last_op {
+                        'a' => {
+                            poly.ambo(Some(last_op_value), true);
+                        }
+                        'b' => {
+                            poly.bevel(
+                                Some(last_op_value),
+                                Some(last_op_value),
+                                None,
+                                None,
+                                true,
+                            );
+                        }
+                        'c' => {
+                            poly.chamfer(Some(last_op_value), true);
+                        }
+                        'e' => {
+                            poly.expand(Some(last_op_value), true);
+                        }
+                        'g' => {
+                            poly.gyro(None, Some(last_op_value), true);
+                        }
+                        'i' => {
+                            poly.inset(Some(last_op_value), None, true);
+                        }
+                        'j' => {
+                            poly.join(Some(last_op_value), true);
+                        }
+                        'k' => {
+                            poly.kis(
+                                Some(last_op_value),
+                                None,
+                                None,
+                                None,
+                                true,
+                            );
+                        }
+                        'm' => {
+                            poly.meta(
+                                Some(last_op_value),
+                                Some(last_op_value),
+                                None,
+                                None,
+                                true,
+                            );
+                        }
+                        'o' => {
+                            poly.ortho(Some(last_op_value), true);
+                        }
+                        'p' => {
+                            poly.propeller(Some(last_op_value), true);
+                        }
+                        'P' => {
+                            poly =
+                                Polyhedron::prism((last_op_value * 100.) as _);
+                            poly.normalize();
+                        }
+                        'q' => {
+                            poly.quinto(Some(last_op_value), true);
+                        }
+                        'M' => {
+                            poly.medial(
+                                Some(last_op_value),
+                                Some(last_op_value),
+                                None,
+                                None,
+                                true,
+                            );
+                        }
+                        'n' => {
+                            poly.needle(Some(last_op_value), None, None, true);
+                        }
+                        's' => {
+                            poly.snub(None, Some(last_op_value), true);
+                        }
+                        'S' => {
+                            poly.spherize(Some(last_op_value), true);
+                        }
+                        't' => {
+                            poly.truncate(
+                                Some(last_op_value),
+                                None,
+                                None,
+                                true,
+                            );
+                        }
+                        'w' => {
+                            poly.whirl(None, Some(last_op_value), true);
+                        }
+                        'x' => {
+                            poly.extrude(Some(last_op_value), None, None, true);
+                        }
+                        'z' => {
+                            poly.zip(Some(last_op_value), None, None, true);
+                        }
+                        _ => (),
+                    }
+                    if '_' != last_op {
+                        poly.normalize();
+                    }
+                }
+                c.unlink();
+                let mesh = Rc::new(RefCell::new(into_mesh(poly.clone())));
+                c = window.add_mesh(mesh, Vector3::new(1.0, 1.0, 1.0));
+                c.set_color(0.9, 0.8, 0.7);
+                c.enable_backface_culling(false);
+                c.set_points_size(10.);
+
+                print!(
+                    "❯ {} – render quality {} {:<80}\r",
+                    poly.name(),
+                    render_quality,
+                    if turntable { "(turntable)" } else { "" },
+                );
+                io::stdout().flush().unwrap();
             }
         }
 
