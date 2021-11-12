@@ -52,10 +52,8 @@ In short: use at your own risk.
 * `bevy` – Adds support for converting a polyhedron into a
            [`bevy`](https://bevyengine.org/)
            [`Mesh`](https://docs.rs/bevy/latest/bevy/render/mesh/struct.Mesh.html).
-
 * `nsi`  – Adds support for sending a polyhedron to an offline renderer
            via the [ɴsɪ](https://crates.io/crates/nsi/) crate.
-
 * `obj`  – Adds support for writing data out as
            [Wavefront OBJ](https://en.wikipedia.org/wiki/Wavefront_.obj_file).
 
@@ -77,6 +75,7 @@ In short: use at your own risk.
 - [x] **g** - gyro
 - [x] **i** - inset/loft (equiv. to **x,N**)
 - [x] **j** - join (equiv. to **dad**)
+- [x] **K** - Quick & dirty canonicalization
 - [x] **k** - kis
 - [x] **M** - medial (equiv. to **dta**)
 - [x] **m** - meta (equiv. to **k,,3j**)
@@ -94,7 +93,7 @@ In short: use at your own risk.
 
 ### Other Operators
 
-- [ ] **H** - hollow (called ’intrude‘ in Wings3D)
+- [ ] **H** - hollow (called ‘intrude’ in Wings3D)
 - [ ] **h** - hexpropellor
 - [ ] **l** - stellate
 - [ ] **z** - triangulate
@@ -104,7 +103,7 @@ In short: use at your own risk.
 There is a playground example app to test things & have fun:
 
 ```
-cargo run --release --example playground --features obj,nsi
+cargo run --release --example playground --features obj
 ```
 
 If you want to produce images like the ones above you need to

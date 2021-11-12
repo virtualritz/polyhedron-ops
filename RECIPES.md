@@ -10,3 +10,6 @@ This is a bit of a misnomer since the resulting sphere approximation will also c
 * `dual`
 
 Repeat the `kis`/`dual` combo any number of times to tessellate the shape into more hexagons.
+
+
+Mx0.30in0.20D
