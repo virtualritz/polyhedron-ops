@@ -41,13 +41,19 @@
 //!
 //! ```toml
 //! [dependencies]
-//! polyhedron-ops = { version = "0.2.1", features = [ "bevy", "nsi", "obj" ] }
+//! polyhedron-ops = { version = "0.3", features = [ "bevy", "nsi", "obj" ] }
 //! ```
+//!
 //! * `bevy` – A polyhedro can be converted into a [`bevy`](https://bevyengine.org/)
 //!   [`Mesh`](https://docs.rs/bevy/latest/bevy/render/mesh/struct.Mesh.html).
-//!   See the `bevy` example. ```ignore Mesh::from(polyhedron) ```
+//!   See the `bevy` example.
+//!   ```ignore
+//!   Mesh::from(polyhedron)
+//!   ```
+//!
 //! * `nsi` – Add supports for sending data to renderers implementing the [ɴsɪ](https://crates.io/crates/nsi/)
 //!   API. The function is called [`to_nsi()`](Polyhedron::to_nsi()).
+//!
 //! * `obj` – Add support for output to [Wavefront OBJ](https://en.wikipedia.org/wiki/Wavefront_.obj_file)
 //!   via the [`write_to_obj()`](Polyhedron::write_to_obj()) function.
 use itertools::Itertools;
