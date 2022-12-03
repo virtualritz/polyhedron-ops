@@ -46,10 +46,7 @@
 //!
 //! * `bevy` – A polyhedro can be converted into a [`bevy`](https://bevyengine.org/)
 //!   [`Mesh`](https://docs.rs/bevy/latest/bevy/render/mesh/struct.Mesh.html).
-//!   See the `bevy` example.
-//!   ```ignore
-//!   Mesh::from(polyhedron)
-//!   ```
+//!   See the `bevy` example. ```ignore Mesh::from(polyhedron) ```
 //!
 //! * `nsi` – Add supports for sending data to renderers implementing the [ɴsɪ](https://crates.io/crates/nsi/)
 //!   API. The function is called [`to_nsi()`](Polyhedron::to_nsi()).
@@ -1776,6 +1773,7 @@ impl Polyhedron {
         self
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn open_face(
         &self,
         outer_inset_ratio: Option<Float>,
@@ -1979,7 +1977,7 @@ impl Polyhedron {
     ) -> String {
         let handle = handle.unwrap_or_else(|| self.name.as_str()).to_string();
         // Create a new mesh node.
-        ctx.create(handle.clone(), nsi::NodeType::Mesh, None);
+        ctx.create(handle.clone(), nsi::NodeType::Mesh, &[]);
 
         // Flatten point vector.
         // Fast, unsafe version. May exploce on some platforms.
@@ -2385,9 +2383,8 @@ impl Polyhedron {
 }
 
 #[cfg(feature = "bevy")]
-use bevy::render::{
-    mesh::{Indices, Mesh},
-    pipeline::PrimitiveTopology,
+use bevy::render::mesh::{
+    Indices, Mesh, PrimitiveTopology, VertexAttributeValues,
 };
 
 #[cfg(feature = "bevy")]
@@ -2399,26 +2396,34 @@ impl From<Polyhedron> for Mesh {
 
         let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
         mesh.set_indices(Some(Indices::U32(index)));
-        mesh.set_attribute(
-            Mesh::ATTRIBUTE_POSITION,
-            positions
-                .par_iter()
-                .map(|p| [p.x, p.y, p.z])
-                .collect::<Vec<_>>(),
-        );
-        mesh.set_attribute(
-            Mesh::ATTRIBUTE_NORMAL,
-            normals
-                .par_iter()
-                .map(|n| [-n.x, -n.y, -n.z])
-                .collect::<Vec<_>>(),
-        );
+
+        if let Some(mesh_positions) =
+            mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION)
+        {
+            *mesh_positions = VertexAttributeValues::Float32x3(
+                positions
+                    .par_iter()
+                    .map(|p| [p.x, p.y, p.z])
+                    .collect::<Vec<_>>(),
+            );
+        }
+
+        if let Some(mesh_normals) = mesh.attribute_mut(Mesh::ATTRIBUTE_NORMAL) {
+            *mesh_normals = VertexAttributeValues::Float32x3(
+                normals
+                    .par_iter()
+                    .map(|n| [-n.x, -n.y, -n.z])
+                    .collect::<Vec<_>>(),
+            );
+        }
+
         // Bevy forces UVs. So we create some fake UVs by just
         // projecting through, onto the XY plane.
-        mesh.set_attribute(
-            Mesh::ATTRIBUTE_UV_0,
-            positions.par_iter().map(|p| [p.x, p.y]).collect::<Vec<_>>(),
-        );
+        if let Some(mesh_uvs) = mesh.attribute_mut(Mesh::ATTRIBUTE_UV_0) {
+            *mesh_uvs = VertexAttributeValues::Float32x2(
+                positions.par_iter().map(|p| [p.x, p.y]).collect::<Vec<_>>(),
+            );
+        }
 
         mesh
     }
