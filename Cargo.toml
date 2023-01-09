@@ -1,6 +1,6 @@
 [package]
 name = "polyhedron-ops"
-version = "0.3.0"
+version = "0.2.4"
 authors = ["Moritz Moeller <virtualritz@gmail.com>"]
 edition = "2021"
 keywords = ["3d", "creative", "geometry", "graphics", "rendering"]
