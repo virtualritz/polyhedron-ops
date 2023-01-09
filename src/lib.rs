@@ -1774,7 +1774,7 @@ impl Polyhedron {
     }
 
     #[allow(clippy::too_many_arguments)]
-    pub fn open_face(
+    pub fn _open_face(
         &self,
         outer_inset_ratio: Option<Float>,
         outer_inset: Option<Float>,
@@ -1783,7 +1783,7 @@ impl Polyhedron {
         depth: Option<Float>,
         face_arity: Option<&[usize]>,
         min_edge_length: Option<Float>,
-        no_cut: Option<bool>,
+        _no_cut: Option<bool>,
     ) {
         // upper and lower inset can be specified by ratio or absolute distance
         //  let(inner_inset_ratio= inner_inset_ratio == undef ?
@@ -1818,7 +1818,7 @@ impl Polyhedron {
             })
             .collect::<Vec<_>>();
 
-        let new_vertices = self
+        let _new_vertices = self
             .face_index
             .iter()
             // Filter out faces that have an unwanted arity or are too small.
@@ -1836,7 +1836,7 @@ impl Polyhedron {
                 face.iter()
                     .enumerate()
                     .flat_map(|f| {
-                        let v = *f.1;
+                        let _v = *f.1;
                         let p = face_positions[f.0];
                         let p1 = face_positions[(f.0 + 1) % face.len()];
                         let p0 =
@@ -1848,7 +1848,7 @@ impl Polyhedron {
                                 + (*p0 - *p).normalized());
                         let op = ofp[f.0];
 
-                        let ip = match outer_inset {
+                        let _ip = match outer_inset {
                             None => {
                                 *p + (c - *p) * outer_inset_ratio.unwrap_or(0.2)
                             }
@@ -1856,7 +1856,7 @@ impl Polyhedron {
                                 *p + outer_inset / sa.sin() * bv
                             }
                         };
-                        let oip = match inner_inset {
+                        let _oip = match inner_inset {
                             None => {
                                 *op + (oc - *op)
                                     * inner_inset_ratio.unwrap_or(0.2)

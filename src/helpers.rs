@@ -380,7 +380,7 @@ pub(crate) fn index_as_positions<'a>(
 }
 
 #[inline]
-pub(crate) fn planar_area_ref(positions: &PointsRefSlice) -> Float {
+pub(crate) fn _planar_area_ref(positions: &PointsRefSlice) -> Float {
     let sum = positions
         .iter()
         .circular_tuple_windows::<(_, _)>()
@@ -393,8 +393,8 @@ pub(crate) fn planar_area_ref(positions: &PointsRefSlice) -> Float {
 }
 
 #[inline]
-fn sig_figs(val: Float) -> [u8; 4] {
-    unsafe { std::mem::transmute(val) }
+fn _sig_figs(val: Float) -> [u8; 4] {
+    val.to_ne_bytes()
 }
 
 /*
@@ -740,7 +740,7 @@ pub(crate) fn reciprocate_face_centers(
 ) -> Points {
     face_centers(face_index, positions)
         .iter()
-        .map(|center| reciprocal(center))
+        .map(reciprocal)
         .collect()
 }
 
