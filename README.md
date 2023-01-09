@@ -13,8 +13,8 @@ and others.
 
 This is an experiment to improve my understanding of iterators in Rust.
 It is based on [Kit Wallace](http://kitwallace.tumblr.com/tagged/conway)’s
-OpenSCAD code. As OpenSCAD Language is functional it lends itself
-well to translation into functional Rust.
+OpenSCAD code. As OpenSCAD Language is functional it lends itself well to
+translation into functional Rust.
 
 ```rust
 use polyhedron_ops::Polyhedron;
@@ -39,7 +39,7 @@ iteratively applies four operators.
 
 The resulting shape is shown below.
 
-![](gapcD.jpg)
+![A polyhedron](gapcD.jpg)
 
 ## Caveat
 
@@ -61,50 +61,50 @@ In short: use at your own risk.
 
 ## Base Shapes
 
-- [x] Platonic solids
-- [x] Prisms
-- [ ] Antiprisms
-- [ ] Pyramids
-- [ ] Johnson Solids
+* [x] Platonic solids
+* [x] Prisms
+* [ ] Antiprisms
+* [ ] Pyramids
+* [ ] Johnson Solids
 
 ## Supported Operators
 
-- [x] **a** - ambo
-- [x] **b** - bevel (equiv. to **ta**)
-- [x] **c** - chamfer
-- [x] **d** - dual
-- [x] **e** - expand (a.k.a. explode, equiv. to **aa**)
-- [x] **g** - gyro
-- [x] **i** - inset/loft (equiv. to **x,N**)
-- [x] **j** - join (equiv. to **dad**)
-- [x] **K** - Quick & dirty canonicalization
-- [x] **k** - kis
-- [x] **M** - medial (equiv. to **dta**)
-- [x] **m** - meta (equiv. to **k,,3j**)
-- [x] **n** - needle (equiv. to **dt**)
-- [x] **o** - ortho (equiv. to **jj**)
-- [x] **p** - propeller
-- [x] **q** - quinto
-- [x] **r** - reflect
-- [x] **s** - snub (equiv. to **dgd**)
-- [x] **t** - truncate (equiv. to **dkd**)
-- [x] **v** - subdivide (Catmull-Clark)
-- [x] **w** - whirl
-- [x] **x** - extrude
-- [x] **z** - zip (equiv. to **dk**)
+* [x] **a** - ambo
+* [x] **b** - bevel (equiv. to **ta**)
+* [x] **c** - chamfer
+* [x] **d** - dual
+* [x] **e** - expand (a.k.a. explode, equiv. to **aa**)
+* [x] **g** - gyro
+* [x] **i** - inset/loft (equiv. to **x,N**)
+* [x] **j** - join (equiv. to **dad**)
+* [x] **K** - Quick & dirty canonicalization
+* [x] **k** - kis
+* [x] **M** - medial (equiv. to **dta**)
+* [x] **m** - meta (equiv. to **k,,3j**)
+* [x] **n** - needle (equiv. to **dt**)
+* [x] **o** - ortho (equiv. to **jj**)
+* [x] **p** - propeller
+* [x] **q** - quinto
+* [x] **r** - reflect
+* [x] **s** - snub (equiv. to **dgd**)
+* [x] **t** - truncate (equiv. to **dkd**)
+* [x] **v** - subdivide (Catmull-Clark)
+* [x] **w** - whirl
+* [x] **x** - extrude
+* [x] **z** - zip (equiv. to **dk**)
 
 ### Other Operators
 
-- [ ] **H** - hollow (called ‘intrude’ in Wings3D)
-- [ ] **h** - hexpropellor
-- [ ] **l** - stellate
-- [ ] **z** - triangulate
+* [ ] **H** - hollow (called ‘intrude’ in Wings3D)
+* [ ] **h** - hexpropellor
+* [ ] **l** - stellate
+* [ ] **z** - triangulate
 
 ## Playing
 
 There is a playground example app to test things & have fun:
 
-```
+```text
 cargo run --release --example playground --features obj
 ```
 
@@ -113,7 +113,7 @@ If you want to produce images like the ones above you need to
 and install that. After that, run the example with
 [ɴsɪ](https://crates.io/crates/nsi/) support:
 
-```
+```text
 cargo run --release --example playground --features nsi,obj
 ```
 
@@ -126,10 +126,9 @@ Combine with `Shift` for 10× the change.
 
 `Delete` undoes the last (and only the last) operation.
 
-Press `Enter` to render with 3Delight (requires a [3Delight|ɴsɪ
+Press `F1` to render with 3Delight (requires a [3Delight|ɴsɪ
 installation](https://www.3delight.com/download)).
-Combine with `Shift` to render with 3Delight Cloud (requires
-registration).
+Combine with `Shift` to render with 3Delight Cloud (requires registration).
 
 Press `Space` to save as `$HOME/polyhedron-<type>.obj`.
 
