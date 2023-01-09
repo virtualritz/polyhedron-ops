@@ -2397,33 +2397,25 @@ impl From<Polyhedron> for Mesh {
         let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
         mesh.set_indices(Some(Indices::U32(index)));
 
-        if let Some(mesh_positions) =
-            mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION)
-        {
-            *mesh_positions = VertexAttributeValues::Float32x3(
+        mesh.insert_attribute(
+            Mesh::ATTRIBUTE_POSITION,
+            VertexAttributeValues::Float32x3(
                 positions
                     .par_iter()
                     .map(|p| [p.x, p.y, p.z])
                     .collect::<Vec<_>>(),
-            );
-        }
+            ),
+        );
 
-        if let Some(mesh_normals) = mesh.attribute_mut(Mesh::ATTRIBUTE_NORMAL) {
-            *mesh_normals = VertexAttributeValues::Float32x3(
+        mesh.insert_attribute(
+            Mesh::ATTRIBUTE_NORMAL,
+            VertexAttributeValues::Float32x3(
                 normals
                     .par_iter()
                     .map(|n| [-n.x, -n.y, -n.z])
                     .collect::<Vec<_>>(),
-            );
-        }
-
-        // Bevy forces UVs. So we create some fake UVs by just
-        // projecting through, onto the XY plane.
-        if let Some(mesh_uvs) = mesh.attribute_mut(Mesh::ATTRIBUTE_UV_0) {
-            *mesh_uvs = VertexAttributeValues::Float32x2(
-                positions.par_iter().map(|p| [p.x, p.y]).collect::<Vec<_>>(),
-            );
-        }
+            ),
+        );
 
         mesh
     }
