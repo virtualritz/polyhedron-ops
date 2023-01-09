@@ -12,8 +12,8 @@ fn nsi_globals_and_camera(
     render_quality: u32,
 ) {
     // Setup a camera transform.
-    c.create("camera_xform", nsi::NodeType::Transform, None);
-    c.connect("camera_xform", "", ".root", "objects", None);
+    c.create("camera_xform", nsi::NodeType::Transform, &[]);
+    c.connect("camera_xform", "", ".root", "objects", &[]);
 
     c.set_attribute(
         "camera_xform",
@@ -25,14 +25,14 @@ fn nsi_globals_and_camera(
     );
 
     // Setup a camera.
-    c.create("camera", nsi::NodeType::PerspectiveCamera, None);
+    c.create("camera", nsi::NodeType::PerspectiveCamera, &[]);
 
     c.set_attribute("camera", &[nsi::float!("fov", 35.)]);
-    c.connect("camera", "", "camera_xform", "objects", None);
+    c.connect("camera", "", "camera_xform", "objects", &[]);
 
     // Setup a screen.
-    c.create("screen", nsi::NodeType::Screen, None);
-    c.connect("screen", "", "camera", "screens", None);
+    c.create("screen", nsi::NodeType::Screen, &[]);
+    c.connect("screen", "", "camera", "screens", &[]);
     c.set_attribute(
         "screen",
         &[
@@ -51,7 +51,7 @@ fn nsi_globals_and_camera(
         ],
     );
 
-    c.create("albedo", nsi::NodeType::OutputLayer, None);
+    c.create("albedo", nsi::NodeType::OutputLayer, &[]);
     c.set_attribute(
         "albedo",
         &[
@@ -63,10 +63,10 @@ fn nsi_globals_and_camera(
             nsi::double!("filterwidth", 1.),
         ],
     );
-    c.connect("albedo", "", "screen", "outputlayers", None);
+    c.connect("albedo", "", "screen", "outputlayers", &[]);
 
     // Normal layer.
-    c.create("normal", nsi::NodeType::OutputLayer, None);
+    c.create("normal", nsi::NodeType::OutputLayer, &[]);
     c.set_attribute(
         "normal",
         &[
@@ -78,10 +78,10 @@ fn nsi_globals_and_camera(
             nsi::double!("filterwidth", 1.),
         ],
     );
-    c.connect("normal", "", "screen", "outputlayers", None);
+    c.connect("normal", "", "screen", "outputlayers", &[]);
 
     // Setup an output layer.
-    c.create(name, nsi::NodeType::OutputLayer, None);
+    c.create(name, nsi::NodeType::OutputLayer, &[]);
     c.set_attribute(
         name,
         &[
@@ -91,11 +91,11 @@ fn nsi_globals_and_camera(
             nsi::double!("filterwidth", 1.),
         ],
     );
-    c.connect(name, "", "screen", "outputlayers", None);
+    c.connect(name, "", "screen", "outputlayers", &[]);
 
     // Setup an output driver.
-    c.create("driver", nsi::NodeType::OutputDriver, None);
-    c.connect("driver", "", name, "outputdrivers", None);
+    c.create("driver", nsi::NodeType::OutputDriver, &[]);
+    c.connect("driver", "", name, "outputdrivers", &[]);
     c.set_attribute(
         "driver",
         &[
@@ -105,10 +105,10 @@ fn nsi_globals_and_camera(
     );
 
     /*
-    c.create("driver2", nsi::NodeType::OutputDriver, None);
-    c.connect("driver2", "", name, "outputdrivers", None);
-    c.connect("driver2", "", "albedo", "outputdrivers", None);
-    c.connect("driver2", "", "normal", "outputdrivers", None);
+    c.create("driver2", nsi::NodeType::OutputDriver, &[]);
+    c.connect("driver2", "", name, "outputdrivers", &[]);
+    c.connect("driver2", "", "albedo", "outputdrivers", &[]);
+    c.connect("driver2", "", "normal", "outputdrivers", &[]);
     c.set_attribute(
         "driver2",
         &[
@@ -122,19 +122,19 @@ fn nsi_globals_and_camera(
 fn nsi_environment(c: &nsi::Context) {
     if let Ok(path) = &env::var("DELIGHT") {
         // Set up an environment light.
-        c.create("env_xform", nsi::NodeType::Transform, None);
-        c.connect("env_xform", "", ".root", "objects", None);
+        c.create("env_xform", nsi::NodeType::Transform, &[]);
+        c.connect("env_xform", "", ".root", "objects", &[]);
 
-        c.create("environment", nsi::NodeType::Environment, None);
-        c.connect("environment", "", "env_xform", "objects", None);
+        c.create("environment", nsi::NodeType::Environment, &[]);
+        c.connect("environment", "", "env_xform", "objects", &[]);
 
-        c.create("env_attrib", nsi::NodeType::Attributes, None);
-        c.connect("env_attrib", "", "environment", "geometryattributes", None);
+        c.create("env_attrib", nsi::NodeType::Attributes, &[]);
+        c.connect("env_attrib", "", "environment", "geometryattributes", &[]);
 
         c.set_attribute("env_attrib", &[nsi::integer!("visibility.camera", 0)]);
 
-        c.create("env_shader", nsi::NodeType::Shader, None);
-        c.connect("env_shader", "", "env_attrib", "surfaceshader", None);
+        c.create("env_shader", nsi::NodeType::Shader, &[]);
+        c.connect("env_shader", "", "env_attrib", "surfaceshader", &[]);
 
         // Environment light attributes.
         c.set_attribute(
@@ -163,18 +163,18 @@ fn nsi_material(c: &nsi::Context, name: &str) {
     if let Ok(path) = &env::var("DELIGHT") {
         // Particle attributes.
         let attribute_name = format!("{}_attrib", name);
-        c.create(attribute_name.clone(), nsi::NodeType::Attributes, None);
-        c.connect(attribute_name.clone(), "", name, "geometryattributes", None);
+        c.create(attribute_name.clone(), nsi::NodeType::Attributes, &[]);
+        c.connect(attribute_name.clone(), "", name, "geometryattributes", &[]);
 
         // Particle shader.
         let shader_name = format!("{}_shader", name);
-        c.create(shader_name.clone(), nsi::NodeType::Shader, None);
+        c.create(shader_name.clone(), nsi::NodeType::Shader, &[]);
         c.connect(
             shader_name.clone(),
             "",
             attribute_name,
             "surfaceshader",
-            None,
+            &[],
         );
 
         /*
@@ -251,14 +251,14 @@ pub fn nsi_render(
 
     let ctx = {
         match render_type {
-            RenderType::Normal => nsi::Context::new(None),
+            RenderType::Normal => nsi::Context::new(&[]),
             RenderType::Cloud => {
-                nsi::Context::new(Some(&[nsi::integer!("cloud", 1)]))
+                nsi::Context::new(&[nsi::integer!("cloud", 1)])
             }
-            RenderType::Dump => nsi::Context::new(Some(&[
+            RenderType::Dump => nsi::Context::new(&[
                 nsi::string!("type", "apistream"),
                 nsi::string!("streamfilename", destination.to_str().unwrap()),
-            ])),
+            ]),
         }
     }
     .unwrap();
@@ -308,9 +308,9 @@ pub fn nsi_render(
     );*/
 
     if turntable {
-        ctx.create("rotation", nsi::NodeType::Transform, None);
-        ctx.connect("rotation", "", ".root", "objects", None);
-        ctx.connect(name, "", "rotation", "objects", None);
+        ctx.create("rotation", nsi::NodeType::Transform, &[]);
+        ctx.connect("rotation", "", ".root", "objects", &[]);
+        ctx.connect(name, "", "rotation", "objects", &[]);
 
         for frame in 0..72 {
             ctx.set_attribute(
@@ -334,7 +334,7 @@ pub fn nsi_render(
             ctx.render_control(&[nsi::string!("action", "wait")]);
         }
     } else {
-        ctx.connect(name, "", ".root", "objects", None);
+        ctx.connect(name, "", ".root", "objects", &[]);
 
         //if RenderType::Dump != render_type {
         ctx.render_control(&[nsi::string!("action", "start")]);

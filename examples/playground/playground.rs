@@ -138,9 +138,9 @@ fn main() {
     print!(
         " (dump to NSI w. [Shift])\n\
         _______________________________________________________ Rendering ______\n\
-        (Shift)+[Enter]   – Render (in the cloud w. [Shift])\n\
-        [Shift]+[0]..[9]  – Set render quality: [preview]..[super high quality]\n\
-        [Ctrl]+[T]        – Toggle turntable rendering (72 frames)"
+        (Shift)+[F1] – Render (in the cloud w. [Shift])\n\
+        [0]..[9]     – Set render quality: [preview]..[super high quality]\n\
+        [Ctrl]+[T]   – Toggle turntable rendering (72 frames)"
     );
     print!(
         "\n________________________________________________________________________\n\
@@ -166,49 +166,31 @@ fn main() {
                     Key::Numpad2 => use_arc_ball = false,
                     Key::Key0 => render_quality = 0,
                     Key::Key1 => {
-                        if modifiers.intersects(Modifiers::Shift) {
-                            render_quality = 1;
-                        }
+                        render_quality = 1;
                     }
                     Key::Key2 => {
-                        if modifiers.intersects(Modifiers::Shift) {
-                            render_quality = 2;
-                        }
+                        render_quality = 2;
                     }
                     Key::Key3 => {
-                        if modifiers.intersects(Modifiers::Shift) {
-                            render_quality = 3;
-                        }
+                        render_quality = 3;
                     }
                     Key::Key4 => {
-                        if modifiers.intersects(Modifiers::Shift) {
-                            render_quality = 4;
-                        }
+                        render_quality = 4;
                     }
                     Key::Key5 => {
-                        if modifiers.intersects(Modifiers::Shift) {
-                            render_quality = 5;
-                        }
+                        render_quality = 5;
                     }
                     Key::Key6 => {
-                        if modifiers.intersects(Modifiers::Shift) {
-                            render_quality = 6;
-                        }
+                        render_quality = 6;
                     }
                     Key::Key7 => {
-                        if modifiers.intersects(Modifiers::Shift) {
-                            render_quality = 7;
-                        }
+                        render_quality = 7;
                     }
                     Key::Key8 => {
-                        if modifiers.intersects(Modifiers::Shift) {
-                            render_quality = 8;
-                        }
+                        render_quality = 8;
                     }
                     Key::Key9 => {
-                        if modifiers.intersects(Modifiers::Shift) {
-                            render_quality = 9;
-                        }
+                        render_quality = 9;
                     }
                     Key::A => {
                         alter_last_op = false;
@@ -491,7 +473,7 @@ fn main() {
                         poly = last_poly.clone();
                     }
                     #[cfg(feature = "nsi")]
-                    Key::Return => {
+                    Key::F1 => {
                         let xform = arc_ball
                             .inverse_transformation()
                             .iter()
