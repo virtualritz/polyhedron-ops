@@ -100,13 +100,9 @@ temp	closure color	$tmp58	%read{99,99} %write{97,97}
 temp	closure color	$tmp59	%read{99,99} %write{98,98}
 const	string	$const16	"transparent"		%read{98,98} %write{2147483647,-1}
 code ___main___
-# environmentLight.osl:102
-# 	color result = i_color * intensity * pow(2, exposure );
 	mul		$tmp1 i_color intensity 	%filename{"environmentLight.osl"} %line{102} %argrw{"wrr"}
 	pow		$tmp2 $const2 exposure 	%argrw{"wrr"}
 	mul		result $tmp1 $tmp2 	%argrw{"wrr"}
-# environmentLight.osl:108
-# 	if( result!=0.0 && contributions == 1 )
 	neq		$tmp3 result $const3 	%line{108} %argrw{"wrr"}
 	neq		$tmp4 $tmp3 $const4 	%argrw{"wrr"}
 	if		$tmp4 9 9 	%argrw{"r"}
@@ -114,8 +110,6 @@ code ___main___
 	neq		$tmp6 $tmp5 $const4 	%argrw{"wrr"}
 	assign		$tmp4 $tmp6 	%argrw{"wr"}
 	if		$tmp4 50 50 	%argrw{"r"}
-# environmentLight.osl:110
-# 		if( background_contribution!=1.0 && raytype("camera") )
 	neq		$tmp7 background_contribution $const6 	%line{110} %argrw{"wrr"}
 	neq		$tmp8 $tmp7 $const4 	%argrw{"wrr"}
 	if		$tmp8 16 16 	%argrw{"r"}
@@ -123,11 +117,7 @@ code ___main___
 	neq		$tmp10 $tmp9 $const4 	%argrw{"wrr"}
 	assign		$tmp8 $tmp10 	%argrw{"wr"}
 	if		$tmp8 18 50 	%argrw{"r"}
-# environmentLight.osl:111
-# 			result *= background_contribution;
 	mul		result result background_contribution 	%line{111} %argrw{"wrr"}
-# environmentLight.osl:112
-# 		else if( diffuse_contribution!=1.0 && raytype("diffuse") )
 	neq		$tmp11 diffuse_contribution $const6 	%line{112} %argrw{"wrr"}
 	neq		$tmp12 $tmp11 $const4 	%argrw{"wrr"}
 	if		$tmp12 24 24 	%argrw{"r"}
@@ -135,11 +125,7 @@ code ___main___
 	neq		$tmp14 $tmp13 $const4 	%argrw{"wrr"}
 	assign		$tmp12 $tmp14 	%argrw{"wr"}
 	if		$tmp12 26 50 	%argrw{"r"}
-# environmentLight.osl:113
-# 			result *= diffuse_contribution;
 	mul		result result diffuse_contribution 	%line{113} %argrw{"wrr"}
-# environmentLight.osl:114
-# 		else if( hair_contribution!=1.0 && raytype("hair") )
 	neq		$tmp15 hair_contribution $const6 	%line{114} %argrw{"wrr"}
 	neq		$tmp16 $tmp15 $const4 	%argrw{"wrr"}
 	if		$tmp16 32 32 	%argrw{"r"}
@@ -147,11 +133,7 @@ code ___main___
 	neq		$tmp18 $tmp17 $const4 	%argrw{"wrr"}
 	assign		$tmp16 $tmp18 	%argrw{"wr"}
 	if		$tmp16 34 50 	%argrw{"r"}
-# environmentLight.osl:115
-# 			result *= hair_contribution;
 	mul		result result hair_contribution 	%line{115} %argrw{"wrr"}
-# environmentLight.osl:116
-# 		else if( specular_contribution!=1.0 && raytype("specular") )
 	neq		$tmp19 specular_contribution $const6 	%line{116} %argrw{"wrr"}
 	neq		$tmp20 $tmp19 $const4 	%argrw{"wrr"}
 	if		$tmp20 40 40 	%argrw{"r"}
@@ -159,11 +141,7 @@ code ___main___
 	neq		$tmp22 $tmp21 $const4 	%argrw{"wrr"}
 	assign		$tmp20 $tmp22 	%argrw{"wr"}
 	if		$tmp20 42 50 	%argrw{"r"}
-# environmentLight.osl:117
-# 			result *= specular_contribution;
 	mul		result result specular_contribution 	%line{117} %argrw{"wrr"}
-# environmentLight.osl:118
-# 		else if( volume_contribution!=1.0 && raytype("volume") )
 	neq		$tmp23 volume_contribution $const6 	%line{118} %argrw{"wrr"}
 	neq		$tmp24 $tmp23 $const4 	%argrw{"wrr"}
 	if		$tmp24 48 48 	%argrw{"r"}
@@ -171,40 +149,22 @@ code ___main___
 	neq		$tmp26 $tmp25 $const4 	%argrw{"wrr"}
 	assign		$tmp24 $tmp26 	%argrw{"wr"}
 	if		$tmp24 50 50 	%argrw{"r"}
-# environmentLight.osl:119
-# 			result *= volume_contribution;
 	mul		result result volume_contribution 	%line{119} %argrw{"wrr"}
-# environmentLight.osl:122
-# 	if( result == 0.0 )
 	eq		$tmp27 result $const3 	%line{122} %argrw{"wrr"}
 	if		$tmp27 55 55 	%argrw{"r"}
-# environmentLight.osl:124
-# 		Ci = 0; out = 0;
 	assign		Ci $const4 	%line{124} %argrw{"wr"}
 	assign		out $const4 	%argrw{"wr"}
-# environmentLight.osl:125
-# 		return;
 	exit	%line{125}
-# environmentLight.osl:131
-# 	if( image != "" )
 	neq		$tmp28 image $const12 	%line{131} %argrw{"wrr"}
 	if		$tmp28 96 96 	%argrw{"r"}
-# environmentLight.osl:133
-# 		vector R = normalize( I );
 	normalize	___327_R I 	%line{133} %argrw{"wr"}
-# environmentLight.osl:136
-# 		if( mapping == 0 )
 	eq		$tmp29 mapping $const4 	%line{136} %argrw{"wrr"}
 	if		$tmp29 78 94 	%argrw{"r"}
-# environmentLight.osl:139
-# 			float signed_s = atan2( R[0], R[2] ) / (2 * M_PI);
 	compref		$tmp31 ___327_R $const4 	%line{139} %argrw{"wrr"}
 	compref		$tmp32 ___327_R $const1 	%argrw{"wrr"}
 	atan2		$tmp30 $tmp31 $tmp32 	%argrw{"wrr"}
 	mul		$tmp33 $const2 $const13 	%argrw{"wrr"}
 	div		___328_signed_s $tmp30 $tmp33 	%argrw{"wrr"}
-# environmentLight.osl:140
-# 			float signed_t = atan2( R[1], sqrt( R[0]*R[0] + R[2]*R[2] ) ) / M_PI;
 	compref		$tmp35 ___327_R $const5 	%line{140} %argrw{"wrr"}
 	compref		$tmp37 ___327_R $const4 	%argrw{"wrr"}
 	compref		$tmp38 ___327_R $const4 	%argrw{"wrr"}
@@ -216,42 +176,26 @@ code ___main___
 	sqrt		$tmp36 $tmp43 	%argrw{"wr"}
 	atan2		$tmp34 $tmp35 $tmp36 	%argrw{"wrr"}
 	div		___328_signed_t $tmp34 $const13 	%argrw{"wrr"}
-# environmentLight.osl:142
-# 			s = signed_s + 0.5;
 	add		___327_s ___328_signed_s $const14 	%line{142} %argrw{"wrr"}
-# environmentLight.osl:143
-# 			t = signed_t + 0.5;
 	add		___327_t ___328_signed_t $const14 	%line{143} %argrw{"wrr"}
-# environmentLight.osl:148
-# 			float signed_s = R[0] / sqrt( 2.0 * (R[2]+1) );
 	compref		$tmp44 ___327_R $const4 	%line{148} %argrw{"wrr"}
 	compref		$tmp46 ___327_R $const1 	%argrw{"wrr"}
 	add		$tmp47 $tmp46 $const6 	%argrw{"wrr"}
 	mul		$tmp48 $const2 $tmp47 	%argrw{"wrr"}
 	sqrt		$tmp45 $tmp48 	%argrw{"wr"}
 	div		___329_signed_s $tmp44 $tmp45 	%argrw{"wrr"}
-# environmentLight.osl:149
-# 			float signed_t = R[1] / sqrt( 2.0 * (R[2]+1) );
 	compref		$tmp49 ___327_R $const5 	%line{149} %argrw{"wrr"}
 	compref		$tmp51 ___327_R $const1 	%argrw{"wrr"}
 	add		$tmp52 $tmp51 $const6 	%argrw{"wrr"}
 	mul		$tmp53 $const2 $tmp52 	%argrw{"wrr"}
 	sqrt		$tmp50 $tmp53 	%argrw{"wr"}
 	div		___329_signed_t $tmp49 $tmp50 	%argrw{"wrr"}
-# environmentLight.osl:151
-# 			s = (signed_s + 1.0) * 0.5;
 	add		$tmp54 ___329_signed_s $const6 	%line{151} %argrw{"wrr"}
 	mul		___327_s $tmp54 $const14 	%argrw{"wrr"}
-# environmentLight.osl:152
-# 			t = (signed_t + 1.0) * 0.5;
 	add		$tmp55 ___329_signed_t $const6 	%line{152} %argrw{"wrr"}
 	mul		___327_t $tmp55 $const14 	%argrw{"wrr"}
-# environmentLight.osl:155
-# 		result *= texture(image, s, t );
 	texture		$tmp56 image ___327_s ___327_t 	%line{155} %argrw{"wrrr"} %argderivs{2,3}
 	mul		result result $tmp56 	%argrw{"wrr"}
-# environmentLight.osl:158
-# 	out = Ci = result*emission() + transparent();
 	closure		$tmp57 $const15 	%line{158} %argrw{"wr"}
 	mul		$tmp58 $tmp57 result 	%argrw{"wrr"}
 	closure		$tmp59 $const16 	%argrw{"wr"}

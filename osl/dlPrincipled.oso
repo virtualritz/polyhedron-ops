@@ -2,1782 +2,1302 @@ OpenShadingLanguage 1.00
 # Compiled by oslc 1.11.3
 # options: -q -o build/dlPrincipled.oso
 surface dlPrincipled	%meta{string[1],tags,"surface"} %meta{string,maya_classification,"surface"} %meta{string,niceName,"Principled"} %meta{string,maya_typeID,"0x001254A4"} %meta{int,maya_generateAETemplate,0} 
-param	color	i_color	0.800000012 0.800000012 0.800000012		%meta{string,page,"Base"} %meta{string,label,"Color"} %meta{string,attribute,"color"}  %read{267,540} %write{2147483647,-1}
-param	float	roughness	0.300000012		%meta{string,page,"Base"} %meta{string,label,"Roughness"} %meta{float,min,0} %meta{float,max,1}  %read{282,377} %write{2147483647,-1}
-param	float	specular_level	0.5		%meta{string,page,"Base"} %meta{string,label,"Specular Level"} %meta{float,min,0} %meta{float,slidermin,0} %meta{float,slidermax,1}  %read{357,364} %write{2147483647,-1}
-param	float	metallic	0		%meta{string,page,"Base"} %meta{string,label,"Metallic"} %meta{float,min,0} %meta{float,max,1}  %read{581,597} %write{2147483647,-1}
-param	float	anisotropy	0		%meta{string,page,"Base"} %meta{string,label,"Anisotropy"} %meta{float,min,-1} %meta{float,max,1}  %read{297,350} %write{2147483647,-1}
-param	color	anisotropy_direction	0.5 1 0		%meta{string,page,"Base"} %meta{string,label,"Direction"}  %read{327,327} %write{2147483647,-1}
-param	float	opacity	1		%meta{string,page,"Base"} %meta{string,label,"Opacity"} %meta{float,min,0} %meta{float,max,1} %meta{float,slidermin,0} %meta{float,slidermax,1}  %read{576,599} %write{2147483647,-1}
-param	float	coating_thickness	0		%meta{string,page,"Coating"} %meta{string,label,"Thickness"} %meta{float,min,0} %meta{float,max,1} %meta{string,lock_left,"coating_on"} %meta{string,lock_op,"lessThanOrEqualTo"} %meta{int,lock_right,0}  %read{131,222} %write{2147483647,-1}
-param	color	coating_color	1 0.5 0.100000001		%meta{string,page,"Coating"} %meta{string,label,"Color"} %meta{string,lock_left,"coating_on"} %meta{string,lock_op,"lessThanOrEqualTo"} %meta{int,lock_right,0}  %read{204,204} %write{2147483647,-1}
-param	float	coating_roughness	0		%meta{string,page,"Coating"} %meta{string,label,"Roughness"} %meta{float,min,0} %meta{float,max,1} %meta{string,lock_left,"coating_on"} %meta{string,lock_op,"lessThanOrEqualTo"} %meta{int,lock_right,0}  %read{152,238} %write{2147483647,-1}
-param	float	coating_specular_level	0.5		%meta{string,page,"Coating"} %meta{string,label,"Specular Level"} %meta{float,min,0} %meta{float,max,1} %meta{string,lock_left,"coating_on"} %meta{string,lock_op,"lessThanOrEqualTo"} %meta{int,lock_right,0}  %read{139,139} %write{2147483647,-1}
-param	float	sss_weight	0		%meta{string,page,"Subsurface"} %meta{string,label,"Weight"} %meta{string,niceName,"SSS Weight"} %meta{float,min,0} %meta{float,max,1}  %read{269,269} %write{2147483647,-1}
-param	color	sss_color	0.5 0.5 0.5		%meta{string,page,"Subsurface"} %meta{string,label,"Transmittance"} %meta{string,lock_left,"sss_weight"} %meta{string,lock_op,"lessThanOrEqualTo"} %meta{float,lock_right,0} %meta{string,niceName,"SSS Color"}  %read{289,289} %write{2147483647,-1}
-param	float	sss_scale	0.100000001		%meta{string,page,"Subsurface"} %meta{string,label,"Scale"} %meta{float,min,0} %meta{float,max,1000} %meta{float,slidermin,0} %meta{float,slidermax,10} %meta{string,lock_left,"sss_weight"} %meta{string,lock_op,"lessThanOrEqualTo"} %meta{float,lock_right,0} %meta{string,niceName,"SSS Scale"}  %read{270,289} %write{2147483647,-1}
-param	color	incandescence	0 0 0		%meta{string,page,"Incandescence"} %meta{string,label,"Color"}  %read{245,245} %write{2147483647,-1}
-param	float	incandescence_intensity	1		%meta{string,page,"Incandescence"} %meta{string,label,"Intensity"} %meta{float,min,0} %meta{float,slidermin,0} %meta{float,slidermax,10}  %read{245,245} %write{2147483647,-1}
-param	color	incandescence_multiplier	1 1 1		%meta{string,widget,"null"} %meta{string,maya_attribute,"*none"}  %read{246,246} %write{2147483647,-1}
-param	int	disp_normal_bump_type	0		%meta{string,page,"Bump / Normal / Displacement Map"} %meta{string,label,"Type"} %meta{string,widget,"mapper"} %meta{string,options,"Bump Map:0|Normal Map (DirectX):1|Normal Map (OpenGL):2|Displacement (0.0 centered):3|Displacement (0.5 centered):4|"} %meta{string,niceName,"Bump / Normal / Displacement Map Type"}  %read{14,38} %write{2147483647,-1}
-param	color	disp_normal_bump_value	0 0 0		%meta{string,page,"Bump / Normal / Displacement Map"} %meta{string,label,"Value"} %meta{int,skip_init,1} %meta{string,widget,"navigation"} %meta{string,niceName,"Bump / Normal / Displacement Map Value"}  %read{7,34} %write{0,0} %derivs %initexpr
-param	float	disp_normal_bump_intensity	1		%meta{string,page,"Bump / Normal / Displacement Map"} %meta{string,label,"Intensity"} %meta{float,slidermin,0} %meta{float,slidermax,1} %meta{string,niceName,"Bump / Normal / Displacement Map Intensity"}  %read{10,34} %write{2147483647,-1} %derivs
-param	int	normal_bump_affect_layer	0		%meta{string,page,"Bump / Normal / Displacement Map"} %meta{string,label,"Layers Affected"} %meta{string,widget,"mapper"} %meta{string,options,"Both Layers:0|Coating Layer:1|Base Layer:2|"} %meta{string,lock_left,"disp_normal_bump_type"} %meta{string,lock_op,"greaterThanOrEqualTo"} %meta{int,lock_right,3} %meta{string,niceName,"Bump / Normal / Displacement Map Affect Layer"}  %read{117,120} %write{2147483647,-1}
+param	color	i_color	0.800000012 0.800000012 0.800000012		%meta{string,page,"Base"} %meta{string,label,"Color"} %meta{string,attribute,"color"}  %read{144,144} %write{2147483647,-1}
+param	float	roughness	0.300000012		%meta{string,page,"Base"} %meta{string,label,"Roughness"} %meta{float,min,0} %meta{float,max,1}  %read{302,396} %write{2147483647,-1}
+param	float	specular_level	0.5		%meta{string,page,"Base"} %meta{string,label,"Specular Level"} %meta{float,min,0} %meta{float,slidermin,0} %meta{float,slidermax,1}  %read{376,383} %write{2147483647,-1}
+param	float	metallic	0		%meta{string,page,"Base"} %meta{string,label,"Metallic"} %meta{float,min,0} %meta{float,max,1}  %read{449,656} %write{2147483647,-1}
+param	int	reflect_aovs	0		%meta{string,label,"Reflect AOVs"} %meta{string,page,"Base"} %meta{string,widget,"checkBox"}  %read{564,564} %write{2147483647,-1}
+param	float	anisotropy	0		%meta{string,page,"Base"} %meta{string,label,"Anisotropy"} %meta{float,min,-1} %meta{float,max,1}  %read{316,369} %write{2147483647,-1}
+param	color	anisotropy_direction	0.5 1 0		%meta{string,page,"Base"} %meta{string,label,"Direction"}  %read{346,346} %write{2147483647,-1}
+param	float	opacity	1		%meta{string,page,"Base"} %meta{string,label,"Opacity"} %meta{float,min,0} %meta{float,max,1} %meta{float,slidermin,0} %meta{float,slidermax,1}  %read{624,675} %write{2147483647,-1}
+param	float	coating_thickness	0		%meta{string,page,"Coating"} %meta{string,label,"Thickness"} %meta{float,min,0} %meta{float,max,1} %meta{string,lock_left,"coating_on"} %meta{string,lock_op,"lessThanOrEqualTo"} %meta{int,lock_right,0}  %read{149,244} %write{2147483647,-1}
+param	color	coating_color	1 0.5 0.100000001		%meta{string,page,"Coating"} %meta{string,label,"Color"} %meta{string,lock_left,"coating_on"} %meta{string,lock_op,"lessThanOrEqualTo"} %meta{int,lock_right,0}  %read{224,224} %write{2147483647,-1}
+param	float	coating_roughness	0		%meta{string,page,"Coating"} %meta{string,label,"Roughness"} %meta{float,min,0} %meta{float,max,1} %meta{string,lock_left,"coating_on"} %meta{string,lock_op,"lessThanOrEqualTo"} %meta{int,lock_right,0}  %read{169,260} %write{2147483647,-1}
+param	float	coating_specular_level	0.5		%meta{string,page,"Coating"} %meta{string,label,"Specular Level"} %meta{float,min,0} %meta{float,max,1} %meta{string,lock_left,"coating_on"} %meta{string,lock_op,"lessThanOrEqualTo"} %meta{int,lock_right,0}  %read{156,156} %write{2147483647,-1}
+param	float	sss_weight	0		%meta{string,page,"Subsurface"} %meta{string,label,"Weight"} %meta{string,niceName,"SSS Weight"} %meta{float,min,0} %meta{float,max,1}  %read{291,291} %write{2147483647,-1}
+param	color	sss_color	0.5 0.5 0.5		%meta{string,page,"Subsurface"} %meta{string,label,"Transmittance"} %meta{string,lock_left,"sss_weight"} %meta{string,lock_op,"lessThanOrEqualTo"} %meta{float,lock_right,0} %meta{string,niceName,"SSS Color"}  %read{309,309} %write{2147483647,-1}
+param	float	sss_anisotropy	0		%meta{string,page,"Subsurface"} %meta{string,label,"Anisotropy"} %meta{float,min,-1} %meta{float,max,1} %meta{string,lock_left,"sss_weight"} %meta{string,lock_op,"lessThanOrEqualTo"} %meta{float,lock_right,0} %meta{string,niceName,"SSS Anisotropy"}  %read{311,311} %write{2147483647,-1}
+param	float	sss_scale	0.100000001		%meta{string,page,"Subsurface"} %meta{string,label,"Scale"} %meta{float,min,0} %meta{float,max,1000} %meta{float,slidermin,0} %meta{float,slidermax,10} %meta{string,lock_left,"sss_weight"} %meta{string,lock_op,"lessThanOrEqualTo"} %meta{float,lock_right,0} %meta{string,niceName,"SSS Scale"}  %read{292,311} %write{2147483647,-1}
+param	int	sss_internal_lighting	0		%meta{string,page,"Subsurface"} %meta{string,label,"Internal Lighting"} %meta{string,help,"Lights inside the object will be visible in the subsurface simulation only if this is checked."} %meta{string,widget,"checkBox"}  %read{311,311} %write{2147483647,-1}
+param	float	refract_weight	0		%meta{string,page,"Refraction"} %meta{string,label,"Weight"} %meta{float,min,0} %meta{float,max,1}  %read{568,635} %write{2147483647,-1}
+param	int	volumetric_enable	1		%meta{string,page,"Refraction"} %meta{string,label,"Enable"} %meta{string,widget,"null"}  %read{2147483647,-1} %write{2147483647,-1}
+param	color	volumetric_transparency_color	1 1 1		%meta{string,page,"Refraction"} %meta{string,label,"Color"} %meta{string,niceName,"Refraction Color"} %meta{string,attribute,"refract_color"}  %read{2147483647,-1} %write{2147483647,-1}
+param	color	volumetric_scattering_color	0 0 0		%meta{string,page,"Refraction"} %meta{string,label,"Scattering"} %meta{string,niceName,"Refraction Scattering"} %meta{string,attribute,"refract_scattering_color"}  %read{2147483647,-1} %write{2147483647,-1}
+param	float	refract_ior	1.29999995		%meta{string,page,"Refraction"} %meta{string,label,"IOR"} %meta{string,niceName,"Refraction IOR"} %meta{float,min,1} %meta{float,slidermin,1} %meta{float,slidermax,5}  %read{580,580} %write{2147483647,-1}
+param	float	refract_roughness	0		%meta{string,page,"Refraction"} %meta{string,label,"Roughness"} %meta{string,niceName,"Refraction Roughness"} %meta{float,min,0} %meta{float,max,1}  %read{575,575} %write{2147483647,-1}
+param	float	volumetric_density	1		%meta{string,page,"Refraction"} %meta{string,label,"Density"} %meta{string,niceName,"Refraction Density"} %meta{string,attribute,"refract_density"} %meta{float,min,0} %meta{float,slidermin,0} %meta{float,slidermax,1}  %read{2147483647,-1} %write{2147483647,-1}
+param	int	transmit_aovs	0		%meta{string,label,"Transmit AOVs"} %meta{string,page,"Refraction"} %meta{string,widget,"checkBox"}  %read{580,580} %write{2147483647,-1}
+param	color	incandescence	0 0 0		%meta{string,page,"Incandescence"} %meta{string,label,"Color"}  %read{267,267} %write{2147483647,-1}
+param	float	incandescence_intensity	1		%meta{string,page,"Incandescence"} %meta{string,label,"Intensity"} %meta{float,min,0} %meta{float,slidermin,0} %meta{float,slidermax,10}  %read{267,267} %write{2147483647,-1}
+param	color	incandescence_multiplier	1 1 1		%meta{string,widget,"null"} %meta{string,maya_attribute,"*none"}  %read{268,268} %write{2147483647,-1}
+param	int	disp_normal_bump_type	0		%meta{string,page,"Bump / Normal / Displacement Map"} %meta{string,label,"Type"} %meta{string,widget,"mapper"} %meta{string,options,"Bump Map:0|Normal Map (DirectX):1|Normal Map (OpenGL):2|Displacement (0.0 centered):3|Displacement (0.5 centered):4|"} %meta{string,niceName,"Bump / Normal / Displacement Map Type"}  %read{14,40} %write{2147483647,-1}
+param	color	disp_normal_bump_value	0 0 0		%meta{string,page,"Bump / Normal / Displacement Map"} %meta{string,label,"Value"} %meta{int,skip_init,1} %meta{string,widget,"navigation"} %meta{string,niceName,"Bump / Normal / Displacement Map Value"}  %read{7,36} %write{0,0} %derivs %initexpr
+param	float	disp_normal_bump_intensity	1		%meta{string,page,"Bump / Normal / Displacement Map"} %meta{string,label,"Intensity"} %meta{float,slidermin,0} %meta{float,slidermax,1} %meta{string,niceName,"Bump / Normal / Displacement Map Intensity"}  %read{10,36} %write{2147483647,-1} %derivs
+param	int	normal_bump_affect_layer	0		%meta{string,page,"Bump / Normal / Displacement Map"} %meta{string,label,"Layers Affected"} %meta{string,widget,"mapper"} %meta{string,options,"Both Layers:0|Coating Layer:1|Base Layer:2|"} %meta{string,lock_left,"disp_normal_bump_type"} %meta{string,lock_op,"greaterThanOrEqualTo"} %meta{int,lock_right,3} %meta{string,niceName,"Bump / Normal / Displacement Map Affect Layer"}  %read{130,133} %write{2147483647,-1}
+param	float	occlusion_distance	0		%meta{string,page,"Geometry"} %meta{string,label,"Occlusion Distance"} %meta{string,help,"Controls maximum distance for the ambient occlusion AOV."}  %read{684,684} %write{2147483647,-1}
 param	float[2]	uvCoord	0 0		%meta{string,default_connection,"uvCoord"} %meta{int,skip_init,1} %meta{int,hidden,1} %meta{string,label,"UV Coordinates"} %meta{string,widget,"null"}  %read{1,2} %write{2147483647,-1} %derivs
-param	closure color	aovGroup			%meta{string,label,"AOV Group"}  %read{264,610} %write{2147483647,-1}
-oparam	closure color	outColor			%meta{string,attribute,"outColor"}  %read{263,611} %write{263,610}
-global	vector	I	%read{123,123} %write{2147483647,-1}
+param	closure color	aovGroup			%meta{string,label,"AOV Group"}  %read{286,681} %write{2147483647,-1}
+oparam	closure color	outColor			%meta{string,attribute,"outColor"}  %read{285,686} %write{285,685}
+global	point	P	%read{25,25} %write{2147483647,-1} %derivs
+global	vector	I	%read{136,136} %write{2147483647,-1}
 global	normal	N	%read{0,3} %write{2147483647,-1} %derivs
-global	float	u	%read{57,308} %write{2147483647,-1} %derivs
-global	float	v	%read{66,317} %write{2147483647,-1} %derivs
-global	vector	dPdu	%read{63,311} %write{2147483647,-1}
-global	vector	dPdv	%read{72,320} %write{2147483647,-1}
-global	closure color	Ci	%read{2147483647,-1} %write{265,611}
-local	float	___406_sqrtr	%read{461,524} %write{460,522}
-local	float	___407_nplusone	%read{469,531} %write{467,529}
-local	float	___407_nminusone	%read{471,533} %write{468,530}
-local	float	___407_nr	%read{474,536} %write{472,534}
-local	float	___403_rr	%read{454,535} %write{451,513}
-local	float	___408_n_r	%read{467,538} %write{465,465}
-local	float	___408_n_g	%read{498,538} %write{496,496}
-local	float	___408_n_b	%read{529,538} %write{527,527}
-local	float	___408_k2_r	%read{539,539} %write{475,475}
-local	float	___408_k2_g	%read{539,539} %write{506,506}
-local	float	___408_k2_b	%read{539,539} %write{537,537}
-local	vector	___409_anisotropy_coordsys_u	%read{338,338} %write{335,335}
-local	vector	___409_anisotropy_coordsys_v	%read{340,340} %write{336,336}
-local	vector	___409_anisotropy_udir	%read{345,345} %write{344,344}
-local	float	___410_magic	%read{156,379} %write{155,378}
-local	float	___411_n	%read{169,392} %write{162,387}
-local	float	___411_ni	%read{170,393} %write{163,388}
-local	float	___411_cos_theta	%read{160,412} %write{159,389}
-local	float	___411_cos2_theta	%read{168,416} %write{167,390}
-local	float	___411_sin2_theta	%read{172,419} %write{168,391}
-local	float	___411_n2	%read{171,398} %write{169,392}
-local	float	___411_ni2	%read{172,407} %write{170,393}
-local	float	___411_t0	%read{174,406} %write{173,396}
-local	float	___411_t1	%read{179,406} %write{178,401}
-local	float	___411_a2plusb2	%read{187,416} %write{179,402}
-local	float	___411_a2	%read{186,409} %write{182,405}
-local	float	___411_b2	%read{2147483647,-1} %write{185,408}
-local	float	___411_a	%read{188,411} %write{186,409}
-local	float	___411_t2	%read{190,414} %write{187,410}
-local	float	___411_t3	%read{190,419} %write{189,412}
-local	float	___411_R_s	%read{198,424} %write{192,415}
-local	float	___411_t4	%read{197,422} %write{195,418}
-local	float	___411_t5	%read{197,422} %write{196,419}
-local	float	___411_R_p	%read{201,424} %write{200,423}
-local	float	___414_T	%read{146,372} %write{145,370}
-local	float	___416_vdotn	%read{219,219} %write{213,213}
-local	float	___416_ldotn	%read{220,220} %write{218,218}
-local	float	___416_l	%read{225,233} %write{222,222}
-local	float	___416_r	%read{235,235} %write{226,226}
-local	float	___416_g	%read{235,235} %write{230,230}
-local	float	___416_b	%read{235,235} %write{234,234}
-local	vector	___417_H	%read{2147483647,-1} %write{207,207}
-local	color	___417_absorpt_term	%read{236,236} %write{235,235}
-local	normal	___418_N_result	%read{30,116} %write{29,111}
-local	float	___419_depth	%read{22,24} %write{19,19} %derivs
-local	float	___419_offset	%read{26,26} %write{25,25} %derivs
-local	point	___419_pb	%read{28,28} %write{27,27} %derivs
-local	vector	___418_basisx	%read{98,103} %write{54,101}
-local	vector	___418_basisy	%read{53,105} %write{52,76}
-local	vector	___418_basisz	%read{51,108} %write{43,43}
-local	vector	___418_stangent	%read{47,51} %write{44,44}
-local	vector	___423_uorient	%read{98,98} %write{97,97}
-local	vector	___427_anisotropy_stangent	%read{322,336} %write{299,326}
-local	vector	___427_anisotropy_direction	%read{337,342} %write{329,329}
-local	float	___427_anisotropy	%read{352,354} %write{349,352}
-local	float	ss	%read{27,316} %write{1,1} %derivs
-local	float	tt	%read{27,68} %write{2,2} %derivs
-local	normal	Nn	%read{4,125} %write{3,3}
-local	normal	N_normal_bump	%read{119,122} %write{4,116}
-local	normal	Nn_coating	%read{209,239} %write{5,119}
-local	normal	Nn_base	%read{282,540} %write{6,122}
-local	vector	In	%read{124,214} %write{123,123}
-local	float	fresnel_cos_theta	%read{157,380} %write{126,126}
-local	int	__is_subsurface_ray	%read{134,360} %write{127,127}
-local	closure color	c_coating	%read{591,591} %write{128,239}
-local	color	_coating_color	%read{203,591} %write{129,203}
-local	color	coating_absorbed	%read{237,607} %write{130,237}
-local	float	___442_coating_ior	%read{150,239} %write{143,150}
-local	color	___442_coating_absorbtion	%read{223,231} %write{204,204}
-local	float	___442__coating_roughness	%read{239,239} %write{238,238}
-local	closure color	c_incandescence	%read{261,606} %write{240,244}
-local	color	incandescence_color	%read{257,606} %write{246,257}
-local	color	_diffuse_color	%read{291,584} %write{267,574}
-local	color	_sss_color	%read{292,587} %write{268,575}
-local	float	_sss_weight	%read{280,292} %write{269,277}
-local	closure color	c_diffuse	%read{584,584} %write{278,282}
-local	closure color	c_sss	%read{587,587} %write{279,289}
-local	float	roughness_u	%read{294,540} %write{293,353}
-local	float	roughness_v	%read{354,540} %write{294,354}
-local	vector	anisotropy_udir	%read{427,540} %write{295,345}
-local	closure color	c_reflect	%read{593,593} %write{355,427}
-local	color	_reflect_color	%read{427,593} %write{356,552}
-local	float	___446_reflect_ior	%read{385,427} %write{368,373}
-local	closure color	c_metallic_reflect	%read{596,596} %write{428,540}
-local	color	_metallic_color	%read{563,596} %write{429,563}
-local	color	___447_metallic_ior	%read{540,540} %write{538,538}
-local	color	___447_metallic_complex_ior	%read{540,540} %write{539,539}
-local	color	___447_metallic_edge	%read{434,508} %write{433,443}
-local	float	diff_scale	%read{574,575} %write{573,573}
-local	float	transparency	%read{580,604} %write{576,576}
-local	color	___449_cmo	%read{585,594} %write{583,583}
-local	closure color	___449_aov_diffuse	%read{602,602} %write{590,590}
-local	closure color	___449_aov_reflection	%read{602,602} %write{601,601}
-const	int	$const1	0		%read{1,565} %write{2147483647,-1}
-const	int	$const2	1		%read{2,567} %write{2147483647,-1}
+global	normal	Ng	%read{22,22} %write{2147483647,-1} %derivs
+global	float	u	%read{70,327} %write{2147483647,-1} %derivs
+global	float	v	%read{79,336} %write{2147483647,-1} %derivs
+global	vector	dPdu	%read{76,330} %write{2147483647,-1}
+global	vector	dPdv	%read{85,339} %write{2147483647,-1}
+global	closure color	Ci	%read{2147483647,-1} %write{287,686}
+local	float	___406_sqrtr	%read{485,548} %write{484,546}
+local	float	___407_nplusone	%read{493,555} %write{491,553}
+local	float	___407_nminusone	%read{495,557} %write{492,554}
+local	float	___407_nr	%read{498,560} %write{496,558}
+local	float	___403_rr	%read{478,559} %write{475,537}
+local	float	___408_n_r	%read{491,562} %write{489,489}
+local	float	___408_n_g	%read{522,562} %write{520,520}
+local	float	___408_n_b	%read{553,562} %write{551,551}
+local	float	___408_k2_r	%read{563,563} %write{499,499}
+local	float	___408_k2_g	%read{563,563} %write{530,530}
+local	float	___408_k2_b	%read{563,563} %write{561,561}
+local	vector	___409_anisotropy_coordsys_u	%read{357,357} %write{354,354}
+local	vector	___409_anisotropy_coordsys_v	%read{359,359} %write{355,355}
+local	vector	___409_anisotropy_udir	%read{364,364} %write{363,363}
+local	float	___410_magic	%read{173,398} %write{172,397}
+local	float	___411_n	%read{186,411} %write{179,406}
+local	float	___411_ni	%read{187,412} %write{180,407}
+local	float	___411_cos_theta	%read{177,431} %write{176,408}
+local	float	___411_cos2_theta	%read{185,435} %write{184,409}
+local	float	___411_sin2_theta	%read{189,438} %write{185,410}
+local	float	___411_n2	%read{188,417} %write{186,411}
+local	float	___411_ni2	%read{189,426} %write{187,412}
+local	float	___411_t0	%read{191,425} %write{190,415}
+local	float	___411_t1	%read{196,425} %write{195,420}
+local	float	___411_a2plusb2	%read{204,435} %write{196,421}
+local	float	___411_a2	%read{203,428} %write{199,424}
+local	float	___411_b2	%read{2147483647,-1} %write{202,427}
+local	float	___411_a	%read{205,430} %write{203,428}
+local	float	___411_t2	%read{207,433} %write{204,429}
+local	float	___411_t3	%read{207,438} %write{206,431}
+local	float	___411_R_s	%read{215,443} %write{209,434}
+local	float	___411_t4	%read{214,441} %write{212,437}
+local	float	___411_t5	%read{214,441} %write{213,438}
+local	float	___411_R_p	%read{218,443} %write{217,442}
+local	float	___414_T	%read{163,391} %write{162,389}
+local	float	___416_vdotn	%read{241,241} %write{235,235}
+local	float	___416_ldotn	%read{242,242} %write{240,240}
+local	float	___416_l	%read{247,255} %write{244,244}
+local	float	___416_r	%read{257,257} %write{248,248}
+local	float	___416_g	%read{257,257} %write{252,252}
+local	float	___416_b	%read{257,257} %write{256,256}
+local	vector	___417_H	%read{2147483647,-1} %write{229,229}
+local	color	___417_absorpt_term	%read{258,258} %write{257,257}
+local	normal	___418_N_result	%read{33,129} %write{32,124}
+local	float	___419_intensity	%read{29,29} %write{20,20} %derivs
+local	normal	___419_Nn	%read{23,23} %write{21,21}
+local	normal	___419_Ngn	%read{23,27} %write{22,22} %derivs
+local	normal	___419_Noffset	%read{34,34} %write{23,23}
+local	point	___419_Pp	%read{31,31} %write{30,30} %derivs
+local	vector	___420_basisx	%read{111,116} %write{55,114}
+local	vector	___420_basisy	%read{66,118} %write{56,89}
+local	vector	___420_basisz	%read{64,121} %write{45,45}
+local	vector	___420_stangent	%read{60,64} %write{57,57}
+local	vector	___423_uorient	%read{111,111} %write{110,110}
+local	vector	___427_anisotropy_stangent	%read{341,355} %write{318,345}
+local	vector	___427_anisotropy_direction	%read{356,361} %write{348,348}
+local	float	___427_anisotropy	%read{371,373} %write{368,371}
+local	float	ss	%read{93,335} %write{1,1} %derivs
+local	float	tt	%read{69,81} %write{2,2} %derivs
+local	normal	Nn	%read{4,138} %write{3,3}
+local	normal	N_normal_bump	%read{132,135} %write{4,129}
+local	normal	Nn_coating	%read{231,261} %write{5,132}
+local	normal	Nn_base	%read{302,684} %write{6,135}
+local	vector	In	%read{137,236} %write{136,136}
+local	float	fresnel_cos_theta	%read{174,399} %write{139,139}
+local	int	__is_subsurface_ray	%read{152,571} %write{140,140}
+local	color	in_color	%read{289,674} %write{145,145}
+local	closure color	c_coating	%read{650,650} %write{146,261}
+local	color	_coating_color	%read{261,650} %write{147,220}
+local	color	coating_absorbed	%read{259,678} %write{148,259}
+local	float	___445_coating_ior	%read{167,261} %write{160,167}
+local	color	___445_coating_absorbtion	%read{245,253} %write{226,226}
+local	float	___445__coating_roughness	%read{261,261} %write{260,260}
+local	closure color	c_incandescence	%read{283,677} %write{262,266}
+local	color	incandescence_color	%read{279,677} %write{268,279}
+local	color	_diffuse_color	%read{584,640} %write{289,621}
+local	color	_sss_color	%read{587,643} %write{290,622}
+local	float	_sss_weight	%read{300,586} %write{291,297}
+local	closure color	c_diffuse	%read{640,640} %write{298,302}
+local	closure color	c_sss	%read{643,643} %write{299,311}
+local	float	roughness_u	%read{313,564} %write{312,372}
+local	float	roughness_v	%read{373,564} %write{313,373}
+local	vector	anisotropy_udir	%read{446,564} %write{314,364}
+local	closure color	c_reflect	%read{652,652} %write{374,446}
+local	color	_reflect_color	%read{446,652} %write{375,599}
+local	float	___449_reflect_ior	%read{404,446} %write{387,392}
+local	closure color	c_metallic_reflect	%read{655,655} %write{447,564}
+local	color	_metallic_color	%read{610,655} %write{448,610}
+local	color	___450_metallic_ior	%read{564,564} %write{562,562}
+local	color	___450_metallic_complex_ior	%read{564,564} %write{563,563}
+local	color	___450_metallic_edge	%read{458,532} %write{457,467}
+local	closure color	c_refract	%read{647,647} %write{566,580}
+local	color	_refract_color	%read{588,647} %write{567,623}
+local	float	___451_refract_roughness2	%read{580,580} %write{575,575}
+local	int	___451_sides	%read{580,580} %write{578,579}
+local	float	base_scale	%read{621,623} %write{620,620}
+local	float	transparency	%read{628,664} %write{624,624}
+local	color	___453_cmo	%read{641,653} %write{639,639}
+local	closure color	___453_aov_diffuse	%read{661,661} %write{646,646}
+local	closure color	___453_aov_refraction	%read{662,662} %write{649,649}
+local	closure color	___453_aov_reflection	%read{661,661} %write{660,660}
+const	int	$const1	0		%read{1,670} %write{2147483647,-1}
+const	int	$const2	1		%read{2,614} %write{2147483647,-1}
 temp	int	$tmp1	%read{8,8} %write{7,7}
 temp	int	$tmp2	%read{9,13} %write{8,12}
 temp	int	$tmp3	%read{11,11} %write{10,10}
 temp	int	$tmp4	%read{12,12} %write{11,11}
-const	int	$const3	2		%read{14,570} %write{2147483647,-1}
+const	int	$const3	2		%read{14,617} %write{2147483647,-1}
 temp	int	$tmp5	%read{15,15} %write{14,14}
 const	string	$const4	"getNormalFromMap"		%read{16,16} %write{2147483647,-1}
 temp	int	$tmp6	%read{18,18} %write{17,17}
-temp	float	$tmp7	%read{21,21} %write{20,20} %derivs
-temp	float	$tmp8	%read{24,24} %write{21,21} %derivs
-temp	float	$tmp9	%read{25,25} %write{22,22} %derivs
-const	string	$const5	"clamp"		%read{23,511} %write{2147483647,-1}
-temp	float	$tmp10	%read{25,25} %write{24,24} %derivs
-const	float	$const6	0.00400000019		%read{26,26} %write{2147483647,-1}
-temp	float	$tmp11	%read{27,27} %write{26,26} %derivs
-temp	vector	$tmp12	%read{29,29} %write{28,28}
-temp	float	$tmp13	%read{31,31} %write{30,30}
-temp	int	$tmp14	%read{32,32} %write{31,31}
-temp	normal	$tmp15	%read{36,36} %write{35,35}
-temp	color	$tmp16	%read{35,35} %write{34,34}
-const	color	$const7	0.5 0.5 1		%read{34,34} %write{2147483647,-1}
-const	vector	$const8	0.5 0.5 0.5		%read{36,36} %write{2147483647,-1}
-temp	normal	$tmp19	%read{37,37} %write{36,36}
-temp	int	$tmp20	%read{39,39} %write{38,38}
-temp	float	$tmp21	%read{41,41} %write{40,40}
-temp	float	$tmp22	%read{42,42} %write{41,41}
-const	float	$const10	-1		%read{41,41} %write{2147483647,-1}
-temp	int	$tmp23	%read{45,45} %write{44,44}
-const	string	$const11	"tangent:st"		%read{44,300} %write{2147483647,-1}
-temp	int	$tmp24	%read{46,50} %write{45,49}
-temp	int	$tmp25	%read{48,48} %write{47,47}
-temp	int	$tmp26	%read{49,49} %write{48,48}
-temp	vector	$tmp27	%read{52,52} %write{51,51}
-temp	vector	$tmp28	%read{54,54} %write{53,53}
-temp	float	$tmp29	%read{63,63} %write{62,62}
-const	string	$const12	"Du"		%read{55,303} %write{2147483647,-1}
-temp	float	$tmp30	%read{58,58} %write{56,56}
-temp	float	$tmp31	%read{58,58} %write{57,57}
-temp	float	$tmp32	%read{62,62} %write{58,58}
-temp	float	$tmp33	%read{61,61} %write{59,59}
-temp	float	$tmp34	%read{61,61} %write{60,60}
-temp	float	$tmp35	%read{62,62} %write{61,61}
-temp	vector	$tmp36	%read{73,73} %write{63,63}
-temp	float	$tmp37	%read{72,72} %write{71,71}
-const	string	$const13	"Dv"		%read{64,312} %write{2147483647,-1}
-temp	float	$tmp38	%read{67,67} %write{65,65}
-temp	float	$tmp39	%read{67,67} %write{66,66}
-temp	float	$tmp40	%read{71,71} %write{67,67}
-temp	float	$tmp41	%read{70,70} %write{68,68}
-temp	float	$tmp42	%read{70,70} %write{69,69}
-temp	float	$tmp43	%read{71,71} %write{70,70}
-temp	vector	$tmp44	%read{73,73} %write{72,72}
-temp	vector	$tmp45	%read{76,76} %write{75,75}
-temp	vector	$tmp46	%read{75,75} %write{74,74}
-temp	vector	$tmp47	%read{78,78} %write{77,77}
-temp	float	$tmp48	%read{87,87} %write{86,86}
-temp	float	$tmp49	%read{82,82} %write{80,80}
-temp	float	$tmp50	%read{82,82} %write{81,81}
-temp	float	$tmp51	%read{86,86} %write{82,82}
-temp	float	$tmp52	%read{85,85} %write{83,83}
-temp	float	$tmp53	%read{85,85} %write{84,84}
-temp	float	$tmp54	%read{86,86} %write{85,85}
-temp	vector	$tmp55	%read{97,97} %write{87,87}
-temp	float	$tmp56	%read{96,96} %write{95,95}
-temp	float	$tmp57	%read{91,91} %write{89,89}
-temp	float	$tmp58	%read{91,91} %write{90,90}
-temp	float	$tmp59	%read{95,95} %write{91,91}
-temp	float	$tmp60	%read{94,94} %write{92,92}
-temp	float	$tmp61	%read{94,94} %write{93,93}
-temp	float	$tmp62	%read{95,95} %write{94,94}
-temp	vector	$tmp63	%read{97,97} %write{96,96}
-temp	float	$tmp64	%read{99,99} %write{98,98}
-temp	int	$tmp65	%read{100,100} %write{99,99}
-temp	normal	$tmp66	%read{111,111} %write{110,110}
-temp	float	$tmp67	%read{103,103} %write{102,102}
-temp	vector	$tmp68	%read{106,106} %write{103,103}
-temp	float	$tmp69	%read{105,105} %write{104,104}
-temp	vector	$tmp70	%read{106,106} %write{105,105}
-temp	vector	$tmp71	%read{109,109} %write{106,106}
-temp	float	$tmp72	%read{108,108} %write{107,107}
-temp	vector	$tmp73	%read{109,109} %write{108,108}
-temp	vector	$tmp74	%read{110,110} %write{109,109}
-const	normal	$const14	0 0 0		%read{112,112} %write{2147483647,-1}
-temp	int	$tmp76	%read{113,113} %write{112,112}
-temp	int	$tmp77	%read{118,118} %write{117,117}
-temp	int	$tmp78	%read{121,121} %write{120,120}
-temp	float	$tmp79	%read{126,126} %write{125,125}
-temp	vector	$tmp80	%read{125,125} %write{124,124}
-const	string	$const15	"subsurface"		%read{127,589} %write{2147483647,-1}
-temp	int	$tmp81	%read{132,132} %write{131,131}
-temp	int	$tmp82	%read{133,137} %write{132,136}
-temp	int	$tmp83	%read{135,135} %write{134,134}
-temp	int	$tmp84	%read{136,136} %write{135,135}
-const	float	$const16	0.0799999982		%read{139,364} %write{2147483647,-1}
-temp	float	$tmp85	%read{141,145} %write{139,139}
-const	string	$const17	"EtaFromIntensity"		%read{140,365} %write{2147483647,-1}
-temp	int	$tmp86	%read{142,142} %write{141,141}
-const	int	$const18	500		%read{143,368} %write{2147483647,-1}
-temp	float	$tmp87	%read{148,148} %write{146,146}
-const	float	$const19	1		%read{146,581} %write{2147483647,-1}
-temp	float	$tmp88	%read{148,148} %write{147,147}
-temp	float	$tmp89	%read{150,150} %write{149,149}
-const	float	$const20	0		%read{149,540} %write{2147483647,-1}
-const	float	$const21	0.0250000004		%read{149,149} %write{2147483647,-1}
-temp	float	$tmp90	%read{203,203} %write{202,202}
-temp	float	$tmp91	%read{159,159} %write{157,157}
-const	string	$const22	"CompensateFresnelRoughness"		%read{151,374} %write{2147483647,-1}
-temp	float	$tmp92	%read{154,154} %write{153,153}
-const	float	$const23	0.0500000007		%read{153,376} %write{2147483647,-1}
-const	float	$const24	0.5		%read{152,435} %write{2147483647,-1}
-temp	float	$tmp93	%read{153,153} %write{152,152}
-temp	float	$tmp94	%read{155,155} %write{154,154}
-temp	float	$tmp95	%read{157,157} %write{156,156}
-const	string	$const25	"Fresnel_DieletricConductor"		%read{158,381} %write{2147483647,-1}
-temp	int	$tmp96	%read{161,161} %write{160,160}
-temp	float	$tmp97	%read{173,173} %write{171,171}
-temp	float	$tmp98	%read{173,173} %write{172,172}
-temp	float	$tmp99	%read{177,177} %write{174,174}
-temp	float	$tmp100	%read{176,176} %write{175,175}
-const	float	$const27	4		%read{175,398} %write{2147483647,-1}
-temp	float	$tmp101	%read{177,177} %write{176,176}
-temp	float	$tmp102	%read{178,178} %write{177,177}
-temp	float	$tmp103	%read{182,182} %write{180,180}
-temp	float	$tmp104	%read{182,182} %write{181,181}
-const	float	$const28	2		%read{181,411} %write{2147483647,-1}
-temp	float	$tmp105	%read{185,185} %write{183,183}
-temp	float	$tmp106	%read{185,185} %write{184,184}
-temp	float	$tmp107	%read{189,189} %write{188,188}
-temp	float	$tmp108	%read{192,192} %write{190,190}
-temp	float	$tmp109	%read{192,192} %write{191,191}
-temp	float	$tmp110	%read{195,195} %write{193,193}
-temp	float	$tmp111	%read{195,195} %write{194,194}
-temp	float	$tmp112	%read{198,198} %write{197,197}
-temp	float	$tmp113	%read{200,200} %write{198,198}
-temp	float	$tmp114	%read{200,200} %write{199,199}
-temp	float	$tmp115	%read{202,202} %write{201,201}
-temp	color	$tmp116	%read{237,237} %write{236,236}
-const	string	$const29	"GetLayerScale"		%read{205,205} %write{2147483647,-1}
-temp	vector	$tmp117	%read{207,207} %write{206,206}
-const	string	$const30	"GetAbsorption"		%read{208,208} %write{2147483647,-1}
+temp	float	$tmp7	%read{20,20} %write{19,19} %derivs
+temp	point	$tmp8	%read{30,30} %write{25,25} %derivs
+const	string	$const5	"object"		%read{25,32} %write{2147483647,-1}
+const	string	$const6	"transform"		%read{24,26} %write{2147483647,-1}
+const	string	$const7	"common"		%read{25,32} %write{2147483647,-1}
+temp	normal	$tmp9	%read{29,29} %write{28,28} %derivs
+temp	normal	$tmp10	%read{28,28} %write{27,27} %derivs
+temp	normal	$tmp11	%read{30,30} %write{29,29} %derivs
+temp	vector	$tmp12	%read{32,32} %write{31,31}
+temp	normal	$tmp13	%read{35,35} %write{34,34}
+temp	normal	$tmp14	%read{38,38} %write{37,37}
+temp	color	$tmp15	%read{37,37} %write{36,36}
+const	color	$const8	0.5 0.5 1		%read{36,36} %write{2147483647,-1}
+const	vector	$const9	0.5 0.5 0.5		%read{38,38} %write{2147483647,-1}
+temp	normal	$tmp18	%read{39,39} %write{38,38}
+temp	int	$tmp19	%read{41,41} %write{40,40}
+temp	float	$tmp20	%read{43,43} %write{42,42}
+temp	float	$tmp21	%read{44,44} %write{43,43}
+const	float	$const11	-1		%read{43,43} %write{2147483647,-1}
+temp	float	$tmp22	%read{47,47} %write{46,46}
+const	float	$const12	0		%read{47,564} %write{2147483647,-1}
+temp	int	$tmp23	%read{48,48} %write{47,47}
+temp	int	$tmp24	%read{49,54} %write{48,53}
+temp	float	$tmp25	%read{51,51} %write{50,50}
+temp	int	$tmp26	%read{52,52} %write{51,51}
+temp	int	$tmp27	%read{53,53} %write{52,52}
+temp	int	$tmp28	%read{58,58} %write{57,57}
+const	string	$const13	"tangent:st"		%read{57,319} %write{2147483647,-1}
+temp	int	$tmp29	%read{59,63} %write{58,62}
+temp	int	$tmp30	%read{61,61} %write{60,60}
+temp	int	$tmp31	%read{62,62} %write{61,61}
+temp	vector	$tmp32	%read{65,65} %write{64,64}
+temp	vector	$tmp33	%read{67,67} %write{66,66}
+temp	float	$tmp34	%read{76,76} %write{75,75}
+const	string	$const14	"Du"		%read{68,322} %write{2147483647,-1}
+temp	float	$tmp35	%read{71,71} %write{69,69}
+temp	float	$tmp36	%read{71,71} %write{70,70}
+temp	float	$tmp37	%read{75,75} %write{71,71}
+temp	float	$tmp38	%read{74,74} %write{72,72}
+temp	float	$tmp39	%read{74,74} %write{73,73}
+temp	float	$tmp40	%read{75,75} %write{74,74}
+temp	vector	$tmp41	%read{86,86} %write{76,76}
+temp	float	$tmp42	%read{85,85} %write{84,84}
+const	string	$const15	"Dv"		%read{77,331} %write{2147483647,-1}
+temp	float	$tmp43	%read{80,80} %write{78,78}
+temp	float	$tmp44	%read{80,80} %write{79,79}
+temp	float	$tmp45	%read{84,84} %write{80,80}
+temp	float	$tmp46	%read{83,83} %write{81,81}
+temp	float	$tmp47	%read{83,83} %write{82,82}
+temp	float	$tmp48	%read{84,84} %write{83,83}
+temp	vector	$tmp49	%read{86,86} %write{85,85}
+temp	vector	$tmp50	%read{89,89} %write{88,88}
+temp	vector	$tmp51	%read{88,88} %write{87,87}
+temp	vector	$tmp52	%read{91,91} %write{90,90}
+temp	float	$tmp53	%read{100,100} %write{99,99}
+temp	float	$tmp54	%read{95,95} %write{93,93}
+temp	float	$tmp55	%read{95,95} %write{94,94}
+temp	float	$tmp56	%read{99,99} %write{95,95}
+temp	float	$tmp57	%read{98,98} %write{96,96}
+temp	float	$tmp58	%read{98,98} %write{97,97}
+temp	float	$tmp59	%read{99,99} %write{98,98}
+temp	vector	$tmp60	%read{110,110} %write{100,100}
+temp	float	$tmp61	%read{109,109} %write{108,108}
+temp	float	$tmp62	%read{104,104} %write{102,102}
+temp	float	$tmp63	%read{104,104} %write{103,103}
+temp	float	$tmp64	%read{108,108} %write{104,104}
+temp	float	$tmp65	%read{107,107} %write{105,105}
+temp	float	$tmp66	%read{107,107} %write{106,106}
+temp	float	$tmp67	%read{108,108} %write{107,107}
+temp	vector	$tmp68	%read{110,110} %write{109,109}
+temp	float	$tmp69	%read{112,112} %write{111,111}
+temp	int	$tmp70	%read{113,113} %write{112,112}
+temp	normal	$tmp71	%read{124,124} %write{123,123}
+temp	float	$tmp72	%read{116,116} %write{115,115}
+temp	vector	$tmp73	%read{119,119} %write{116,116}
+temp	float	$tmp74	%read{118,118} %write{117,117}
+temp	vector	$tmp75	%read{119,119} %write{118,118}
+temp	vector	$tmp76	%read{122,122} %write{119,119}
+temp	float	$tmp77	%read{121,121} %write{120,120}
+temp	vector	$tmp78	%read{122,122} %write{121,121}
+temp	vector	$tmp79	%read{123,123} %write{122,122}
+const	normal	$const16	0 0 0		%read{125,125} %write{2147483647,-1}
+temp	int	$tmp81	%read{126,126} %write{125,125}
+temp	int	$tmp82	%read{131,131} %write{130,130}
+temp	int	$tmp83	%read{134,134} %write{133,133}
+temp	float	$tmp84	%read{139,139} %write{138,138}
+temp	vector	$tmp85	%read{138,138} %write{137,137}
+const	string	$const17	"subsurface"		%read{140,645} %write{2147483647,-1}
+temp	color	$tmp86	%read{145,145} %write{141,141}
+const	float	$const18	1		%read{142,637} %write{2147483647,-1}
+temp	color	$tmp87	%read{144,144} %write{142,142}
+const	string	$const19	"clamp"		%read{143,535} %write{2147483647,-1}
+temp	color	$tmp88	%read{145,145} %write{144,144}
+temp	int	$tmp89	%read{150,150} %write{149,149}
+temp	int	$tmp90	%read{151,155} %write{150,154}
+temp	int	$tmp91	%read{153,153} %write{152,152}
+temp	int	$tmp92	%read{154,154} %write{153,153}
+const	float	$const20	0.0799999982		%read{156,383} %write{2147483647,-1}
+temp	float	$tmp93	%read{158,162} %write{156,156}
+const	string	$const21	"EtaFromIntensity"		%read{157,384} %write{2147483647,-1}
+temp	int	$tmp94	%read{159,159} %write{158,158}
+const	int	$const22	500		%read{160,387} %write{2147483647,-1}
+temp	float	$tmp95	%read{165,165} %write{163,163}
+temp	float	$tmp96	%read{165,165} %write{164,164}
+temp	float	$tmp97	%read{167,167} %write{166,166}
+const	float	$const23	0.0250000004		%read{166,166} %write{2147483647,-1}
+temp	float	$tmp98	%read{220,220} %write{219,219}
+temp	float	$tmp99	%read{176,176} %write{174,174}
+const	string	$const24	"CompensateFresnelRoughness"		%read{168,393} %write{2147483647,-1}
+temp	float	$tmp100	%read{171,171} %write{170,170}
+const	float	$const25	0.0500000007		%read{170,395} %write{2147483647,-1}
+const	float	$const26	0.5		%read{169,459} %write{2147483647,-1}
+temp	float	$tmp101	%read{170,170} %write{169,169}
+temp	float	$tmp102	%read{172,172} %write{171,171}
+temp	float	$tmp103	%read{174,174} %write{173,173}
+const	string	$const27	"Fresnel_DieletricConductor"		%read{175,400} %write{2147483647,-1}
+temp	int	$tmp104	%read{178,178} %write{177,177}
+temp	float	$tmp105	%read{190,190} %write{188,188}
+temp	float	$tmp106	%read{190,190} %write{189,189}
+temp	float	$tmp107	%read{194,194} %write{191,191}
+temp	float	$tmp108	%read{193,193} %write{192,192}
+const	float	$const29	4		%read{192,417} %write{2147483647,-1}
+temp	float	$tmp109	%read{194,194} %write{193,193}
+temp	float	$tmp110	%read{195,195} %write{194,194}
+temp	float	$tmp111	%read{199,199} %write{197,197}
+temp	float	$tmp112	%read{199,199} %write{198,198}
+const	float	$const30	2		%read{198,430} %write{2147483647,-1}
+temp	float	$tmp113	%read{202,202} %write{200,200}
+temp	float	$tmp114	%read{202,202} %write{201,201}
+temp	float	$tmp115	%read{206,206} %write{205,205}
+temp	float	$tmp116	%read{209,209} %write{207,207}
+temp	float	$tmp117	%read{209,209} %write{208,208}
 temp	float	$tmp118	%read{212,212} %write{210,210}
-temp	float	$tmp119	%read{210,210} %write{209,209}
-const	float	$const31	9.99999997e-07		%read{213,270} %write{2147483647,-1}
-temp	float	$tmp120	%read{213,213} %write{212,212}
+temp	float	$tmp119	%read{212,212} %write{211,211}
+temp	float	$tmp120	%read{215,215} %write{214,214}
 temp	float	$tmp121	%read{217,217} %write{215,215}
-temp	float	$tmp122	%read{215,215} %write{214,214}
-temp	float	$tmp123	%read{218,218} %write{217,217}
-temp	float	$tmp124	%read{221,221} %write{219,219}
-temp	float	$tmp125	%read{221,221} %write{220,220}
-temp	float	$tmp126	%read{222,222} %write{221,221}
-temp	float	$tmp127	%read{224,224} %write{223,223}
-temp	float	$tmp128	%read{225,225} %write{224,224}
-temp	float	$tmp129	%read{226,226} %write{225,225}
-temp	float	$tmp130	%read{228,228} %write{227,227}
-temp	float	$tmp131	%read{229,229} %write{228,228}
-temp	float	$tmp132	%read{230,230} %write{229,229}
-temp	float	$tmp133	%read{232,232} %write{231,231}
-temp	float	$tmp134	%read{233,233} %write{232,232}
-temp	float	$tmp135	%read{234,234} %write{233,233}
-const	string	$const32	"ggx"		%read{239,540} %write{2147483647,-1}
-const	vector	$const33	0 0 0		%read{239,239} %write{2147483647,-1}
-const	string	$const34	"multiplescatteringalbedo"		%read{239,540} %write{2147483647,-1}
-const	string	$const35	"microfacet"		%read{239,540} %write{2147483647,-1}
-temp	int	$tmp137	%read{242,242} %write{241,241}
-temp	int	$tmp138	%read{243,243} %write{242,242}
-const	string	$const36	"emission"		%read{244,244} %write{2147483647,-1}
-temp	color	$tmp139	%read{246,246} %write{245,245}
-temp	float	$tmp140	%read{256,256} %write{255,255}
-const	string	$const37	"CIEluminance"		%read{247,564} %write{2147483647,-1}
-temp	float	$tmp141	%read{249,249} %write{248,248}
-const	float	$const38	0.212670997		%read{249,566} %write{2147483647,-1}
-temp	float	$tmp142	%read{252,252} %write{249,249}
+temp	float	$tmp122	%read{217,217} %write{216,216}
+temp	float	$tmp123	%read{219,219} %write{218,218}
+temp	color	$tmp124	%read{226,226} %write{225,225}
+temp	color	$tmp125	%read{225,225} %write{221,221}
+temp	color	$tmp126	%read{224,224} %write{222,222}
+temp	color	$tmp127	%read{225,225} %write{224,224}
+temp	color	$tmp128	%read{259,259} %write{258,258}
+const	string	$const31	"GetLayerScale"		%read{227,227} %write{2147483647,-1}
+temp	vector	$tmp129	%read{229,229} %write{228,228}
+const	string	$const32	"GetAbsorption"		%read{230,230} %write{2147483647,-1}
+temp	float	$tmp130	%read{234,234} %write{232,232}
+temp	float	$tmp131	%read{232,232} %write{231,231}
+const	float	$const33	9.99999997e-07		%read{235,292} %write{2147483647,-1}
+temp	float	$tmp132	%read{235,235} %write{234,234}
+temp	float	$tmp133	%read{239,239} %write{237,237}
+temp	float	$tmp134	%read{237,237} %write{236,236}
+temp	float	$tmp135	%read{240,240} %write{239,239}
+temp	float	$tmp136	%read{243,243} %write{241,241}
+temp	float	$tmp137	%read{243,243} %write{242,242}
+temp	float	$tmp138	%read{244,244} %write{243,243}
+temp	float	$tmp139	%read{246,246} %write{245,245}
+temp	float	$tmp140	%read{247,247} %write{246,246}
+temp	float	$tmp141	%read{248,248} %write{247,247}
+temp	float	$tmp142	%read{250,250} %write{249,249}
 temp	float	$tmp143	%read{251,251} %write{250,250}
-const	float	$const39	0.715160012		%read{251,568} %write{2147483647,-1}
 temp	float	$tmp144	%read{252,252} %write{251,251}
-temp	float	$tmp145	%read{255,255} %write{252,252}
-temp	float	$tmp146	%read{254,254} %write{253,253}
-const	float	$const40	0.0721689984		%read{254,571} %write{2147483647,-1}
-temp	float	$tmp147	%read{255,255} %write{254,254}
-temp	float	$tmp148	%read{257,257} %write{256,256}
-temp	int	$tmp149	%read{259,259} %write{258,258}
-const	string	$const41	"intensityestimate"		%read{258,258} %write{2147483647,-1}
-temp	int	$tmp150	%read{260,260} %write{259,259}
-temp	closure color	$tmp151	%read{262,262} %write{261,261}
-temp	closure color	$tmp152	%read{263,263} %write{262,262}
-temp	int	$tmp153	%read{271,271} %write{270,270}
-temp	int	$tmp154	%read{272,276} %write{271,275}
-temp	int	$tmp155	%read{274,274} %write{273,273}
-temp	int	$tmp156	%read{275,275} %write{274,274}
-temp	int	$tmp157	%read{281,281} %write{280,280}
-const	string	$const42	"oren_nayar"		%read{282,282} %write{2147483647,-1}
-temp	int	$tmp158	%read{284,284} %write{283,283}
-temp	int	$tmp159	%read{287,287} %write{286,286}
-const	float	$const43	1.29999995		%read{289,289} %write{2147483647,-1}
-temp	color	$tmp160	%read{289,289} %write{288,288}
-const	string	$const44	"transmittance"		%read{289,289} %write{2147483647,-1}
-const	string	$const45	"scale"		%read{289,289} %write{2147483647,-1}
-temp	float	$tmp161	%read{291,291} %write{290,290}
-const	string	$const46	"GetAnisotropy"		%read{296,296} %write{2147483647,-1}
-temp	int	$tmp162	%read{298,298} %write{297,297}
-temp	int	$tmp163	%read{301,301} %write{300,300}
-temp	int	$tmp164	%read{302,302} %write{301,301}
-temp	float	$tmp165	%read{311,311} %write{310,310}
-temp	float	$tmp166	%read{306,306} %write{304,304}
-temp	float	$tmp167	%read{306,306} %write{305,305}
-temp	float	$tmp168	%read{310,310} %write{306,306}
-temp	float	$tmp169	%read{309,309} %write{307,307}
-temp	float	$tmp170	%read{309,309} %write{308,308}
-temp	float	$tmp171	%read{310,310} %write{309,309}
-temp	vector	$tmp172	%read{321,321} %write{311,311}
-temp	float	$tmp173	%read{320,320} %write{319,319}
-temp	float	$tmp174	%read{315,315} %write{313,313}
-temp	float	$tmp175	%read{315,315} %write{314,314}
-temp	float	$tmp176	%read{319,319} %write{315,315}
-temp	float	$tmp177	%read{318,318} %write{316,316}
-temp	float	$tmp178	%read{318,318} %write{317,317}
-temp	float	$tmp179	%read{319,319} %write{318,318}
-temp	vector	$tmp180	%read{321,321} %write{320,320}
-temp	int	$tmp181	%read{323,323} %write{322,322}
-temp	vector	$tmp182	%read{325,325} %write{324,324}
-temp	color	$tmp183	%read{329,329} %write{328,328}
-temp	color	$tmp184	%read{328,328} %write{327,327}
-const	string	$const47	"TransformToTangentSpace"		%read{330,330} %write{2147483647,-1}
-temp	int	$tmp185	%read{332,332} %write{331,331}
-temp	float	$tmp186	%read{338,338} %write{337,337}
-temp	vector	$tmp187	%read{341,341} %write{338,338}
-temp	float	$tmp188	%read{340,340} %write{339,339}
-temp	vector	$tmp189	%read{341,341} %write{340,340}
-temp	vector	$tmp190	%read{344,344} %write{341,341}
-temp	float	$tmp191	%read{343,343} %write{342,342}
-temp	normal	$tmp192	%read{344,344} %write{343,343}
-const	float	$const48	0.75		%read{347,347} %write{2147483647,-1}
-temp	float	$tmp193	%read{347,347} %write{346,346}
-temp	float	$tmp194	%read{348,348} %write{347,347}
-temp	float	$tmp195	%read{349,349} %write{348,348}
-temp	int	$tmp196	%read{351,351} %write{350,350}
-temp	int	$tmp197	%read{358,358} %write{357,357}
-temp	int	$tmp198	%read{359,363} %write{358,362}
-temp	int	$tmp199	%read{361,361} %write{360,360}
-temp	int	$tmp200	%read{362,362} %write{361,361}
-temp	float	$tmp201	%read{366,370} %write{364,364}
-temp	int	$tmp202	%read{367,367} %write{366,366}
-temp	float	$tmp203	%read{373,373} %write{371,371}
-temp	float	$tmp204	%read{373,373} %write{372,372}
-temp	float	$tmp205	%read{426,426} %write{425,425}
-temp	float	$tmp206	%read{382,382} %write{380,380}
-temp	float	$tmp207	%read{377,377} %write{376,376}
-temp	float	$tmp208	%read{376,376} %write{375,375}
-temp	float	$tmp209	%read{378,378} %write{377,377}
-temp	float	$tmp210	%read{380,380} %write{379,379}
-temp	int	$tmp211	%read{384,384} %write{383,383}
-temp	float	$tmp212	%read{396,396} %write{394,394}
-temp	float	$tmp213	%read{396,396} %write{395,395}
-temp	float	$tmp214	%read{400,400} %write{397,397}
-temp	float	$tmp215	%read{399,399} %write{398,398}
-temp	float	$tmp216	%read{400,400} %write{399,399}
-temp	float	$tmp217	%read{401,401} %write{400,400}
-temp	float	$tmp218	%read{405,405} %write{403,403}
-temp	float	$tmp219	%read{405,405} %write{404,404}
-temp	float	$tmp220	%read{408,408} %write{406,406}
-temp	float	$tmp221	%read{408,408} %write{407,407}
-temp	float	$tmp222	%read{412,412} %write{411,411}
-temp	float	$tmp223	%read{415,415} %write{413,413}
-temp	float	$tmp224	%read{415,415} %write{414,414}
-temp	float	$tmp225	%read{418,418} %write{416,416}
-temp	float	$tmp226	%read{418,418} %write{417,417}
-temp	float	$tmp227	%read{421,421} %write{420,420}
-temp	float	$tmp228	%read{423,423} %write{421,421}
-temp	float	$tmp229	%read{423,423} %write{422,422}
-temp	float	$tmp230	%read{425,425} %write{424,424}
-temp	int	$tmp231	%read{431,431} %write{430,430}
-const	string	$const49	"hsv"		%read{433,443} %write{2147483647,-1}
-const	string	$const50	"transformc"		%read{432,432} %write{2147483647,-1}
-const	string	$const51	"rgb"		%read{433,443} %write{2147483647,-1}
-temp	float	$tmp232	%read{435,435} %write{434,434}
-temp	float	$tmp233	%read{436,436} %write{435,435}
-temp	float	$tmp234	%read{442,442} %write{441,441}
-temp	float	$tmp235	%read{438,438} %write{437,437}
-const	float	$const52	1.20000005		%read{438,438} %write{2147483647,-1}
-temp	float	$tmp236	%read{440,440} %write{438,438}
-temp	float	$tmp237	%read{441,441} %write{440,440}
-const	string	$const53	"Gulbrandsen_Mapping"		%read{444,509} %write{2147483647,-1}
-temp	float	$tmp238	%read{450,450} %write{445,445}
-temp	float	$tmp239	%read{457,458} %write{446,446}
-const	float	$const54	0.00100000005		%read{448,510} %write{2147483647,-1}
-temp	float	$tmp240	%read{450,450} %write{448,448}
-temp	float	$tmp241	%read{451,451} %write{450,450}
-const	string	$const55	"get_n"		%read{452,514} %write{2147483647,-1}
-temp	float	$tmp242	%read{457,457} %write{456,456}
-const	string	$const56	"n_min"		%read{453,515} %write{2147483647,-1}
-temp	float	$tmp243	%read{456,456} %write{454,454}
-temp	float	$tmp244	%read{456,456} %write{455,455}
-temp	float	$tmp245	%read{465,465} %write{457,457}
-temp	float	$tmp246	%read{464,464} %write{458,458}
-temp	float	$tmp247	%read{464,464} %write{463,463}
-const	string	$const57	"n_max"		%read{459,521} %write{2147483647,-1}
-temp	float	$tmp248	%read{463,463} %write{461,461}
-temp	float	$tmp249	%read{463,463} %write{462,462}
-temp	float	$tmp250	%read{465,465} %write{464,464}
-temp	float	$tmp251	%read{475,475} %write{474,474}
-const	string	$const58	"get_k2"		%read{466,528} %write{2147483647,-1}
-temp	float	$tmp252	%read{470,470} %write{469,469}
-temp	float	$tmp253	%read{472,472} %write{470,470}
-temp	float	$tmp254	%read{472,472} %write{471,471}
-temp	float	$tmp255	%read{474,474} %write{473,473}
-temp	float	$tmp256	%read{481,481} %write{476,476}
-temp	float	$tmp257	%read{488,489} %write{477,477}
-temp	float	$tmp258	%read{481,481} %write{479,479}
-temp	float	$tmp259	%read{482,482} %write{481,481}
-temp	float	$tmp260	%read{488,488} %write{487,487}
-temp	float	$tmp261	%read{487,487} %write{485,485}
-temp	float	$tmp262	%read{487,487} %write{486,486}
-temp	float	$tmp263	%read{496,496} %write{488,488}
-temp	float	$tmp264	%read{495,495} %write{489,489}
-temp	float	$tmp265	%read{495,495} %write{494,494}
-temp	float	$tmp266	%read{494,494} %write{492,492}
+temp	float	$tmp145	%read{254,254} %write{253,253}
+temp	float	$tmp146	%read{255,255} %write{254,254}
+temp	float	$tmp147	%read{256,256} %write{255,255}
+const	string	$const34	"ggx"		%read{261,580} %write{2147483647,-1}
+const	vector	$const35	0 0 0		%read{261,580} %write{2147483647,-1}
+const	string	$const36	"multiplescatteringalbedo"		%read{261,564} %write{2147483647,-1}
+const	string	$const37	"microfacet"		%read{261,580} %write{2147483647,-1}
+temp	int	$tmp149	%read{264,264} %write{263,263}
+temp	int	$tmp150	%read{265,265} %write{264,264}
+const	string	$const38	"emission"		%read{266,266} %write{2147483647,-1}
+temp	color	$tmp151	%read{268,268} %write{267,267}
+temp	float	$tmp152	%read{278,278} %write{277,277}
+const	string	$const39	"CIEluminance"		%read{269,611} %write{2147483647,-1}
+temp	float	$tmp153	%read{271,271} %write{270,270}
+const	float	$const40	0.212670997		%read{271,613} %write{2147483647,-1}
+temp	float	$tmp154	%read{274,274} %write{271,271}
+temp	float	$tmp155	%read{273,273} %write{272,272}
+const	float	$const41	0.715160012		%read{273,615} %write{2147483647,-1}
+temp	float	$tmp156	%read{274,274} %write{273,273}
+temp	float	$tmp157	%read{277,277} %write{274,274}
+temp	float	$tmp158	%read{276,276} %write{275,275}
+const	float	$const42	0.0721689984		%read{276,618} %write{2147483647,-1}
+temp	float	$tmp159	%read{277,277} %write{276,276}
+temp	float	$tmp160	%read{279,279} %write{278,278}
+temp	int	$tmp161	%read{281,281} %write{280,280}
+const	string	$const43	"intensityestimate"		%read{280,280} %write{2147483647,-1}
+temp	int	$tmp162	%read{282,282} %write{281,281}
+temp	closure color	$tmp163	%read{284,284} %write{283,283}
+temp	closure color	$tmp164	%read{285,285} %write{284,284}
+temp	int	$tmp165	%read{293,293} %write{292,292}
+temp	int	$tmp166	%read{296,296} %write{295,295}
+temp	int	$tmp167	%read{301,301} %write{300,300}
+const	string	$const44	"oren_nayar"		%read{302,302} %write{2147483647,-1}
+temp	int	$tmp168	%read{304,304} %write{303,303}
+const	float	$const45	1.29999995		%read{311,311} %write{2147483647,-1}
+temp	color	$tmp169	%read{311,311} %write{305,305}
+const	string	$const46	"transmittance"		%read{311,311} %write{2147483647,-1}
+temp	color	$tmp170	%read{311,311} %write{310,310}
+temp	color	$tmp171	%read{310,310} %write{306,306}
+temp	color	$tmp172	%read{309,309} %write{307,307}
+temp	color	$tmp173	%read{310,310} %write{309,309}
+const	string	$const47	"scale"		%read{311,311} %write{2147483647,-1}
+const	string	$const48	"N"		%read{311,311} %write{2147483647,-1}
+const	string	$const49	"roughness"		%read{311,311} %write{2147483647,-1}
+const	string	$const50	"internallighting"		%read{311,311} %write{2147483647,-1}
+const	string	$const51	"GetAnisotropy"		%read{315,315} %write{2147483647,-1}
+temp	int	$tmp174	%read{317,317} %write{316,316}
+temp	int	$tmp175	%read{320,320} %write{319,319}
+temp	int	$tmp176	%read{321,321} %write{320,320}
+temp	float	$tmp177	%read{330,330} %write{329,329}
+temp	float	$tmp178	%read{325,325} %write{323,323}
+temp	float	$tmp179	%read{325,325} %write{324,324}
+temp	float	$tmp180	%read{329,329} %write{325,325}
+temp	float	$tmp181	%read{328,328} %write{326,326}
+temp	float	$tmp182	%read{328,328} %write{327,327}
+temp	float	$tmp183	%read{329,329} %write{328,328}
+temp	vector	$tmp184	%read{340,340} %write{330,330}
+temp	float	$tmp185	%read{339,339} %write{338,338}
+temp	float	$tmp186	%read{334,334} %write{332,332}
+temp	float	$tmp187	%read{334,334} %write{333,333}
+temp	float	$tmp188	%read{338,338} %write{334,334}
+temp	float	$tmp189	%read{337,337} %write{335,335}
+temp	float	$tmp190	%read{337,337} %write{336,336}
+temp	float	$tmp191	%read{338,338} %write{337,337}
+temp	vector	$tmp192	%read{340,340} %write{339,339}
+temp	int	$tmp193	%read{342,342} %write{341,341}
+temp	vector	$tmp194	%read{344,344} %write{343,343}
+temp	color	$tmp195	%read{348,348} %write{347,347}
+temp	color	$tmp196	%read{347,347} %write{346,346}
+const	string	$const52	"TransformToTangentSpace"		%read{349,349} %write{2147483647,-1}
+temp	int	$tmp197	%read{351,351} %write{350,350}
+temp	float	$tmp198	%read{357,357} %write{356,356}
+temp	vector	$tmp199	%read{360,360} %write{357,357}
+temp	float	$tmp200	%read{359,359} %write{358,358}
+temp	vector	$tmp201	%read{360,360} %write{359,359}
+temp	vector	$tmp202	%read{363,363} %write{360,360}
+temp	float	$tmp203	%read{362,362} %write{361,361}
+temp	normal	$tmp204	%read{363,363} %write{362,362}
+const	float	$const53	0.75		%read{366,366} %write{2147483647,-1}
+temp	float	$tmp205	%read{366,366} %write{365,365}
+temp	float	$tmp206	%read{367,367} %write{366,366}
+temp	float	$tmp207	%read{368,368} %write{367,367}
+temp	int	$tmp208	%read{370,370} %write{369,369}
+temp	int	$tmp209	%read{377,377} %write{376,376}
+temp	int	$tmp210	%read{378,382} %write{377,381}
+temp	int	$tmp211	%read{380,380} %write{379,379}
+temp	int	$tmp212	%read{381,381} %write{380,380}
+temp	float	$tmp213	%read{385,389} %write{383,383}
+temp	int	$tmp214	%read{386,386} %write{385,385}
+temp	float	$tmp215	%read{392,392} %write{390,390}
+temp	float	$tmp216	%read{392,392} %write{391,391}
+temp	float	$tmp217	%read{445,445} %write{444,444}
+temp	float	$tmp218	%read{401,401} %write{399,399}
+temp	float	$tmp219	%read{396,396} %write{395,395}
+temp	float	$tmp220	%read{395,395} %write{394,394}
+temp	float	$tmp221	%read{397,397} %write{396,396}
+temp	float	$tmp222	%read{399,399} %write{398,398}
+temp	int	$tmp223	%read{403,403} %write{402,402}
+temp	float	$tmp224	%read{415,415} %write{413,413}
+temp	float	$tmp225	%read{415,415} %write{414,414}
+temp	float	$tmp226	%read{419,419} %write{416,416}
+temp	float	$tmp227	%read{418,418} %write{417,417}
+temp	float	$tmp228	%read{419,419} %write{418,418}
+temp	float	$tmp229	%read{420,420} %write{419,419}
+temp	float	$tmp230	%read{424,424} %write{422,422}
+temp	float	$tmp231	%read{424,424} %write{423,423}
+temp	float	$tmp232	%read{427,427} %write{425,425}
+temp	float	$tmp233	%read{427,427} %write{426,426}
+temp	float	$tmp234	%read{431,431} %write{430,430}
+temp	float	$tmp235	%read{434,434} %write{432,432}
+temp	float	$tmp236	%read{434,434} %write{433,433}
+temp	float	$tmp237	%read{437,437} %write{435,435}
+temp	float	$tmp238	%read{437,437} %write{436,436}
+temp	float	$tmp239	%read{440,440} %write{439,439}
+temp	float	$tmp240	%read{442,442} %write{440,440}
+temp	float	$tmp241	%read{442,442} %write{441,441}
+temp	float	$tmp242	%read{444,444} %write{443,443}
+temp	int	$tmp243	%read{450,450} %write{449,449}
+temp	int	$tmp244	%read{451,455} %write{450,454}
+temp	int	$tmp245	%read{453,453} %write{452,452}
+temp	int	$tmp246	%read{454,454} %write{453,453}
+const	string	$const54	"hsv"		%read{457,467} %write{2147483647,-1}
+const	string	$const55	"transformc"		%read{456,456} %write{2147483647,-1}
+const	string	$const56	"rgb"		%read{457,467} %write{2147483647,-1}
+temp	float	$tmp247	%read{459,459} %write{458,458}
+temp	float	$tmp248	%read{460,460} %write{459,459}
+temp	float	$tmp249	%read{466,466} %write{465,465}
+temp	float	$tmp250	%read{462,462} %write{461,461}
+const	float	$const57	1.20000005		%read{462,462} %write{2147483647,-1}
+temp	float	$tmp251	%read{464,464} %write{462,462}
+temp	float	$tmp252	%read{465,465} %write{464,464}
+const	string	$const58	"Gulbrandsen_Mapping"		%read{468,533} %write{2147483647,-1}
+temp	float	$tmp253	%read{474,474} %write{469,469}
+temp	float	$tmp254	%read{481,482} %write{470,470}
+const	float	$const59	0.00100000005		%read{472,534} %write{2147483647,-1}
+temp	float	$tmp255	%read{474,474} %write{472,472}
+temp	float	$tmp256	%read{475,475} %write{474,474}
+const	string	$const60	"get_n"		%read{476,538} %write{2147483647,-1}
+temp	float	$tmp257	%read{481,481} %write{480,480}
+const	string	$const61	"n_min"		%read{477,539} %write{2147483647,-1}
+temp	float	$tmp258	%read{480,480} %write{478,478}
+temp	float	$tmp259	%read{480,480} %write{479,479}
+temp	float	$tmp260	%read{489,489} %write{481,481}
+temp	float	$tmp261	%read{488,488} %write{482,482}
+temp	float	$tmp262	%read{488,488} %write{487,487}
+const	string	$const62	"n_max"		%read{483,545} %write{2147483647,-1}
+temp	float	$tmp263	%read{487,487} %write{485,485}
+temp	float	$tmp264	%read{487,487} %write{486,486}
+temp	float	$tmp265	%read{489,489} %write{488,488}
+temp	float	$tmp266	%read{499,499} %write{498,498}
+const	string	$const63	"get_k2"		%read{490,552} %write{2147483647,-1}
 temp	float	$tmp267	%read{494,494} %write{493,493}
-temp	float	$tmp268	%read{496,496} %write{495,495}
-temp	float	$tmp269	%read{506,506} %write{505,505}
-temp	float	$tmp270	%read{501,501} %write{500,500}
-temp	float	$tmp271	%read{503,503} %write{501,501}
-temp	float	$tmp272	%read{503,503} %write{502,502}
-temp	float	$tmp273	%read{505,505} %write{504,504}
-temp	float	$tmp274	%read{512,512} %write{507,507}
-temp	float	$tmp275	%read{519,520} %write{508,508}
-temp	float	$tmp276	%read{512,512} %write{510,510}
-temp	float	$tmp277	%read{513,513} %write{512,512}
-temp	float	$tmp278	%read{519,519} %write{518,518}
-temp	float	$tmp279	%read{518,518} %write{516,516}
-temp	float	$tmp280	%read{518,518} %write{517,517}
-temp	float	$tmp281	%read{527,527} %write{519,519}
-temp	float	$tmp282	%read{526,526} %write{520,520}
-temp	float	$tmp283	%read{526,526} %write{525,525}
-temp	float	$tmp284	%read{525,525} %write{523,523}
+temp	float	$tmp268	%read{496,496} %write{494,494}
+temp	float	$tmp269	%read{496,496} %write{495,495}
+temp	float	$tmp270	%read{498,498} %write{497,497}
+temp	float	$tmp271	%read{505,505} %write{500,500}
+temp	float	$tmp272	%read{512,513} %write{501,501}
+temp	float	$tmp273	%read{505,505} %write{503,503}
+temp	float	$tmp274	%read{506,506} %write{505,505}
+temp	float	$tmp275	%read{512,512} %write{511,511}
+temp	float	$tmp276	%read{511,511} %write{509,509}
+temp	float	$tmp277	%read{511,511} %write{510,510}
+temp	float	$tmp278	%read{520,520} %write{512,512}
+temp	float	$tmp279	%read{519,519} %write{513,513}
+temp	float	$tmp280	%read{519,519} %write{518,518}
+temp	float	$tmp281	%read{518,518} %write{516,516}
+temp	float	$tmp282	%read{518,518} %write{517,517}
+temp	float	$tmp283	%read{520,520} %write{519,519}
+temp	float	$tmp284	%read{530,530} %write{529,529}
 temp	float	$tmp285	%read{525,525} %write{524,524}
-temp	float	$tmp286	%read{527,527} %write{526,526}
-temp	float	$tmp287	%read{537,537} %write{536,536}
-temp	float	$tmp288	%read{532,532} %write{531,531}
-temp	float	$tmp289	%read{534,534} %write{532,532}
-temp	float	$tmp290	%read{534,534} %write{533,533}
-temp	float	$tmp291	%read{536,536} %write{535,535}
-const	string	$const59	"mediumeta"		%read{540,540} %write{2147483647,-1}
-const	string	$const60	"thinfilmeta"		%read{540,540} %write{2147483647,-1}
-const	string	$const61	"realeta"		%read{540,540} %write{2147483647,-1}
-const	string	$const62	"complexeta"		%read{540,540} %write{2147483647,-1}
-const	string	$const63	"thinfilmthickness"		%read{540,540} %write{2147483647,-1}
-temp	float	$tmp292	%read{551,551} %write{550,550}
-temp	float	$tmp293	%read{544,544} %write{543,543}
-temp	float	$tmp294	%read{547,547} %write{544,544}
-temp	float	$tmp295	%read{546,546} %write{545,545}
-temp	float	$tmp296	%read{547,547} %write{546,546}
-temp	float	$tmp297	%read{550,550} %write{547,547}
-temp	float	$tmp298	%read{549,549} %write{548,548}
-temp	float	$tmp299	%read{550,550} %write{549,549}
-temp	float	$tmp300	%read{552,552} %write{551,551}
-temp	float	$tmp301	%read{562,562} %write{561,561}
-temp	float	$tmp302	%read{555,555} %write{554,554}
-temp	float	$tmp303	%read{558,558} %write{555,555}
-temp	float	$tmp304	%read{557,557} %write{556,556}
+temp	float	$tmp286	%read{527,527} %write{525,525}
+temp	float	$tmp287	%read{527,527} %write{526,526}
+temp	float	$tmp288	%read{529,529} %write{528,528}
+temp	float	$tmp289	%read{536,536} %write{531,531}
+temp	float	$tmp290	%read{543,544} %write{532,532}
+temp	float	$tmp291	%read{536,536} %write{534,534}
+temp	float	$tmp292	%read{537,537} %write{536,536}
+temp	float	$tmp293	%read{543,543} %write{542,542}
+temp	float	$tmp294	%read{542,542} %write{540,540}
+temp	float	$tmp295	%read{542,542} %write{541,541}
+temp	float	$tmp296	%read{551,551} %write{543,543}
+temp	float	$tmp297	%read{550,550} %write{544,544}
+temp	float	$tmp298	%read{550,550} %write{549,549}
+temp	float	$tmp299	%read{549,549} %write{547,547}
+temp	float	$tmp300	%read{549,549} %write{548,548}
+temp	float	$tmp301	%read{551,551} %write{550,550}
+temp	float	$tmp302	%read{561,561} %write{560,560}
+temp	float	$tmp303	%read{556,556} %write{555,555}
+temp	float	$tmp304	%read{558,558} %write{556,556}
 temp	float	$tmp305	%read{558,558} %write{557,557}
-temp	float	$tmp306	%read{561,561} %write{558,558}
-temp	float	$tmp307	%read{560,560} %write{559,559}
-temp	float	$tmp308	%read{561,561} %write{560,560}
-temp	float	$tmp309	%read{563,563} %write{562,562}
-temp	float	$tmp310	%read{573,573} %write{572,572}
-temp	float	$tmp311	%read{566,566} %write{565,565}
-temp	float	$tmp312	%read{569,569} %write{566,566}
-temp	float	$tmp313	%read{568,568} %write{567,567}
-temp	float	$tmp314	%read{569,569} %write{568,568}
-temp	float	$tmp315	%read{572,572} %write{569,569}
-temp	float	$tmp316	%read{571,571} %write{570,570}
-temp	float	$tmp317	%read{572,572} %write{571,571}
-temp	int	$tmp318	%read{578,578} %write{577,577}
-const	string	$const64	"shadow"		%read{577,577} %write{2147483647,-1}
-temp	closure color	$tmp319	%read{580,580} %write{579,579}
-const	string	$const65	"transparent"		%read{579,603} %write{2147483647,-1}
-temp	float	$tmp320	%read{582,582} %write{581,581}
-temp	color	$tmp321	%read{583,583} %write{582,582}
-temp	closure color	$tmp322	%read{590,590} %write{586,586}
-const	string	$const66	"diffuse"		%read{586,586} %write{2147483647,-1}
-temp	closure color	$tmp323	%read{585,585} %write{584,584}
-temp	closure color	$tmp324	%read{586,586} %write{585,585}
-const	string	$const67	"outputvariable"		%read{586,608} %write{2147483647,-1}
-temp	closure color	$tmp325	%read{590,590} %write{589,589}
-temp	closure color	$tmp326	%read{588,588} %write{587,587}
-temp	closure color	$tmp327	%read{589,589} %write{588,588}
-const	string	$const68	"reflection"		%read{601,601} %write{2147483647,-1}
-temp	closure color	$tmp328	%read{592,592} %write{591,591}
-temp	closure color	$tmp329	%read{595,595} %write{592,592}
-temp	closure color	$tmp330	%read{594,594} %write{593,593}
-temp	closure color	$tmp331	%read{595,595} %write{594,594}
-temp	closure color	$tmp332	%read{600,600} %write{595,595}
-temp	closure color	$tmp333	%read{597,597} %write{596,596}
-temp	closure color	$tmp334	%read{598,598} %write{597,597}
-temp	closure color	$tmp335	%read{599,599} %write{598,598}
-temp	closure color	$tmp336	%read{600,600} %write{599,599}
-temp	closure color	$tmp337	%read{601,601} %write{600,600}
-temp	closure color	$tmp338	%read{605,605} %write{602,602}
-temp	closure color	$tmp339	%read{604,604} %write{603,603}
-temp	closure color	$tmp340	%read{605,605} %write{604,604}
-temp	closure color	$tmp341	%read{609,609} %write{608,608}
-const	string	$const69	"incandescence"		%read{608,608} %write{2147483647,-1}
-temp	closure color	$tmp342	%read{607,607} %write{606,606}
-temp	closure color	$tmp343	%read{608,608} %write{607,607}
+temp	float	$tmp306	%read{560,560} %write{559,559}
+const	string	$const64	"forwardoutputvariables"		%read{564,580} %write{2147483647,-1}
+const	string	$const65	"mediumeta"		%read{564,564} %write{2147483647,-1}
+const	string	$const66	"thinfilmeta"		%read{564,564} %write{2147483647,-1}
+const	string	$const67	"realeta"		%read{564,564} %write{2147483647,-1}
+const	string	$const68	"complexeta"		%read{564,564} %write{2147483647,-1}
+const	string	$const69	"thinfilmthickness"		%read{564,564} %write{2147483647,-1}
+temp	int	$tmp307	%read{569,569} %write{568,568}
+temp	int	$tmp308	%read{570,574} %write{569,573}
+temp	int	$tmp309	%read{572,572} %write{571,571}
+temp	int	$tmp310	%read{573,573} %write{572,572}
+temp	int	$tmp311	%read{577,577} %write{576,576}
+temp	float	$tmp313	%read{583,583} %write{581,581}
+temp	float	$tmp314	%read{583,583} %write{582,582}
+temp	float	$tmp315	%read{584,584} %write{583,583}
+temp	float	$tmp316	%read{586,586} %write{585,585}
+temp	float	$tmp317	%read{587,587} %write{586,586}
+temp	float	$tmp318	%read{598,598} %write{597,597}
+temp	float	$tmp319	%read{591,591} %write{590,590}
+temp	float	$tmp320	%read{594,594} %write{591,591}
+temp	float	$tmp321	%read{593,593} %write{592,592}
+temp	float	$tmp322	%read{594,594} %write{593,593}
+temp	float	$tmp323	%read{597,597} %write{594,594}
+temp	float	$tmp324	%read{596,596} %write{595,595}
+temp	float	$tmp325	%read{597,597} %write{596,596}
+temp	float	$tmp326	%read{599,599} %write{598,598}
+temp	float	$tmp327	%read{609,609} %write{608,608}
+temp	float	$tmp328	%read{602,602} %write{601,601}
+temp	float	$tmp329	%read{605,605} %write{602,602}
+temp	float	$tmp330	%read{604,604} %write{603,603}
+temp	float	$tmp331	%read{605,605} %write{604,604}
+temp	float	$tmp332	%read{608,608} %write{605,605}
+temp	float	$tmp333	%read{607,607} %write{606,606}
+temp	float	$tmp334	%read{608,608} %write{607,607}
+temp	float	$tmp335	%read{610,610} %write{609,609}
+temp	float	$tmp336	%read{620,620} %write{619,619}
+temp	float	$tmp337	%read{613,613} %write{612,612}
+temp	float	$tmp338	%read{616,616} %write{613,613}
+temp	float	$tmp339	%read{615,615} %write{614,614}
+temp	float	$tmp340	%read{616,616} %write{615,615}
+temp	float	$tmp341	%read{619,619} %write{616,616}
+temp	float	$tmp342	%read{618,618} %write{617,617}
+temp	float	$tmp343	%read{619,619} %write{618,618}
+temp	int	$tmp344	%read{626,626} %write{625,625}
+const	string	$const70	"shadow"		%read{625,625} %write{2147483647,-1}
+temp	closure color	$tmp345	%read{636,636} %write{627,627}
+const	string	$const71	"transparent"		%read{627,663} %write{2147483647,-1}
+temp	color	$tmp346	%read{636,636} %write{635,635}
+temp	color	$tmp347	%read{635,635} %write{628,628}
+temp	color	$tmp348	%read{631,631} %write{629,629}
+temp	color	$tmp349	%read{631,631} %write{630,630}
+temp	color	$tmp350	%read{632,632} %write{631,631}
+temp	color	$tmp351	%read{634,634} %write{632,632}
+temp	float	$tmp352	%read{634,634} %write{633,633}
+temp	color	$tmp353	%read{635,635} %write{634,634}
+temp	float	$tmp354	%read{638,638} %write{637,637}
+temp	color	$tmp355	%read{639,639} %write{638,638}
+temp	closure color	$tmp356	%read{646,646} %write{642,642}
+const	string	$const72	"diffuse"		%read{642,642} %write{2147483647,-1}
+temp	closure color	$tmp357	%read{641,641} %write{640,640}
+temp	closure color	$tmp358	%read{642,642} %write{641,641}
+const	string	$const73	"outputvariable"		%read{642,679} %write{2147483647,-1}
+temp	closure color	$tmp359	%read{646,646} %write{645,645}
+temp	closure color	$tmp360	%read{644,644} %write{643,643}
+temp	closure color	$tmp361	%read{645,645} %write{644,644}
+const	string	$const74	"refraction"		%read{649,669} %write{2147483647,-1}
+temp	closure color	$tmp362	%read{648,648} %write{647,647}
+temp	closure color	$tmp363	%read{649,649} %write{648,648}
+const	string	$const75	"reflection"		%read{660,660} %write{2147483647,-1}
+temp	closure color	$tmp364	%read{651,651} %write{650,650}
+temp	closure color	$tmp365	%read{654,654} %write{651,651}
+temp	closure color	$tmp366	%read{653,653} %write{652,652}
+temp	closure color	$tmp367	%read{654,654} %write{653,653}
+temp	closure color	$tmp368	%read{659,659} %write{654,654}
+temp	closure color	$tmp369	%read{656,656} %write{655,655}
+temp	closure color	$tmp370	%read{657,657} %write{656,656}
+temp	closure color	$tmp371	%read{658,658} %write{657,657}
+temp	closure color	$tmp372	%read{659,659} %write{658,658}
+temp	closure color	$tmp373	%read{660,660} %write{659,659}
+temp	closure color	$tmp374	%read{662,662} %write{661,661}
+temp	closure color	$tmp375	%read{665,665} %write{662,662}
+temp	closure color	$tmp376	%read{664,664} %write{663,663}
+temp	closure color	$tmp377	%read{665,665} %write{664,664}
+temp	int	$tmp378	%read{667,667} %write{666,666}
+const	string	$const76	"camera"		%read{666,682} %write{2147483647,-1}
+temp	int	$tmp379	%read{668,672} %write{667,671}
+temp	int	$tmp380	%read{670,670} %write{669,669}
+temp	int	$tmp381	%read{671,671} %write{670,670}
+temp	closure color	$tmp382	%read{674,674} %write{673,673}
+const	string	$const77	"albedo"		%read{673,673} %write{2147483647,-1}
+const	string	$const78	"debug"		%read{673,673} %write{2147483647,-1}
+temp	closure color	$tmp383	%read{675,675} %write{674,674}
+temp	closure color	$tmp384	%read{676,676} %write{675,675}
+temp	closure color	$tmp385	%read{680,680} %write{679,679}
+const	string	$const79	"incandescence"		%read{679,679} %write{2147483647,-1}
+temp	closure color	$tmp386	%read{678,678} %write{677,677}
+temp	closure color	$tmp387	%read{679,679} %write{678,678}
+temp	int	$tmp388	%read{683,683} %write{682,682}
+temp	closure color	$tmp389	%read{685,685} %write{684,684}
+const	string	$const80	"distance"		%read{684,684} %write{2147483647,-1}
+const	string	$const81	"occlusion"		%read{684,684} %write{2147483647,-1}
 code disp_normal_bump_value
-# dlPrincipled.osl:169
-# 	DECLARE_DISP_NORMALMAP_BUMP
-	assign		disp_normal_bump_value N 	%filename{"dlPrincipled.osl"} %line{169} %argrw{"wr"}
+	assign		disp_normal_bump_value N 	%filename{"dlPrincipled.osl"} %line{234} %argrw{"wr"}
 code ___main___
-# dlPrincipled.osl:181
-# 	GET_UV(ss,tt)
-	aref		ss uvCoord $const1 	%filename{"dlPrincipled.osl"} %line{181} %argrw{"wrr"}
+	aref		ss uvCoord $const1 	%filename{"dlPrincipled.osl"} %line{248} %argrw{"wrr"}
 	aref		tt uvCoord $const2 	%argrw{"wrr"}
-# dlPrincipled.osl:183
-# 	normal Nn = normalize(N);
-	normalize	Nn N 	%line{183} %argrw{"wr"}
-# dlPrincipled.osl:184
-# 	normal N_normal_bump = Nn;
-	assign		N_normal_bump Nn 	%line{184} %argrw{"wr"}
-# dlPrincipled.osl:185
-# 	normal Nn_coating = Nn;
-	assign		Nn_coating Nn 	%line{185} %argrw{"wr"}
-# dlPrincipled.osl:186
-# 	normal Nn_base = Nn;
-	assign		Nn_base Nn 	%line{186} %argrw{"wr"}
-# dlPrincipled.osl:188
-# 	COMPUTE_DISP_NORMALMAP_BUMP(N_normal_bump,ss,tt,Nn)
-	isconnected	$tmp1 disp_normal_bump_value 	%line{188} %argrw{"wr"}
+	normalize	Nn N 	%line{250} %argrw{"wr"}
+	assign		N_normal_bump Nn 	%line{251} %argrw{"wr"}
+	assign		Nn_coating Nn 	%line{252} %argrw{"wr"}
+	assign		Nn_base Nn 	%line{253} %argrw{"wr"}
+	isconnected	$tmp1 disp_normal_bump_value 	%line{255} %argrw{"wr"}
 	neq		$tmp2 $tmp1 $const1 	%argrw{"wrr"}
 	if		$tmp2 13 13 	%argrw{"r"}
 	neq		$tmp3 disp_normal_bump_intensity $const1 	%argrw{"wrr"}
 	neq		$tmp4 $tmp3 $const1 	%argrw{"wrr"}
 	assign		$tmp2 $tmp4 	%argrw{"wr"}
-	if		$tmp2 117 117 	%argrw{"r"}
+	if		$tmp2 130 130 	%argrw{"r"}
 	le		$tmp5 disp_normal_bump_type $const3 	%argrw{"wrr"}
-	if		$tmp5 117 117 	%argrw{"r"}
-	functioncall	$const4 117 	%argrw{"r"}
-# material_common.h:286
-# 	if (i_type == 0) // Bump
+	if		$tmp5 130 130 	%argrw{"r"}
+	functioncall	$const4 130 	%argrw{"r"}
 	eq		$tmp6 disp_normal_bump_type $const1 	%filename{"material_common.h"} %line{286} %argrw{"wrr"}
-	if		$tmp6 34 43 	%argrw{"r"}
-# material_common.h:288
-# 		float depth = abs( i_intensity );
-	abs		___419_depth disp_normal_bump_intensity 	%line{288} %argrw{"wr"}
-# material_common.h:289
-# 		float offset = clamp( i_value[0] * i_intensity, -depth, depth );
-	compref		$tmp7 disp_normal_bump_value $const1 	%line{289} %argrw{"wrr"}
-	mul		$tmp8 $tmp7 disp_normal_bump_intensity 	%argrw{"wrr"}
-	neg		$tmp9 ___419_depth 	%argrw{"wr"}
-	functioncall	$const5 26 	%argrw{"r"}
-# /users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h:163
-# float  clamp (float x, float minval, float maxval) { return max(min(x,maxval),minval); }
-	min		$tmp10 $tmp8 ___419_depth 	%filename{"/users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h"} %line{163} %argrw{"wrr"}
-	max		___419_offset $tmp10 $tmp9 	%argrw{"wrr"}
-# material_common.h:290
-# 		point pb = point( i_s, i_t, 0.004 * offset );
-	mul		$tmp11 $const6 ___419_offset 	%filename{"material_common.h"} %line{290} %argrw{"wrr"}
-	point		___419_pb ss tt $tmp11 	%argrw{"wrrr"}
-# material_common.h:291
-# 		N_result = normalize( calculatenormal( pb ) );
-	calculatenormal	$tmp12 ___419_pb 	%line{291} %argrw{"wr"} %argderivs{1}
-	normalize	___418_N_result $tmp12 	%argrw{"wr"}
-# material_common.h:296
-# 		if ( N_result[2] < 0 )
-	compref		$tmp13 ___418_N_result $const3 	%line{296} %argrw{"wrr"}
-	lt		$tmp14 $tmp13 $const1 	%argrw{"wrr"}
-	if		$tmp14 34 34 	%argrw{"r"}
-# material_common.h:298
-# 			N_result = -N_result;
-	neg		___418_N_result ___418_N_result 	%line{298} %argrw{"wr"}
-# material_common.h:303
-# 		N_result = normal(normal(mix(color(0.5,0.5,1),i_value,i_intensity)) - vector(0.5));
-	mix		$tmp16 $const7 disp_normal_bump_value disp_normal_bump_intensity 	%line{303} %argrw{"wrrr"}
-	assign		$tmp15 $tmp16 	%argrw{"wr"}
-	sub		$tmp19 $tmp15 $const8 	%argrw{"wrr"}
-	assign		___418_N_result $tmp19 	%argrw{"wr"}
-# material_common.h:305
-# 		if (i_type == 1) // DirectX Normal Map
-	eq		$tmp20 disp_normal_bump_type $const2 	%line{305} %argrw{"wrr"}
-	if		$tmp20 43 43 	%argrw{"r"}
-# material_common.h:306
-# 			N_result[1] *= -1;
-	compref		$tmp21 ___418_N_result $const2 	%line{306} %argrw{"wrr"}
-	mul		$tmp22 $tmp21 $const10 	%argrw{"wrr"}
-	compassign	___418_N_result $const2 $tmp22 	%argrw{"wrr"}
-# material_common.h:310
-# 	vector basisz = i_N;
-	assign		___418_basisz Nn 	%line{310} %argrw{"wr"}
-# material_common.h:313
-# 	if( getattribute("tangent:st", 0, stangent) && stangent != 0 )
-	getattribute	$tmp23 $const11 $const1 ___418_stangent 	%line{313} %argrw{"wrrw"}
+	if		$tmp6 36 125 	%argrw{"r"}
+	compref		$tmp7 disp_normal_bump_value $const1 	%line{288} %argrw{"wrr"}
+	mul		___419_intensity disp_normal_bump_intensity $tmp7 	%argrw{"wrr"}
+	normalize	___419_Nn Nn 	%line{290} %argrw{"wr"}
+	normalize	___419_Ngn Ng 	%line{291} %argrw{"wr"}
+	sub		___419_Noffset ___419_Nn ___419_Ngn 	%line{292} %argrw{"wrr"}
+	functioncall	$const6 26 	%line{294} %argrw{"r"}
+	transform	$tmp8 $const7 $const5 P 	%filename{"/users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h"} %line{285} %argrw{"wrrr"}
+	functioncall	$const6 28 	%filename{"material_common.h"} %line{295} %argrw{"r"}
+	transformn	$tmp10 $const7 $const5 ___419_Ngn 	%filename{"/users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h"} %line{283} %argrw{"wrrr"}
+	normalize	$tmp9 $tmp10 	%filename{"material_common.h"} %line{295} %argrw{"wr"}
+	mul		$tmp11 $tmp9 ___419_intensity 	%argrw{"wrr"}
+	add		___419_Pp $tmp8 $tmp11 	%line{294} %argrw{"wrr"}
+	calculatenormal	$tmp12 ___419_Pp 	%line{296} %argrw{"wr"} %argderivs{1}
+	transformv	___418_N_result $const5 $const7 $tmp12 	%argrw{"wrrr"}
+	normalize	___418_N_result ___418_N_result 	%line{297} %argrw{"wr"}
+	add		$tmp13 ___418_N_result ___419_Noffset 	%line{298} %argrw{"wrr"}
+	normalize	___418_N_result $tmp13 	%argrw{"wr"}
+	mix		$tmp15 $const8 disp_normal_bump_value disp_normal_bump_intensity 	%line{302} %argrw{"wrrr"}
+	assign		$tmp14 $tmp15 	%argrw{"wr"}
+	sub		$tmp18 $tmp14 $const9 	%argrw{"wrr"}
+	assign		___418_N_result $tmp18 	%argrw{"wr"}
+	eq		$tmp19 disp_normal_bump_type $const2 	%line{304} %argrw{"wrr"}
+	if		$tmp19 45 45 	%argrw{"r"}
+	compref		$tmp20 ___418_N_result $const2 	%line{305} %argrw{"wrr"}
+	mul		$tmp21 $tmp20 $const11 	%argrw{"wrr"}
+	compassign	___418_N_result $const2 $tmp21 	%argrw{"wrr"}
+	assign		___420_basisz Nn 	%line{308} %argrw{"wr"}
+	compref		$tmp22 ___418_N_result $const1 	%line{311} %argrw{"wrr"}
+	eq		$tmp23 $tmp22 $const12 	%argrw{"wrr"}
 	neq		$tmp24 $tmp23 $const1 	%argrw{"wrr"}
-	if		$tmp24 50 50 	%argrw{"r"}
-	neq		$tmp25 ___418_stangent $const1 	%argrw{"wrr"}
-	neq		$tmp26 $tmp25 $const1 	%argrw{"wrr"}
-	assign		$tmp24 $tmp26 	%argrw{"wr"}
-	if		$tmp24 55 102 	%argrw{"r"}
-# material_common.h:315
-# 		basisy = normalize( cross( basisz, stangent ) );
-	cross		$tmp27 ___418_basisz ___418_stangent 	%line{315} %argrw{"wrr"}
-	normalize	___418_basisy $tmp27 	%argrw{"wr"}
-# material_common.h:316
-# 		basisx = normalize( cross( basisy, basisz ) );
-	cross		$tmp28 ___418_basisy ___418_basisz 	%line{316} %argrw{"wrr"}
-	normalize	___418_basisx $tmp28 	%argrw{"wr"}
-# material_common.h:320
-# 		basisy = Du(i_t) * dPdu + Dv(i_t) * dPdv;
-	functioncall	$const12 63 	%line{320} %argrw{"r"}
-# utils.h:232
-# 	return Dx(a)/Dx(u) + Dy(a)/Dy(u);
-	Dx		$tmp30 tt 	%filename{"utils.h"} %line{232} %argrw{"wr"} %argderivs{1}
-	Dx		$tmp31 u 	%argrw{"wr"} %argderivs{1}
-	div		$tmp32 $tmp30 $tmp31 	%argrw{"wrr"}
-	Dy		$tmp33 tt 	%argrw{"wr"} %argderivs{1}
-	Dy		$tmp34 u 	%argrw{"wr"} %argderivs{1}
-	div		$tmp35 $tmp33 $tmp34 	%argrw{"wrr"}
-	add		$tmp29 $tmp32 $tmp35 	%argrw{"wrr"}
-# material_common.h:320
-# 		basisy = Du(i_t) * dPdu + Dv(i_t) * dPdv;
-	mul		$tmp36 $tmp29 dPdu 	%filename{"material_common.h"} %line{320} %argrw{"wrr"}
-	functioncall	$const13 72 	%argrw{"r"}
-# utils.h:244
-# 	return Dx(a)/Dx(v) + Dy(a)/Dy(v);
-	Dx		$tmp38 tt 	%filename{"utils.h"} %line{244} %argrw{"wr"} %argderivs{1}
-	Dx		$tmp39 v 	%argrw{"wr"} %argderivs{1}
+	if		$tmp24 54 54 	%argrw{"r"}
+	compref		$tmp25 ___418_N_result $const2 	%argrw{"wrr"}
+	eq		$tmp26 $tmp25 $const12 	%argrw{"wrr"}
+	neq		$tmp27 $tmp26 $const1 	%argrw{"wrr"}
+	assign		$tmp24 $tmp27 	%argrw{"wr"}
+	if		$tmp24 57 115 	%argrw{"r"}
+	assign		___420_basisx $const1 	%line{321} %argrw{"wr"}
+	assign		___420_basisy $const1 	%line{322} %argrw{"wr"}
+	getattribute	$tmp28 $const13 $const1 ___420_stangent 	%line{324} %argrw{"wrrw"}
+	neq		$tmp29 $tmp28 $const1 	%argrw{"wrr"}
+	if		$tmp29 63 63 	%argrw{"r"}
+	neq		$tmp30 ___420_stangent $const1 	%argrw{"wrr"}
+	neq		$tmp31 $tmp30 $const1 	%argrw{"wrr"}
+	assign		$tmp29 $tmp31 	%argrw{"wr"}
+	if		$tmp29 68 115 	%argrw{"r"}
+	cross		$tmp32 ___420_basisz ___420_stangent 	%line{326} %argrw{"wrr"}
+	normalize	___420_basisy $tmp32 	%argrw{"wr"}
+	cross		$tmp33 ___420_basisy ___420_basisz 	%line{327} %argrw{"wrr"}
+	normalize	___420_basisx $tmp33 	%argrw{"wr"}
+	functioncall	$const14 76 	%line{331} %argrw{"r"}
+	Dx		$tmp35 tt 	%filename{"utils.h"} %line{232} %argrw{"wr"} %argderivs{1}
+	Dx		$tmp36 u 	%argrw{"wr"} %argderivs{1}
+	div		$tmp37 $tmp35 $tmp36 	%argrw{"wrr"}
+	Dy		$tmp38 tt 	%argrw{"wr"} %argderivs{1}
+	Dy		$tmp39 u 	%argrw{"wr"} %argderivs{1}
 	div		$tmp40 $tmp38 $tmp39 	%argrw{"wrr"}
-	Dy		$tmp41 tt 	%argrw{"wr"} %argderivs{1}
-	Dy		$tmp42 v 	%argrw{"wr"} %argderivs{1}
-	div		$tmp43 $tmp41 $tmp42 	%argrw{"wrr"}
-	add		$tmp37 $tmp40 $tmp43 	%argrw{"wrr"}
-# material_common.h:320
-# 		basisy = Du(i_t) * dPdu + Dv(i_t) * dPdv;
-	mul		$tmp44 $tmp37 dPdv 	%filename{"material_common.h"} %line{320} %argrw{"wrr"}
-	add		___418_basisy $tmp36 $tmp44 	%argrw{"wrr"}
-# material_common.h:321
-# 		basisy = normalize( cross(basisz, cross(basisy, basisz)) );
-	cross		$tmp46 ___418_basisy ___418_basisz 	%line{321} %argrw{"wrr"}
-	cross		$tmp45 ___418_basisz $tmp46 	%argrw{"wrr"}
-	normalize	___418_basisy $tmp45 	%argrw{"wr"}
-# material_common.h:322
-# 		basisx = normalize( cross( basisy, basisz ) );
-	cross		$tmp47 ___418_basisy ___418_basisz 	%line{322} %argrw{"wrr"}
-	normalize	___418_basisx $tmp47 	%argrw{"wr"}
-# material_common.h:325
-# 		vector uorient = Du(i_s) * dPdu + Dv(i_s) * dPdv;
-	functioncall	$const12 87 	%line{325} %argrw{"r"}
-# utils.h:232
-# 	return Dx(a)/Dx(u) + Dy(a)/Dy(u);
-	Dx		$tmp49 ss 	%filename{"utils.h"} %line{232} %argrw{"wr"} %argderivs{1}
-	Dx		$tmp50 u 	%argrw{"wr"} %argderivs{1}
-	div		$tmp51 $tmp49 $tmp50 	%argrw{"wrr"}
-	Dy		$tmp52 ss 	%argrw{"wr"} %argderivs{1}
-	Dy		$tmp53 u 	%argrw{"wr"} %argderivs{1}
-	div		$tmp54 $tmp52 $tmp53 	%argrw{"wrr"}
-	add		$tmp48 $tmp51 $tmp54 	%argrw{"wrr"}
-# material_common.h:325
-# 		vector uorient = Du(i_s) * dPdu + Dv(i_s) * dPdv;
-	mul		$tmp55 $tmp48 dPdu 	%filename{"material_common.h"} %line{325} %argrw{"wrr"}
-	functioncall	$const13 96 	%argrw{"r"}
-# utils.h:244
-# 	return Dx(a)/Dx(v) + Dy(a)/Dy(v);
-	Dx		$tmp57 ss 	%filename{"utils.h"} %line{244} %argrw{"wr"} %argderivs{1}
-	Dx		$tmp58 v 	%argrw{"wr"} %argderivs{1}
+	add		$tmp34 $tmp37 $tmp40 	%argrw{"wrr"}
+	mul		$tmp41 $tmp34 dPdu 	%filename{"material_common.h"} %line{331} %argrw{"wrr"}
+	functioncall	$const15 85 	%argrw{"r"}
+	Dx		$tmp43 tt 	%filename{"utils.h"} %line{244} %argrw{"wr"} %argderivs{1}
+	Dx		$tmp44 v 	%argrw{"wr"} %argderivs{1}
+	div		$tmp45 $tmp43 $tmp44 	%argrw{"wrr"}
+	Dy		$tmp46 tt 	%argrw{"wr"} %argderivs{1}
+	Dy		$tmp47 v 	%argrw{"wr"} %argderivs{1}
+	div		$tmp48 $tmp46 $tmp47 	%argrw{"wrr"}
+	add		$tmp42 $tmp45 $tmp48 	%argrw{"wrr"}
+	mul		$tmp49 $tmp42 dPdv 	%filename{"material_common.h"} %line{331} %argrw{"wrr"}
+	add		___420_basisy $tmp41 $tmp49 	%argrw{"wrr"}
+	cross		$tmp51 ___420_basisy ___420_basisz 	%line{332} %argrw{"wrr"}
+	cross		$tmp50 ___420_basisz $tmp51 	%argrw{"wrr"}
+	normalize	___420_basisy $tmp50 	%argrw{"wr"}
+	cross		$tmp52 ___420_basisy ___420_basisz 	%line{333} %argrw{"wrr"}
+	normalize	___420_basisx $tmp52 	%argrw{"wr"}
+	functioncall	$const14 100 	%line{336} %argrw{"r"}
+	Dx		$tmp54 ss 	%filename{"utils.h"} %line{232} %argrw{"wr"} %argderivs{1}
+	Dx		$tmp55 u 	%argrw{"wr"} %argderivs{1}
+	div		$tmp56 $tmp54 $tmp55 	%argrw{"wrr"}
+	Dy		$tmp57 ss 	%argrw{"wr"} %argderivs{1}
+	Dy		$tmp58 u 	%argrw{"wr"} %argderivs{1}
 	div		$tmp59 $tmp57 $tmp58 	%argrw{"wrr"}
-	Dy		$tmp60 ss 	%argrw{"wr"} %argderivs{1}
-	Dy		$tmp61 v 	%argrw{"wr"} %argderivs{1}
-	div		$tmp62 $tmp60 $tmp61 	%argrw{"wrr"}
-	add		$tmp56 $tmp59 $tmp62 	%argrw{"wrr"}
-# material_common.h:325
-# 		vector uorient = Du(i_s) * dPdu + Dv(i_s) * dPdv;
-	mul		$tmp63 $tmp56 dPdv 	%filename{"material_common.h"} %line{325} %argrw{"wrr"}
-	add		___423_uorient $tmp55 $tmp63 	%argrw{"wrr"}
-# material_common.h:326
-# 		if( dot( basisx, uorient ) < 0 )
-	dot		$tmp64 ___418_basisx ___423_uorient 	%line{326} %argrw{"wrr"}
-	lt		$tmp65 $tmp64 $const1 	%argrw{"wrr"}
-	if		$tmp65 102 102 	%argrw{"r"}
-# material_common.h:328
-# 			basisx = -basisx;
-	neg		___418_basisx ___418_basisx 	%line{328} %argrw{"wr"}
-# material_common.h:333
-# 		N_result[0] * basisx +
-	compref		$tmp67 ___418_N_result $const1 	%line{333} %argrw{"wrr"}
-	mul		$tmp68 $tmp67 ___418_basisx 	%argrw{"wrr"}
-# material_common.h:334
-# 		N_result[1] * basisy +
-	compref		$tmp69 ___418_N_result $const2 	%line{334} %argrw{"wrr"}
-	mul		$tmp70 $tmp69 ___418_basisy 	%argrw{"wrr"}
-# material_common.h:333
-# 		N_result[0] * basisx +
-	add		$tmp71 $tmp68 $tmp70 	%line{333} %argrw{"wrr"}
-# material_common.h:335
-# 		N_result[2] * basisz ));
-	compref		$tmp72 ___418_N_result $const3 	%line{335} %argrw{"wrr"}
-	mul		$tmp73 $tmp72 ___418_basisz 	%argrw{"wrr"}
-# material_common.h:334
-# 		N_result[1] * basisy +
-	add		$tmp74 $tmp71 $tmp73 	%line{334} %argrw{"wrr"}
-# material_common.h:332
-# 	N_result = normalize(normal(
-	assign		$tmp66 $tmp74 	%line{332} %argrw{"wr"}
-	normalize	___418_N_result $tmp66 	%argrw{"wr"}
-# material_common.h:337
-# 	if( N_result == normal(0) )
-	eq		$tmp76 ___418_N_result $const14 	%line{337} %argrw{"wrr"}
-	if		$tmp76 116 116 	%argrw{"r"}
-# material_common.h:338
-# 		return i_N;
-	assign		N_normal_bump Nn 	%line{338} %argrw{"wr"}
+	add		$tmp53 $tmp56 $tmp59 	%argrw{"wrr"}
+	mul		$tmp60 $tmp53 dPdu 	%filename{"material_common.h"} %line{336} %argrw{"wrr"}
+	functioncall	$const15 109 	%argrw{"r"}
+	Dx		$tmp62 ss 	%filename{"utils.h"} %line{244} %argrw{"wr"} %argderivs{1}
+	Dx		$tmp63 v 	%argrw{"wr"} %argderivs{1}
+	div		$tmp64 $tmp62 $tmp63 	%argrw{"wrr"}
+	Dy		$tmp65 ss 	%argrw{"wr"} %argderivs{1}
+	Dy		$tmp66 v 	%argrw{"wr"} %argderivs{1}
+	div		$tmp67 $tmp65 $tmp66 	%argrw{"wrr"}
+	add		$tmp61 $tmp64 $tmp67 	%argrw{"wrr"}
+	mul		$tmp68 $tmp61 dPdv 	%filename{"material_common.h"} %line{336} %argrw{"wrr"}
+	add		___423_uorient $tmp60 $tmp68 	%argrw{"wrr"}
+	dot		$tmp69 ___420_basisx ___423_uorient 	%line{337} %argrw{"wrr"}
+	lt		$tmp70 $tmp69 $const1 	%argrw{"wrr"}
+	if		$tmp70 115 115 	%argrw{"r"}
+	neg		___420_basisx ___420_basisx 	%line{339} %argrw{"wr"}
+	compref		$tmp72 ___418_N_result $const1 	%line{344} %argrw{"wrr"}
+	mul		$tmp73 $tmp72 ___420_basisx 	%argrw{"wrr"}
+	compref		$tmp74 ___418_N_result $const2 	%line{345} %argrw{"wrr"}
+	mul		$tmp75 $tmp74 ___420_basisy 	%argrw{"wrr"}
+	add		$tmp76 $tmp73 $tmp75 	%line{344} %argrw{"wrr"}
+	compref		$tmp77 ___418_N_result $const3 	%line{346} %argrw{"wrr"}
+	mul		$tmp78 $tmp77 ___420_basisz 	%argrw{"wrr"}
+	add		$tmp79 $tmp76 $tmp78 	%line{345} %argrw{"wrr"}
+	assign		$tmp71 $tmp79 	%line{343} %argrw{"wr"}
+	normalize	___418_N_result $tmp71 	%argrw{"wr"}
+	eq		$tmp81 ___418_N_result $const16 	%line{349} %argrw{"wrr"}
+	if		$tmp81 129 129 	%argrw{"r"}
+	assign		N_normal_bump Nn 	%line{350} %argrw{"wr"}
 	return
-# material_common.h:340
-# 	return N_result;
-	assign		N_normal_bump ___418_N_result 	%line{340} %argrw{"wr"}
-# dlPrincipled.osl:189
-# 	COMPUTE_NORMALMAP_BUMP_LAYER_AFFECT(N_normal_bump,Nn_coating,Nn_base)
-	neq		$tmp77 normal_bump_affect_layer $const3 	%filename{"dlPrincipled.osl"} %line{189} %argrw{"wrr"}
-	if		$tmp77 120 120 	%argrw{"r"}
+	assign		N_normal_bump ___418_N_result 	%line{352} %argrw{"wr"}
+	neq		$tmp82 normal_bump_affect_layer $const3 	%filename{"dlPrincipled.osl"} %line{256} %argrw{"wrr"}
+	if		$tmp82 133 133 	%argrw{"r"}
 	assign		Nn_coating N_normal_bump 	%argrw{"wr"}
-	neq		$tmp78 normal_bump_affect_layer $const2 	%argrw{"wrr"}
-	if		$tmp78 123 123 	%argrw{"r"}
+	neq		$tmp83 normal_bump_affect_layer $const2 	%argrw{"wrr"}
+	if		$tmp83 136 136 	%argrw{"r"}
 	assign		Nn_base N_normal_bump 	%argrw{"wr"}
-# dlPrincipled.osl:191
-# 	vector In = normalize(I);
-	normalize	In I 	%line{191} %argrw{"wr"}
-# dlPrincipled.osl:193
-# 	float fresnel_cos_theta = abs(dot(-In, Nn));
-	neg		$tmp80 In 	%line{193} %argrw{"wr"}
-	dot		$tmp79 $tmp80 Nn 	%argrw{"wrr"}
-	abs		fresnel_cos_theta $tmp79 	%argrw{"wr"}
-# dlPrincipled.osl:195
-# 	int __is_subsurface_ray = raytype("subsurface");
-	raytype		__is_subsurface_ray $const15 	%line{195} %argrw{"wr"}
-# dlPrincipled.osl:198
-# 	closure color c_coating = 0;
-	assign		c_coating $const1 	%line{198} %argrw{"wr"}
-# dlPrincipled.osl:199
-# 	color _coating_color = 0;
-	assign		_coating_color $const1 	%line{199} %argrw{"wr"}
-# dlPrincipled.osl:200
-# 	color coating_absorbed = 1;
-	assign		coating_absorbed $const2 	%line{200} %argrw{"wr"}
-# dlPrincipled.osl:202
-# 	if( coating_thickness != 0 && __is_subsurface_ray == 0 )
-	neq		$tmp81 coating_thickness $const1 	%line{202} %argrw{"wrr"}
-	neq		$tmp82 $tmp81 $const1 	%argrw{"wrr"}
-	if		$tmp82 137 137 	%argrw{"r"}
-	eq		$tmp83 __is_subsurface_ray $const1 	%argrw{"wrr"}
-	neq		$tmp84 $tmp83 $const1 	%argrw{"wrr"}
-	assign		$tmp82 $tmp84 	%argrw{"wr"}
-	if		$tmp82 240 240 	%argrw{"r"}
-# dlPrincipled.osl:204
-# 		_coating_color = 1;
-	assign		_coating_color $const2 	%line{204} %argrw{"wr"}
-# dlPrincipled.osl:206
-# 		float coating_ior = EtaFromIntensity( coating_specular_level * 0.08 );
-	mul		$tmp85 coating_specular_level $const16 	%line{206} %argrw{"wrr"}
-	functioncall	$const17 149 	%argrw{"r"}
-# material_common.h:192
-# 	if( x >= 1 )
-	ge		$tmp86 $tmp85 $const2 	%filename{"material_common.h"} %line{192} %argrw{"wrr"}
-	if		$tmp86 145 145 	%argrw{"r"}
-# material_common.h:195
-# 		return 500;
-	assign		___442_coating_ior $const18 	%line{195} %argrw{"wr"}
+	normalize	In I 	%line{258} %argrw{"wr"}
+	neg		$tmp85 In 	%line{260} %argrw{"wr"}
+	dot		$tmp84 $tmp85 Nn 	%argrw{"wrr"}
+	abs		fresnel_cos_theta $tmp84 	%argrw{"wr"}
+	raytype		__is_subsurface_ray $const17 	%line{262} %argrw{"wr"}
+	assign		$tmp86 $const12 	%line{264} %argrw{"wr"}
+	assign		$tmp87 $const18 	%argrw{"wr"}
+	functioncall	$const19 146 	%argrw{"r"}
+	min		$tmp88 i_color $tmp87 	%filename{"/users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h"} %line{162} %argrw{"wrr"}
+	max		in_color $tmp88 $tmp86 	%argrw{"wrr"}
+	assign		c_coating $const1 	%filename{"dlPrincipled.osl"} %line{267} %argrw{"wr"}
+	assign		_coating_color $const1 	%line{268} %argrw{"wr"}
+	assign		coating_absorbed $const2 	%line{269} %argrw{"wr"}
+	neq		$tmp89 coating_thickness $const1 	%line{271} %argrw{"wrr"}
+	neq		$tmp90 $tmp89 $const1 	%argrw{"wrr"}
+	if		$tmp90 155 155 	%argrw{"r"}
+	eq		$tmp91 __is_subsurface_ray $const1 	%argrw{"wrr"}
+	neq		$tmp92 $tmp91 $const1 	%argrw{"wrr"}
+	assign		$tmp90 $tmp92 	%argrw{"wr"}
+	if		$tmp90 262 262 	%argrw{"r"}
+	mul		$tmp93 coating_specular_level $const20 	%line{273} %argrw{"wrr"}
+	functioncall	$const21 166 	%argrw{"r"}
+	ge		$tmp94 $tmp93 $const2 	%filename{"material_common.h"} %line{192} %argrw{"wrr"}
+	if		$tmp94 162 162 	%argrw{"r"}
+	assign		___445_coating_ior $const22 	%line{195} %argrw{"wr"}
 	return
-# material_common.h:198
-# 	float T = sqrt( x );
-	sqrt		___414_T $tmp85 	%line{198} %argrw{"wr"}
-# material_common.h:199
-# 	return (T+1) / (1-T);
-	add		$tmp87 ___414_T $const19 	%line{199} %argrw{"wrr"}
-	sub		$tmp88 $const19 ___414_T 	%argrw{"wrr"}
-	div		___442_coating_ior $tmp87 $tmp88 	%argrw{"wrr"}
-# dlPrincipled.osl:208
-# 		coating_ior = mix(1, coating_ior, smoothstep(0.0, 0.025, coating_thickness));
-	smoothstep	$tmp89 $const20 $const21 coating_thickness 	%filename{"dlPrincipled.osl"} %line{208} %argrw{"wrrr"}
-	mix		___442_coating_ior $const19 ___442_coating_ior $tmp89 	%argrw{"wrrr"}
-# dlPrincipled.osl:212
-# 				CompensateFresnelRoughness(coating_roughness, fresnel_cos_theta) );
-	functioncall	$const22 158 	%line{212} %argrw{"r"}
-# material_common.h:106
-# 	float magic = min(1, i_roughness - min(0.05, i_roughness * 0.5));
-	mul		$tmp93 coating_roughness $const24 	%filename{"material_common.h"} %line{106} %argrw{"wrr"}
-	min		$tmp92 $const23 $tmp93 	%argrw{"wrr"}
-	sub		$tmp94 coating_roughness $tmp92 	%argrw{"wrr"}
-	min		___410_magic $const19 $tmp94 	%argrw{"wrr"}
-# material_common.h:107
-# 	return mix(0.5 * magic, 1.0, i_cos_theta);
-	mul		$tmp95 $const24 ___410_magic 	%line{107} %argrw{"wrr"}
-	mix		$tmp91 $tmp95 $const19 fresnel_cos_theta 	%argrw{"wrrr"}
-# dlPrincipled.osl:211
-# 			Fresnel_DieletricConductor( coating_ior, 0, 1,
-	functioncall	$const25 203 	%filename{"dlPrincipled.osl"} %line{211} %argrw{"r"}
-# material_common.h:134
-# 	float cos_theta = i_cos_theta;
-	assign		___411_cos_theta $tmp91 	%filename{"material_common.h"} %line{134} %argrw{"wr"}
-# material_common.h:136
-# 	if( cos_theta >= 0 )
-	ge		$tmp96 ___411_cos_theta $const1 	%line{136} %argrw{"wrr"}
-	if		$tmp96 164 167 	%argrw{"r"}
-# material_common.h:138
-# 		n = i_n;
-	assign		___411_n ___442_coating_ior 	%line{138} %argrw{"wr"}
-# material_common.h:139
-# 		ni = i_ni;
-	assign		___411_ni $const19 	%line{139} %argrw{"wr"}
-# material_common.h:143
-# 		n = i_ni;
-	assign		___411_n $const19 	%line{143} %argrw{"wr"}
-# material_common.h:144
-# 		ni = i_n;
-	assign		___411_ni ___442_coating_ior 	%line{144} %argrw{"wr"}
-# material_common.h:146
-# 		cos_theta = -cos_theta;
+	sqrt		___414_T $tmp93 	%line{198} %argrw{"wr"}
+	add		$tmp95 ___414_T $const18 	%line{199} %argrw{"wrr"}
+	sub		$tmp96 $const18 ___414_T 	%argrw{"wrr"}
+	div		___445_coating_ior $tmp95 $tmp96 	%argrw{"wrr"}
+	smoothstep	$tmp97 $const12 $const23 coating_thickness 	%filename{"dlPrincipled.osl"} %line{275} %argrw{"wrrr"}
+	mix		___445_coating_ior $const18 ___445_coating_ior $tmp97 	%argrw{"wrrr"}
+	functioncall	$const24 175 	%line{279} %argrw{"r"}
+	mul		$tmp101 coating_roughness $const26 	%filename{"material_common.h"} %line{106} %argrw{"wrr"}
+	min		$tmp100 $const25 $tmp101 	%argrw{"wrr"}
+	sub		$tmp102 coating_roughness $tmp100 	%argrw{"wrr"}
+	min		___410_magic $const18 $tmp102 	%argrw{"wrr"}
+	mul		$tmp103 $const26 ___410_magic 	%line{107} %argrw{"wrr"}
+	mix		$tmp99 $tmp103 $const18 fresnel_cos_theta 	%argrw{"wrrr"}
+	functioncall	$const27 220 	%filename{"dlPrincipled.osl"} %line{278} %argrw{"r"}
+	assign		___411_cos_theta $tmp99 	%filename{"material_common.h"} %line{134} %argrw{"wr"}
+	ge		$tmp104 ___411_cos_theta $const1 	%line{136} %argrw{"wrr"}
+	if		$tmp104 181 184 	%argrw{"r"}
+	assign		___411_n ___445_coating_ior 	%line{138} %argrw{"wr"}
+	assign		___411_ni $const18 	%line{139} %argrw{"wr"}
+	assign		___411_n $const18 	%line{143} %argrw{"wr"}
+	assign		___411_ni ___445_coating_ior 	%line{144} %argrw{"wr"}
 	neg		___411_cos_theta ___411_cos_theta 	%line{146} %argrw{"wr"}
-# material_common.h:149
-# 	float cos2_theta = cos_theta * cos_theta;
 	mul		___411_cos2_theta ___411_cos_theta ___411_cos_theta 	%line{149} %argrw{"wrr"}
-# material_common.h:150
-# 	float sin2_theta = 1 - cos2_theta;
-	sub		___411_sin2_theta $const19 ___411_cos2_theta 	%line{150} %argrw{"wrr"}
-# material_common.h:151
-# 	float n2 = n * n;
+	sub		___411_sin2_theta $const18 ___411_cos2_theta 	%line{150} %argrw{"wrr"}
 	mul		___411_n2 ___411_n ___411_n 	%line{151} %argrw{"wrr"}
-# material_common.h:152
-# 	float ni2 = ni * ni;
 	mul		___411_ni2 ___411_ni ___411_ni 	%line{152} %argrw{"wrr"}
-# material_common.h:154
-# 	float t0 = n2 - i_k2 - ni2 * sin2_theta;
-	sub		$tmp97 ___411_n2 $const20 	%line{154} %argrw{"wrr"}
-	mul		$tmp98 ___411_ni2 ___411_sin2_theta 	%argrw{"wrr"}
-	sub		___411_t0 $tmp97 $tmp98 	%argrw{"wrr"}
-# material_common.h:155
-# 	float t1 = sqrt( t0 * t0 + 4 * n2 * i_k2 );
-	mul		$tmp99 ___411_t0 ___411_t0 	%line{155} %argrw{"wrr"}
-	mul		$tmp100 $const27 ___411_n2 	%argrw{"wrr"}
-	mul		$tmp101 $tmp100 $const20 	%argrw{"wrr"}
-	add		$tmp102 $tmp99 $tmp101 	%argrw{"wrr"}
-	sqrt		___411_t1 $tmp102 	%argrw{"wr"}
-# material_common.h:156
-# 	float a2plusb2 = t1 / ni2;
+	sub		$tmp105 ___411_n2 $const12 	%line{154} %argrw{"wrr"}
+	mul		$tmp106 ___411_ni2 ___411_sin2_theta 	%argrw{"wrr"}
+	sub		___411_t0 $tmp105 $tmp106 	%argrw{"wrr"}
+	mul		$tmp107 ___411_t0 ___411_t0 	%line{155} %argrw{"wrr"}
+	mul		$tmp108 $const29 ___411_n2 	%argrw{"wrr"}
+	mul		$tmp109 $tmp108 $const12 	%argrw{"wrr"}
+	add		$tmp110 $tmp107 $tmp109 	%argrw{"wrr"}
+	sqrt		___411_t1 $tmp110 	%argrw{"wr"}
 	div		___411_a2plusb2 ___411_t1 ___411_ni2 	%line{156} %argrw{"wrr"}
-# material_common.h:157
-# 	float a2 = ( t1 + t0 ) / ( 2 * ni2 );
-	add		$tmp103 ___411_t1 ___411_t0 	%line{157} %argrw{"wrr"}
-	mul		$tmp104 $const28 ___411_ni2 	%argrw{"wrr"}
-	div		___411_a2 $tmp103 $tmp104 	%argrw{"wrr"}
-# material_common.h:158
-# 	float b2 = ( t1 - t0 ) / ( 2 * ni2 );
-	sub		$tmp105 ___411_t1 ___411_t0 	%line{158} %argrw{"wrr"}
-	mul		$tmp106 $const28 ___411_ni2 	%argrw{"wrr"}
-	div		___411_b2 $tmp105 $tmp106 	%argrw{"wrr"}
-# material_common.h:159
-# 	float a = sqrt( a2 );
+	add		$tmp111 ___411_t1 ___411_t0 	%line{157} %argrw{"wrr"}
+	mul		$tmp112 $const30 ___411_ni2 	%argrw{"wrr"}
+	div		___411_a2 $tmp111 $tmp112 	%argrw{"wrr"}
+	sub		$tmp113 ___411_t1 ___411_t0 	%line{158} %argrw{"wrr"}
+	mul		$tmp114 $const30 ___411_ni2 	%argrw{"wrr"}
+	div		___411_b2 $tmp113 $tmp114 	%argrw{"wrr"}
 	sqrt		___411_a ___411_a2 	%line{159} %argrw{"wr"}
-# material_common.h:161
-# 	float t2 = a2plusb2 + cos2_theta;
 	add		___411_t2 ___411_a2plusb2 ___411_cos2_theta 	%line{161} %argrw{"wrr"}
-# material_common.h:162
-# 	float t3 = 2 * a * cos_theta;
-	mul		$tmp107 $const28 ___411_a 	%line{162} %argrw{"wrr"}
-	mul		___411_t3 $tmp107 ___411_cos_theta 	%argrw{"wrr"}
-# material_common.h:163
-# 	float R_s = (t2 - t3) / (t2 + t3);
-	sub		$tmp108 ___411_t2 ___411_t3 	%line{163} %argrw{"wrr"}
-	add		$tmp109 ___411_t2 ___411_t3 	%argrw{"wrr"}
-	div		___411_R_s $tmp108 $tmp109 	%argrw{"wrr"}
-# material_common.h:165
-# 	float t4 = cos2_theta * a2plusb2 + sin2_theta * sin2_theta;
-	mul		$tmp110 ___411_cos2_theta ___411_a2plusb2 	%line{165} %argrw{"wrr"}
-	mul		$tmp111 ___411_sin2_theta ___411_sin2_theta 	%argrw{"wrr"}
-	add		___411_t4 $tmp110 $tmp111 	%argrw{"wrr"}
-# material_common.h:166
-# 	float t5 = t3 * sin2_theta;
+	mul		$tmp115 $const30 ___411_a 	%line{162} %argrw{"wrr"}
+	mul		___411_t3 $tmp115 ___411_cos_theta 	%argrw{"wrr"}
+	sub		$tmp116 ___411_t2 ___411_t3 	%line{163} %argrw{"wrr"}
+	add		$tmp117 ___411_t2 ___411_t3 	%argrw{"wrr"}
+	div		___411_R_s $tmp116 $tmp117 	%argrw{"wrr"}
+	mul		$tmp118 ___411_cos2_theta ___411_a2plusb2 	%line{165} %argrw{"wrr"}
+	mul		$tmp119 ___411_sin2_theta ___411_sin2_theta 	%argrw{"wrr"}
+	add		___411_t4 $tmp118 $tmp119 	%argrw{"wrr"}
 	mul		___411_t5 ___411_t3 ___411_sin2_theta 	%line{166} %argrw{"wrr"}
-# material_common.h:167
-# 	float R_p = R_s * (t4 - t5) / (t4 + t5);
-	sub		$tmp112 ___411_t4 ___411_t5 	%line{167} %argrw{"wrr"}
-	mul		$tmp113 ___411_R_s $tmp112 	%argrw{"wrr"}
-	add		$tmp114 ___411_t4 ___411_t5 	%argrw{"wrr"}
-	div		___411_R_p $tmp113 $tmp114 	%argrw{"wrr"}
-# material_common.h:169
-# 	return 0.5 * (R_p + R_s);
-	add		$tmp115 ___411_R_p ___411_R_s 	%line{169} %argrw{"wrr"}
-	mul		$tmp90 $const24 $tmp115 	%argrw{"wrr"}
-# dlPrincipled.osl:212
-# 				CompensateFresnelRoughness(coating_roughness, fresnel_cos_theta) );
-	mul		_coating_color _coating_color $tmp90 	%filename{"dlPrincipled.osl"} %line{212} %argrw{"wrr"}
-# dlPrincipled.osl:217
-# 		color coating_absorbtion = 1 - coating_color;
-	sub		___442_coating_absorbtion $const19 coating_color 	%line{217} %argrw{"wrr"}
-# dlPrincipled.osl:220
-# 			GetLayerScale(
-	functioncall	$const29 237 	%line{220} %argrw{"r"}
-# material_common.h:244
-# 	vector H = normalize( i_L + i_V );
-	add		$tmp117 In In 	%filename{"material_common.h"} %line{244} %argrw{"wrr"}
-	normalize	___417_H $tmp117 	%argrw{"wr"}
-# material_common.h:248
-# 		GetAbsorption(
-	functioncall	$const30 236 	%line{248} %argrw{"r"}
-# material_common.h:215
-# 	float vdotn = clamp(abs( dot(V, Nn) ), EPSILON, 1.0);
-	dot		$tmp119 In Nn_coating 	%line{215} %argrw{"wrr"}
-	abs		$tmp118 $tmp119 	%argrw{"wr"}
-	functioncall	$const5 214 	%argrw{"r"}
-# /users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h:163
-# float  clamp (float x, float minval, float maxval) { return max(min(x,maxval),minval); }
-	min		$tmp120 $tmp118 $const19 	%filename{"/users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h"} %line{163} %argrw{"wrr"}
-	max		___416_vdotn $tmp120 $const31 	%argrw{"wrr"}
-# material_common.h:216
-# 	float ldotn = clamp(abs( dot(Ln,Nn) ), EPSILON, 1.0);
-	dot		$tmp122 In Nn_coating 	%filename{"material_common.h"} %line{216} %argrw{"wrr"}
-	abs		$tmp121 $tmp122 	%argrw{"wr"}
-	functioncall	$const5 219 	%argrw{"r"}
-# /users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h:163
-# float  clamp (float x, float minval, float maxval) { return max(min(x,maxval),minval); }
-	min		$tmp123 $tmp121 $const19 	%filename{"/users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h"} %line{163} %argrw{"wrr"}
-	max		___416_ldotn $tmp123 $const31 	%argrw{"wrr"}
-# material_common.h:220
-# 	float l = d*(1.0/vdotn + 1.0/ldotn);
-	div		$tmp124 $const19 ___416_vdotn 	%filename{"material_common.h"} %line{220} %argrw{"wrr"}
-	div		$tmp125 $const19 ___416_ldotn 	%argrw{"wrr"}
-	add		$tmp126 $tmp124 $tmp125 	%argrw{"wrr"}
-	mul		___416_l coating_thickness $tmp126 	%argrw{"wrr"}
-# material_common.h:222
-# 	float r = exp( -alpha[0]*l );
-	compref		$tmp127 ___442_coating_absorbtion $const1 	%line{222} %argrw{"wrr"}
-	neg		$tmp128 $tmp127 	%argrw{"wr"}
-	mul		$tmp129 $tmp128 ___416_l 	%argrw{"wrr"}
-	exp		___416_r $tmp129 	%argrw{"wr"}
-# material_common.h:223
-# 	float g = exp( -alpha[1]*l );
-	compref		$tmp130 ___442_coating_absorbtion $const2 	%line{223} %argrw{"wrr"}
-	neg		$tmp131 $tmp130 	%argrw{"wr"}
-	mul		$tmp132 $tmp131 ___416_l 	%argrw{"wrr"}
-	exp		___416_g $tmp132 	%argrw{"wr"}
-# material_common.h:224
-# 	float b = exp( -alpha[2]*l );
-	compref		$tmp133 ___442_coating_absorbtion $const3 	%line{224} %argrw{"wrr"}
-	neg		$tmp134 $tmp133 	%argrw{"wr"}
-	mul		$tmp135 $tmp134 ___416_l 	%argrw{"wrr"}
-	exp		___416_b $tmp135 	%argrw{"wr"}
-# material_common.h:226
-# 	return color(r,g,b);
+	sub		$tmp120 ___411_t4 ___411_t5 	%line{167} %argrw{"wrr"}
+	mul		$tmp121 ___411_R_s $tmp120 	%argrw{"wrr"}
+	add		$tmp122 ___411_t4 ___411_t5 	%argrw{"wrr"}
+	div		___411_R_p $tmp121 $tmp122 	%argrw{"wrr"}
+	add		$tmp123 ___411_R_p ___411_R_s 	%line{169} %argrw{"wrr"}
+	mul		$tmp98 $const26 $tmp123 	%argrw{"wrr"}
+	assign		_coating_color $tmp98 	%filename{"dlPrincipled.osl"} %line{277} %argrw{"wr"}
+	assign		$tmp125 $const12 	%line{284} %argrw{"wr"}
+	assign		$tmp126 $const18 	%argrw{"wr"}
+	functioncall	$const19 226 	%argrw{"r"}
+	min		$tmp127 coating_color $tmp126 	%filename{"/users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h"} %line{162} %argrw{"wrr"}
+	max		$tmp124 $tmp127 $tmp125 	%argrw{"wrr"}
+	sub		___445_coating_absorbtion $const18 $tmp124 	%filename{"dlPrincipled.osl"} %line{284} %argrw{"wrr"}
+	functioncall	$const31 259 	%line{287} %argrw{"r"}
+	add		$tmp129 In In 	%filename{"material_common.h"} %line{244} %argrw{"wrr"}
+	normalize	___417_H $tmp129 	%argrw{"wr"}
+	functioncall	$const32 258 	%line{248} %argrw{"r"}
+	dot		$tmp131 In Nn_coating 	%line{215} %argrw{"wrr"}
+	abs		$tmp130 $tmp131 	%argrw{"wr"}
+	functioncall	$const19 236 	%argrw{"r"}
+	min		$tmp132 $tmp130 $const18 	%filename{"/users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h"} %line{163} %argrw{"wrr"}
+	max		___416_vdotn $tmp132 $const33 	%argrw{"wrr"}
+	dot		$tmp134 In Nn_coating 	%filename{"material_common.h"} %line{216} %argrw{"wrr"}
+	abs		$tmp133 $tmp134 	%argrw{"wr"}
+	functioncall	$const19 241 	%argrw{"r"}
+	min		$tmp135 $tmp133 $const18 	%filename{"/users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h"} %line{163} %argrw{"wrr"}
+	max		___416_ldotn $tmp135 $const33 	%argrw{"wrr"}
+	div		$tmp136 $const18 ___416_vdotn 	%filename{"material_common.h"} %line{220} %argrw{"wrr"}
+	div		$tmp137 $const18 ___416_ldotn 	%argrw{"wrr"}
+	add		$tmp138 $tmp136 $tmp137 	%argrw{"wrr"}
+	mul		___416_l coating_thickness $tmp138 	%argrw{"wrr"}
+	compref		$tmp139 ___445_coating_absorbtion $const1 	%line{222} %argrw{"wrr"}
+	neg		$tmp140 $tmp139 	%argrw{"wr"}
+	mul		$tmp141 $tmp140 ___416_l 	%argrw{"wrr"}
+	exp		___416_r $tmp141 	%argrw{"wr"}
+	compref		$tmp142 ___445_coating_absorbtion $const2 	%line{223} %argrw{"wrr"}
+	neg		$tmp143 $tmp142 	%argrw{"wr"}
+	mul		$tmp144 $tmp143 ___416_l 	%argrw{"wrr"}
+	exp		___416_g $tmp144 	%argrw{"wr"}
+	compref		$tmp145 ___445_coating_absorbtion $const3 	%line{224} %argrw{"wrr"}
+	neg		$tmp146 $tmp145 	%argrw{"wr"}
+	mul		$tmp147 $tmp146 ___416_l 	%argrw{"wrr"}
+	exp		___416_b $tmp147 	%argrw{"wr"}
 	color		___417_absorpt_term ___416_r ___416_g ___416_b 	%line{226} %argrw{"wrrr"}
-# material_common.h:272
-# 	return absorpt_term;
-	assign		$tmp116 ___417_absorpt_term 	%line{272} %argrw{"wr"}
-# dlPrincipled.osl:225
-# 					coating_thickness);
-	mul		coating_absorbed coating_absorbed $tmp116 	%filename{"dlPrincipled.osl"} %line{225} %argrw{"wrr"}
-# dlPrincipled.osl:227
-# 		float _coating_roughness = coating_roughness * coating_roughness;
-	mul		___442__coating_roughness coating_roughness coating_roughness 	%line{227} %argrw{"wrr"}
-# dlPrincipled.osl:230
-# 			microfacet(
-	closure		c_coating $const35 $const32 Nn_coating $const33 ___442__coating_roughness ___442__coating_roughness ___442_coating_ior $const1 $const34 _coating_color 	%line{230} %argrw{"wrrrrrrrrrr"}
-# dlPrincipled.osl:240
-# 	closure color c_incandescence = 0;
-	assign		c_incandescence $const1 	%line{240} %argrw{"wr"}
-# dlPrincipled.osl:241
-# 	if( !backfacing() )
-	backfacing	$tmp137 	%line{241} %argrw{"w"}
-	eq		$tmp138 $tmp137 $const1 	%argrw{"wrr"}
-	if		$tmp138 245 245 	%argrw{"r"}
-# dlPrincipled.osl:242
-# 		c_incandescence = emission();
-	closure		c_incandescence $const36 	%line{242} %argrw{"wr"}
-# dlPrincipled.osl:245
-# 		incandescence * incandescence_intensity * incandescence_multiplier;
-	mul		$tmp139 incandescence incandescence_intensity 	%line{245} %argrw{"wrr"}
-	mul		incandescence_color $tmp139 incandescence_multiplier 	%argrw{"wrr"}
-# dlPrincipled.osl:252
-# 		1 - CIEluminance(_coating_color);
-	functioncall	$const37 256 	%line{252} %argrw{"r"}
-# utils.h:62
-# 		i_color[0] * 0.212671 +
-	compref		$tmp141 _coating_color $const1 	%filename{"utils.h"} %line{62} %argrw{"wrr"}
-	mul		$tmp142 $tmp141 $const38 	%argrw{"wrr"}
-# utils.h:63
-# 		i_color[1] * 0.715160 +
-	compref		$tmp143 _coating_color $const2 	%line{63} %argrw{"wrr"}
-	mul		$tmp144 $tmp143 $const39 	%argrw{"wrr"}
-# utils.h:62
-# 		i_color[0] * 0.212671 +
-	add		$tmp145 $tmp142 $tmp144 	%line{62} %argrw{"wrr"}
-# utils.h:64
-# 		i_color[2] * 0.072169;
-	compref		$tmp146 _coating_color $const3 	%line{64} %argrw{"wrr"}
-	mul		$tmp147 $tmp146 $const40 	%argrw{"wrr"}
-# utils.h:63
-# 		i_color[1] * 0.715160 +
-	add		$tmp140 $tmp145 $tmp147 	%line{63} %argrw{"wrr"}
-# dlPrincipled.osl:252
-# 		1 - CIEluminance(_coating_color);
-	sub		$tmp148 $const19 $tmp140 	%filename{"dlPrincipled.osl"} %line{252} %argrw{"wrr"}
-	mul		incandescence_color incandescence_color $tmp148 	%argrw{"wrr"}
-# dlPrincipled.osl:255
-# 	if( 0 != raytype("intensityestimate") )
-	raytype		$tmp149 $const41 	%line{255} %argrw{"wr"}
-	neq		$tmp150 $const1 $tmp149 	%argrw{"wrr"}
+	assign		$tmp128 ___417_absorpt_term 	%line{272} %argrw{"wr"}
+	mul		coating_absorbed coating_absorbed $tmp128 	%filename{"dlPrincipled.osl"} %line{292} %argrw{"wrr"}
+	mul		___445__coating_roughness coating_roughness coating_roughness 	%line{294} %argrw{"wrr"}
+	closure		c_coating $const37 $const34 Nn_coating $const35 ___445__coating_roughness ___445__coating_roughness ___445_coating_ior $const1 $const36 _coating_color 	%line{297} %argrw{"wrrrrrrrrrr"}
+	assign		c_incandescence $const1 	%line{307} %argrw{"wr"}
+	backfacing	$tmp149 	%line{308} %argrw{"w"}
+	eq		$tmp150 $tmp149 $const1 	%argrw{"wrr"}
 	if		$tmp150 267 267 	%argrw{"r"}
-# dlPrincipled.osl:257
-# 		outColor += c_incandescence * incandescence_color * coating_absorbed;
-	mul		$tmp151 c_incandescence incandescence_color 	%line{257} %argrw{"wrr"}
-	mul		$tmp152 $tmp151 coating_absorbed 	%argrw{"wrr"}
-	add		outColor outColor $tmp152 	%argrw{"wrr"}
-# dlPrincipled.osl:258
-# 		outColor += aovGroup;
-	add		outColor outColor aovGroup 	%line{258} %argrw{"wrr"}
-# dlPrincipled.osl:259
-# 		Ci = outColor;
-	assign		Ci outColor 	%line{259} %argrw{"wr"}
-# dlPrincipled.osl:260
-# 		return;
-	exit	%line{260}
-# dlPrincipled.osl:264
-# 	color _diffuse_color = i_color;
-	assign		_diffuse_color i_color 	%line{264} %argrw{"wr"}
-# dlPrincipled.osl:265
-# 	color _sss_color = 1;
-	assign		_sss_color $const2 	%line{265} %argrw{"wr"}
-# dlPrincipled.osl:266
-# 	float _sss_weight = sss_weight;
-	assign		_sss_weight sss_weight 	%line{266} %argrw{"wr"}
-# dlPrincipled.osl:268
-# 	if( sss_scale <= 1e-6 || __is_subsurface_ray != 0 )
-	le		$tmp153 sss_scale $const31 	%line{268} %argrw{"wrr"}
-	neq		$tmp154 $tmp153 $const1 	%argrw{"wrr"}
-	if		$tmp154 273 276 	%argrw{"r"}
-	neq		$tmp155 __is_subsurface_ray $const1 	%argrw{"wrr"}
-	neq		$tmp156 $tmp155 $const1 	%argrw{"wrr"}
-	assign		$tmp154 $tmp156 	%argrw{"wr"}
-	if		$tmp154 278 278 	%argrw{"r"}
-# dlPrincipled.osl:269
-# 		_sss_weight = 0.0;
-	assign		_sss_weight $const20 	%line{269} %argrw{"wr"}
-# dlPrincipled.osl:271
-# 	closure color c_diffuse = 0, c_sss = 0;
-	assign		c_diffuse $const1 	%line{271} %argrw{"wr"}
+	closure		c_incandescence $const38 	%line{309} %argrw{"wr"}
+	mul		$tmp151 incandescence incandescence_intensity 	%line{312} %argrw{"wrr"}
+	mul		incandescence_color $tmp151 incandescence_multiplier 	%argrw{"wrr"}
+	functioncall	$const39 278 	%line{319} %argrw{"r"}
+	compref		$tmp153 _coating_color $const1 	%filename{"utils.h"} %line{62} %argrw{"wrr"}
+	mul		$tmp154 $tmp153 $const40 	%argrw{"wrr"}
+	compref		$tmp155 _coating_color $const2 	%line{63} %argrw{"wrr"}
+	mul		$tmp156 $tmp155 $const41 	%argrw{"wrr"}
+	add		$tmp157 $tmp154 $tmp156 	%line{62} %argrw{"wrr"}
+	compref		$tmp158 _coating_color $const3 	%line{64} %argrw{"wrr"}
+	mul		$tmp159 $tmp158 $const42 	%argrw{"wrr"}
+	add		$tmp152 $tmp157 $tmp159 	%line{63} %argrw{"wrr"}
+	sub		$tmp160 $const18 $tmp152 	%filename{"dlPrincipled.osl"} %line{319} %argrw{"wrr"}
+	mul		incandescence_color incandescence_color $tmp160 	%argrw{"wrr"}
+	raytype		$tmp161 $const43 	%line{322} %argrw{"wr"}
+	neq		$tmp162 $const1 $tmp161 	%argrw{"wrr"}
+	if		$tmp162 289 289 	%argrw{"r"}
+	mul		$tmp163 c_incandescence incandescence_color 	%line{324} %argrw{"wrr"}
+	mul		$tmp164 $tmp163 coating_absorbed 	%argrw{"wrr"}
+	add		outColor outColor $tmp164 	%argrw{"wrr"}
+	add		outColor outColor aovGroup 	%line{325} %argrw{"wrr"}
+	assign		Ci outColor 	%line{326} %argrw{"wr"}
+	exit	%line{327}
+	assign		_diffuse_color in_color 	%line{331} %argrw{"wr"}
+	assign		_sss_color $const2 	%line{332} %argrw{"wr"}
+	assign		_sss_weight sss_weight 	%line{333} %argrw{"wr"}
+	le		$tmp165 sss_scale $const33 	%line{335} %argrw{"wrr"}
+	if		$tmp165 295 295 	%argrw{"r"}
+	assign		_sss_weight $const12 	%line{336} %argrw{"wr"}
+	neq		$tmp166 __is_subsurface_ray $const1 	%line{338} %argrw{"wrr"}
+	if		$tmp166 298 298 	%argrw{"r"}
+	assign		_sss_weight $const18 	%line{339} %argrw{"wr"}
+	assign		c_diffuse $const1 	%line{341} %argrw{"wr"}
 	assign		c_sss $const1 	%argrw{"wr"}
-# dlPrincipled.osl:272
-# 	if( _sss_weight != 1.0 )
-	neq		$tmp157 _sss_weight $const19 	%line{272} %argrw{"wrr"}
-	if		$tmp157 286 286 	%argrw{"r"}
-# dlPrincipled.osl:274
-# 		c_diffuse = oren_nayar(Nn_base, roughness);
-	closure		c_diffuse $const42 Nn_base roughness 	%line{274} %argrw{"wrrr"}
-# dlPrincipled.osl:276
-# 		if( __is_subsurface_ray != 0 )
-	neq		$tmp158 __is_subsurface_ray $const1 	%line{276} %argrw{"wrr"}
-	if		$tmp158 286 286 	%argrw{"r"}
-# dlPrincipled.osl:277
-# 			_diffuse_color = 1;
-	assign		_diffuse_color $const2 	%line{277} %argrw{"wr"}
-# dlPrincipled.osl:279
-# 	if( _sss_weight != 0.0 )
-	neq		$tmp159 _sss_weight $const20 	%line{279} %argrw{"wrr"}
-	if		$tmp159 290 290 	%argrw{"r"}
-# dlPrincipled.osl:281
-# 		c_sss = subsurface(1.3, 0, 0, i_color,
-	assign		$tmp160 $const20 	%line{281} %argrw{"wr"}
-	closure		c_sss $const15 $const43 $const20 $tmp160 i_color $const44 sss_color $const45 sss_scale 	%argrw{"wrrrrrrrrr"}
-# dlPrincipled.osl:286
-# 	_diffuse_color *= (1.0 - _sss_weight);
-	sub		$tmp161 $const19 _sss_weight 	%line{286} %argrw{"wrr"}
-	mul		_diffuse_color _diffuse_color $tmp161 	%argrw{"wrr"}
-# dlPrincipled.osl:287
-# 	_sss_color *= _sss_weight;
-	mul		_sss_color _sss_color _sss_weight 	%line{287} %argrw{"wrr"}
-# dlPrincipled.osl:289
-# 	float roughness_u = roughness * roughness;
-	mul		roughness_u roughness roughness 	%line{289} %argrw{"wrr"}
-# dlPrincipled.osl:290
-# 	float roughness_v = roughness_u;
-	assign		roughness_v roughness_u 	%line{290} %argrw{"wr"}
-# dlPrincipled.osl:291
-# 	vector anisotropy_udir = 0;
-	assign		anisotropy_udir $const1 	%line{291} %argrw{"wr"}
-# dlPrincipled.osl:293
-# 	GetAnisotropy(anisotropy, anisotropy_direction, ss,	Nn_base,
-	functioncall	$const46 355 	%line{293} %argrw{"r"}
-# material_common.h:369
-# 	if( i_anisotropy != 0 )
-	neq		$tmp162 anisotropy $const1 	%filename{"material_common.h"} %line{369} %argrw{"wrr"}
-	if		$tmp162 355 355 	%argrw{"r"}
-# material_common.h:372
-# 		vector anisotropy_stangent = 0;
-	assign		___427_anisotropy_stangent $const1 	%line{372} %argrw{"wr"}
-# material_common.h:373
-# 		if( !getattribute("tangent:st", 0, anisotropy_stangent) )
-	getattribute	$tmp163 $const11 $const1 ___427_anisotropy_stangent 	%line{373} %argrw{"wrrw"}
-	eq		$tmp164 $tmp163 $const1 	%argrw{"wrr"}
-	if		$tmp164 322 322 	%argrw{"r"}
-# material_common.h:376
-# 				Du(i_ss) * dPdu + Dv(i_ss) * dPdv;
-	functioncall	$const12 311 	%line{376} %argrw{"r"}
-# utils.h:232
-# 	return Dx(a)/Dx(u) + Dy(a)/Dy(u);
-	Dx		$tmp166 ss 	%filename{"utils.h"} %line{232} %argrw{"wr"} %argderivs{1}
-	Dx		$tmp167 u 	%argrw{"wr"} %argderivs{1}
-	div		$tmp168 $tmp166 $tmp167 	%argrw{"wrr"}
-	Dy		$tmp169 ss 	%argrw{"wr"} %argderivs{1}
-	Dy		$tmp170 u 	%argrw{"wr"} %argderivs{1}
-	div		$tmp171 $tmp169 $tmp170 	%argrw{"wrr"}
-	add		$tmp165 $tmp168 $tmp171 	%argrw{"wrr"}
-# material_common.h:376
-# 				Du(i_ss) * dPdu + Dv(i_ss) * dPdv;
-	mul		$tmp172 $tmp165 dPdu 	%filename{"material_common.h"} %line{376} %argrw{"wrr"}
-	functioncall	$const13 320 	%argrw{"r"}
-# utils.h:244
-# 	return Dx(a)/Dx(v) + Dy(a)/Dy(v);
-	Dx		$tmp174 ss 	%filename{"utils.h"} %line{244} %argrw{"wr"} %argderivs{1}
-	Dx		$tmp175 v 	%argrw{"wr"} %argderivs{1}
-	div		$tmp176 $tmp174 $tmp175 	%argrw{"wrr"}
-	Dy		$tmp177 ss 	%argrw{"wr"} %argderivs{1}
-	Dy		$tmp178 v 	%argrw{"wr"} %argderivs{1}
-	div		$tmp179 $tmp177 $tmp178 	%argrw{"wrr"}
-	add		$tmp173 $tmp176 $tmp179 	%argrw{"wrr"}
-# material_common.h:376
-# 				Du(i_ss) * dPdu + Dv(i_ss) * dPdv;
-	mul		$tmp180 $tmp173 dPdv 	%filename{"material_common.h"} %line{376} %argrw{"wrr"}
-	add		___427_anisotropy_stangent $tmp172 $tmp180 	%argrw{"wrr"}
-# material_common.h:379
-# 		if( anisotropy_stangent != 0 )
-	neq		$tmp181 ___427_anisotropy_stangent $const1 	%line{379} %argrw{"wrr"}
-	if		$tmp181 326 326 	%argrw{"r"}
-# material_common.h:383
-# 				cross( cross(i_N, anisotropy_stangent), i_N);
-	cross		$tmp182 Nn_base ___427_anisotropy_stangent 	%line{383} %argrw{"wrr"}
-	cross		___427_anisotropy_stangent $tmp182 Nn_base 	%argrw{"wrr"}
-# material_common.h:386
-# 		anisotropy_stangent = normalize(anisotropy_stangent);
-	normalize	___427_anisotropy_stangent ___427_anisotropy_stangent 	%line{386} %argrw{"wr"}
-# material_common.h:389
-# 			vector(color(i_anisotropy_direction-0.5));
-	sub		$tmp184 anisotropy_direction $const24 	%line{389} %argrw{"wrr"}
-	assign		$tmp183 $tmp184 	%argrw{"wr"}
-	assign		___427_anisotropy_direction $tmp183 	%argrw{"wr"}
-# material_common.h:392
-# 			TransformToTangentSpace(
-	functioncall	$const47 346 	%line{392} %argrw{"r"}
-# material_common.h:68
-# 	if( i_stangent == 0 )
-	eq		$tmp185 ___427_anisotropy_stangent $const1 	%line{68} %argrw{"wrr"}
-	if		$tmp185 335 335 	%argrw{"r"}
-# material_common.h:69
-# 		return 0;
+	neq		$tmp167 _sss_weight $const18 	%line{342} %argrw{"wrr"}
+	if		$tmp167 303 303 	%argrw{"r"}
+	closure		c_diffuse $const44 Nn_base roughness 	%line{344} %argrw{"wrrr"}
+	neq		$tmp168 _sss_weight $const12 	%line{346} %argrw{"wrr"}
+	if		$tmp168 312 312 	%argrw{"r"}
+	assign		$tmp169 $const12 	%line{348} %argrw{"wr"}
+	assign		$tmp171 $const12 	%line{349} %argrw{"wr"}
+	assign		$tmp172 $const18 	%argrw{"wr"}
+	functioncall	$const19 311 	%argrw{"r"}
+	min		$tmp173 sss_color $tmp172 	%filename{"/users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h"} %line{162} %argrw{"wrr"}
+	max		$tmp170 $tmp173 $tmp171 	%argrw{"wrr"}
+	closure		c_sss $const17 $const45 sss_anisotropy $tmp169 in_color $const46 $tmp170 $const47 sss_scale $const48 Nn_base $const49 roughness $const50 sss_internal_lighting 	%filename{"dlPrincipled.osl"} %line{348} %argrw{"wrrrrrrrrrrrrrrr"}
+	mul		roughness_u roughness roughness 	%line{356} %argrw{"wrr"}
+	assign		roughness_v roughness_u 	%line{357} %argrw{"wr"}
+	assign		anisotropy_udir $const1 	%line{358} %argrw{"wr"}
+	functioncall	$const51 374 	%line{360} %argrw{"r"}
+	neq		$tmp174 anisotropy $const1 	%filename{"material_common.h"} %line{381} %argrw{"wrr"}
+	if		$tmp174 374 374 	%argrw{"r"}
+	assign		___427_anisotropy_stangent $const1 	%line{384} %argrw{"wr"}
+	getattribute	$tmp175 $const13 $const1 ___427_anisotropy_stangent 	%line{385} %argrw{"wrrw"}
+	eq		$tmp176 $tmp175 $const1 	%argrw{"wrr"}
+	if		$tmp176 341 341 	%argrw{"r"}
+	functioncall	$const14 330 	%line{388} %argrw{"r"}
+	Dx		$tmp178 ss 	%filename{"utils.h"} %line{232} %argrw{"wr"} %argderivs{1}
+	Dx		$tmp179 u 	%argrw{"wr"} %argderivs{1}
+	div		$tmp180 $tmp178 $tmp179 	%argrw{"wrr"}
+	Dy		$tmp181 ss 	%argrw{"wr"} %argderivs{1}
+	Dy		$tmp182 u 	%argrw{"wr"} %argderivs{1}
+	div		$tmp183 $tmp181 $tmp182 	%argrw{"wrr"}
+	add		$tmp177 $tmp180 $tmp183 	%argrw{"wrr"}
+	mul		$tmp184 $tmp177 dPdu 	%filename{"material_common.h"} %line{388} %argrw{"wrr"}
+	functioncall	$const15 339 	%argrw{"r"}
+	Dx		$tmp186 ss 	%filename{"utils.h"} %line{244} %argrw{"wr"} %argderivs{1}
+	Dx		$tmp187 v 	%argrw{"wr"} %argderivs{1}
+	div		$tmp188 $tmp186 $tmp187 	%argrw{"wrr"}
+	Dy		$tmp189 ss 	%argrw{"wr"} %argderivs{1}
+	Dy		$tmp190 v 	%argrw{"wr"} %argderivs{1}
+	div		$tmp191 $tmp189 $tmp190 	%argrw{"wrr"}
+	add		$tmp185 $tmp188 $tmp191 	%argrw{"wrr"}
+	mul		$tmp192 $tmp185 dPdv 	%filename{"material_common.h"} %line{388} %argrw{"wrr"}
+	add		___427_anisotropy_stangent $tmp184 $tmp192 	%argrw{"wrr"}
+	neq		$tmp193 ___427_anisotropy_stangent $const1 	%line{391} %argrw{"wrr"}
+	if		$tmp193 345 345 	%argrw{"r"}
+	cross		$tmp194 Nn_base ___427_anisotropy_stangent 	%line{395} %argrw{"wrr"}
+	cross		___427_anisotropy_stangent $tmp194 Nn_base 	%argrw{"wrr"}
+	normalize	___427_anisotropy_stangent ___427_anisotropy_stangent 	%line{398} %argrw{"wr"}
+	sub		$tmp196 anisotropy_direction $const26 	%line{401} %argrw{"wrr"}
+	assign		$tmp195 $tmp196 	%argrw{"wr"}
+	assign		___427_anisotropy_direction $tmp195 	%argrw{"wr"}
+	functioncall	$const52 365 	%line{404} %argrw{"r"}
+	eq		$tmp197 ___427_anisotropy_stangent $const1 	%line{68} %argrw{"wrr"}
+	if		$tmp197 354 354 	%argrw{"r"}
 	assign		anisotropy_udir $const1 	%line{69} %argrw{"wr"}
 	return
-# material_common.h:72
-# 	vector anisotropy_coordsys_u = i_stangent;
 	assign		___409_anisotropy_coordsys_u ___427_anisotropy_stangent 	%line{72} %argrw{"wr"}
-# material_common.h:73
-# 	vector anisotropy_coordsys_v = cross(i_stangent, i_normal);
 	cross		___409_anisotropy_coordsys_v ___427_anisotropy_stangent Nn_base 	%line{73} %argrw{"wrr"}
-# material_common.h:82
-# 		i_v[0] * anisotropy_coordsys_u +
-	compref		$tmp186 ___427_anisotropy_direction $const1 	%line{82} %argrw{"wrr"}
-	mul		$tmp187 $tmp186 ___409_anisotropy_coordsys_u 	%argrw{"wrr"}
-# material_common.h:83
-# 		i_v[1] * anisotropy_coordsys_v +
-	compref		$tmp188 ___427_anisotropy_direction $const2 	%line{83} %argrw{"wrr"}
-	mul		$tmp189 $tmp188 ___409_anisotropy_coordsys_v 	%argrw{"wrr"}
-# material_common.h:82
-# 		i_v[0] * anisotropy_coordsys_u +
-	add		$tmp190 $tmp187 $tmp189 	%line{82} %argrw{"wrr"}
-# material_common.h:84
-# 		i_v[2] * i_normal;
-	compref		$tmp191 ___427_anisotropy_direction $const3 	%line{84} %argrw{"wrr"}
-	mul		$tmp192 $tmp191 Nn_base 	%argrw{"wrr"}
-# material_common.h:83
-# 		i_v[1] * anisotropy_coordsys_v +
-	add		___409_anisotropy_udir $tmp190 $tmp192 	%line{83} %argrw{"wrr"}
-# material_common.h:86
-# 	return normalize( anisotropy_udir );
+	compref		$tmp198 ___427_anisotropy_direction $const1 	%line{82} %argrw{"wrr"}
+	mul		$tmp199 $tmp198 ___409_anisotropy_coordsys_u 	%argrw{"wrr"}
+	compref		$tmp200 ___427_anisotropy_direction $const2 	%line{83} %argrw{"wrr"}
+	mul		$tmp201 $tmp200 ___409_anisotropy_coordsys_v 	%argrw{"wrr"}
+	add		$tmp202 $tmp199 $tmp201 	%line{82} %argrw{"wrr"}
+	compref		$tmp203 ___427_anisotropy_direction $const3 	%line{84} %argrw{"wrr"}
+	mul		$tmp204 $tmp203 Nn_base 	%argrw{"wrr"}
+	add		___409_anisotropy_udir $tmp202 $tmp204 	%line{83} %argrw{"wrr"}
 	normalize	anisotropy_udir ___409_anisotropy_udir 	%line{86} %argrw{"wr"}
-# material_common.h:397
-# 		float anisotropy = 1/(1-0.75*abs(i_anisotropy));
-	abs		$tmp193 anisotropy 	%line{397} %argrw{"wr"}
-	mul		$tmp194 $const48 $tmp193 	%argrw{"wrr"}
-	sub		$tmp195 $const19 $tmp194 	%argrw{"wrr"}
-	div		___427_anisotropy $const19 $tmp195 	%argrw{"wrr"}
-# material_common.h:398
-# 		if( i_anisotropy < 0 )
-	lt		$tmp196 anisotropy $const1 	%line{398} %argrw{"wrr"}
-	if		$tmp196 353 353 	%argrw{"r"}
-# material_common.h:400
-# 			anisotropy = 1/anisotropy;
-	div		___427_anisotropy $const19 ___427_anisotropy 	%line{400} %argrw{"wrr"}
-# material_common.h:403
-# 		o_roughness_u /= anisotropy;
-	div		roughness_u roughness_u ___427_anisotropy 	%line{403} %argrw{"wrr"}
-# material_common.h:404
-# 		o_roughness_v *= anisotropy;
-	mul		roughness_v roughness_v ___427_anisotropy 	%line{404} %argrw{"wrr"}
-# dlPrincipled.osl:297
-# 	closure color c_reflect = 0;
-	assign		c_reflect $const1 	%filename{"dlPrincipled.osl"} %line{297} %argrw{"wr"}
-# dlPrincipled.osl:298
-# 	color _reflect_color = 0;
-	assign		_reflect_color $const1 	%line{298} %argrw{"wr"}
-# dlPrincipled.osl:300
-# 	if( specular_level != 0 &&
-	neq		$tmp197 specular_level $const1 	%line{300} %argrw{"wrr"}
-	neq		$tmp198 $tmp197 $const1 	%argrw{"wrr"}
-	if		$tmp198 363 363 	%argrw{"r"}
-# dlPrincipled.osl:301
-# 		__is_subsurface_ray == 0 )
-	eq		$tmp199 __is_subsurface_ray $const1 	%line{301} %argrw{"wrr"}
-	neq		$tmp200 $tmp199 $const1 	%argrw{"wrr"}
-# dlPrincipled.osl:300
-# 	if( specular_level != 0 &&
-	assign		$tmp198 $tmp200 	%line{300} %argrw{"wr"}
-	if		$tmp198 428 428 	%argrw{"r"}
-# dlPrincipled.osl:304
-# 		float reflect_ior = EtaFromIntensity( specular_level * 0.08 );
-	mul		$tmp201 specular_level $const16 	%line{304} %argrw{"wrr"}
-	functioncall	$const17 374 	%argrw{"r"}
-# material_common.h:192
-# 	if( x >= 1 )
-	ge		$tmp202 $tmp201 $const2 	%filename{"material_common.h"} %line{192} %argrw{"wrr"}
-	if		$tmp202 370 370 	%argrw{"r"}
-# material_common.h:195
-# 		return 500;
-	assign		___446_reflect_ior $const18 	%line{195} %argrw{"wr"}
+	abs		$tmp205 anisotropy 	%line{409} %argrw{"wr"}
+	mul		$tmp206 $const53 $tmp205 	%argrw{"wrr"}
+	sub		$tmp207 $const18 $tmp206 	%argrw{"wrr"}
+	div		___427_anisotropy $const18 $tmp207 	%argrw{"wrr"}
+	lt		$tmp208 anisotropy $const1 	%line{410} %argrw{"wrr"}
+	if		$tmp208 372 372 	%argrw{"r"}
+	div		___427_anisotropy $const18 ___427_anisotropy 	%line{412} %argrw{"wrr"}
+	div		roughness_u roughness_u ___427_anisotropy 	%line{415} %argrw{"wrr"}
+	mul		roughness_v roughness_v ___427_anisotropy 	%line{416} %argrw{"wrr"}
+	assign		c_reflect $const1 	%filename{"dlPrincipled.osl"} %line{364} %argrw{"wr"}
+	assign		_reflect_color $const1 	%line{365} %argrw{"wr"}
+	neq		$tmp209 specular_level $const1 	%line{367} %argrw{"wrr"}
+	neq		$tmp210 $tmp209 $const1 	%argrw{"wrr"}
+	if		$tmp210 382 382 	%argrw{"r"}
+	eq		$tmp211 __is_subsurface_ray $const1 	%line{368} %argrw{"wrr"}
+	neq		$tmp212 $tmp211 $const1 	%argrw{"wrr"}
+	assign		$tmp210 $tmp212 	%line{367} %argrw{"wr"}
+	if		$tmp210 447 447 	%argrw{"r"}
+	mul		$tmp213 specular_level $const20 	%line{371} %argrw{"wrr"}
+	functioncall	$const21 393 	%argrw{"r"}
+	ge		$tmp214 $tmp213 $const2 	%filename{"material_common.h"} %line{192} %argrw{"wrr"}
+	if		$tmp214 389 389 	%argrw{"r"}
+	assign		___449_reflect_ior $const22 	%line{195} %argrw{"wr"}
 	return
-# material_common.h:198
-# 	float T = sqrt( x );
-	sqrt		___414_T $tmp201 	%line{198} %argrw{"wr"}
-# material_common.h:199
-# 	return (T+1) / (1-T);
-	add		$tmp203 ___414_T $const19 	%line{199} %argrw{"wrr"}
-	sub		$tmp204 $const19 ___414_T 	%argrw{"wrr"}
-	div		___446_reflect_ior $tmp203 $tmp204 	%argrw{"wrr"}
-# dlPrincipled.osl:308
-# 				CompensateFresnelRoughness(roughness, fresnel_cos_theta) );
-	functioncall	$const22 381 	%filename{"dlPrincipled.osl"} %line{308} %argrw{"r"}
-# material_common.h:106
-# 	float magic = min(1, i_roughness - min(0.05, i_roughness * 0.5));
-	mul		$tmp208 roughness $const24 	%filename{"material_common.h"} %line{106} %argrw{"wrr"}
-	min		$tmp207 $const23 $tmp208 	%argrw{"wrr"}
-	sub		$tmp209 roughness $tmp207 	%argrw{"wrr"}
-	min		___410_magic $const19 $tmp209 	%argrw{"wrr"}
-# material_common.h:107
-# 	return mix(0.5 * magic, 1.0, i_cos_theta);
-	mul		$tmp210 $const24 ___410_magic 	%line{107} %argrw{"wrr"}
-	mix		$tmp206 $tmp210 $const19 fresnel_cos_theta 	%argrw{"wrrr"}
-# dlPrincipled.osl:307
-# 			Fresnel_DieletricConductor( reflect_ior, 0, 1,
-	functioncall	$const25 426 	%filename{"dlPrincipled.osl"} %line{307} %argrw{"r"}
-# material_common.h:134
-# 	float cos_theta = i_cos_theta;
-	assign		___411_cos_theta $tmp206 	%filename{"material_common.h"} %line{134} %argrw{"wr"}
-# material_common.h:136
-# 	if( cos_theta >= 0 )
-	ge		$tmp211 ___411_cos_theta $const1 	%line{136} %argrw{"wrr"}
-	if		$tmp211 387 390 	%argrw{"r"}
-# material_common.h:138
-# 		n = i_n;
-	assign		___411_n ___446_reflect_ior 	%line{138} %argrw{"wr"}
-# material_common.h:139
-# 		ni = i_ni;
-	assign		___411_ni $const19 	%line{139} %argrw{"wr"}
-# material_common.h:143
-# 		n = i_ni;
-	assign		___411_n $const19 	%line{143} %argrw{"wr"}
-# material_common.h:144
-# 		ni = i_n;
-	assign		___411_ni ___446_reflect_ior 	%line{144} %argrw{"wr"}
-# material_common.h:146
-# 		cos_theta = -cos_theta;
+	sqrt		___414_T $tmp213 	%line{198} %argrw{"wr"}
+	add		$tmp215 ___414_T $const18 	%line{199} %argrw{"wrr"}
+	sub		$tmp216 $const18 ___414_T 	%argrw{"wrr"}
+	div		___449_reflect_ior $tmp215 $tmp216 	%argrw{"wrr"}
+	functioncall	$const24 400 	%filename{"dlPrincipled.osl"} %line{375} %argrw{"r"}
+	mul		$tmp220 roughness $const26 	%filename{"material_common.h"} %line{106} %argrw{"wrr"}
+	min		$tmp219 $const25 $tmp220 	%argrw{"wrr"}
+	sub		$tmp221 roughness $tmp219 	%argrw{"wrr"}
+	min		___410_magic $const18 $tmp221 	%argrw{"wrr"}
+	mul		$tmp222 $const26 ___410_magic 	%line{107} %argrw{"wrr"}
+	mix		$tmp218 $tmp222 $const18 fresnel_cos_theta 	%argrw{"wrrr"}
+	functioncall	$const27 445 	%filename{"dlPrincipled.osl"} %line{374} %argrw{"r"}
+	assign		___411_cos_theta $tmp218 	%filename{"material_common.h"} %line{134} %argrw{"wr"}
+	ge		$tmp223 ___411_cos_theta $const1 	%line{136} %argrw{"wrr"}
+	if		$tmp223 406 409 	%argrw{"r"}
+	assign		___411_n ___449_reflect_ior 	%line{138} %argrw{"wr"}
+	assign		___411_ni $const18 	%line{139} %argrw{"wr"}
+	assign		___411_n $const18 	%line{143} %argrw{"wr"}
+	assign		___411_ni ___449_reflect_ior 	%line{144} %argrw{"wr"}
 	neg		___411_cos_theta ___411_cos_theta 	%line{146} %argrw{"wr"}
-# material_common.h:149
-# 	float cos2_theta = cos_theta * cos_theta;
 	mul		___411_cos2_theta ___411_cos_theta ___411_cos_theta 	%line{149} %argrw{"wrr"}
-# material_common.h:150
-# 	float sin2_theta = 1 - cos2_theta;
-	sub		___411_sin2_theta $const19 ___411_cos2_theta 	%line{150} %argrw{"wrr"}
-# material_common.h:151
-# 	float n2 = n * n;
+	sub		___411_sin2_theta $const18 ___411_cos2_theta 	%line{150} %argrw{"wrr"}
 	mul		___411_n2 ___411_n ___411_n 	%line{151} %argrw{"wrr"}
-# material_common.h:152
-# 	float ni2 = ni * ni;
 	mul		___411_ni2 ___411_ni ___411_ni 	%line{152} %argrw{"wrr"}
-# material_common.h:154
-# 	float t0 = n2 - i_k2 - ni2 * sin2_theta;
-	sub		$tmp212 ___411_n2 $const20 	%line{154} %argrw{"wrr"}
-	mul		$tmp213 ___411_ni2 ___411_sin2_theta 	%argrw{"wrr"}
-	sub		___411_t0 $tmp212 $tmp213 	%argrw{"wrr"}
-# material_common.h:155
-# 	float t1 = sqrt( t0 * t0 + 4 * n2 * i_k2 );
-	mul		$tmp214 ___411_t0 ___411_t0 	%line{155} %argrw{"wrr"}
-	mul		$tmp215 $const27 ___411_n2 	%argrw{"wrr"}
-	mul		$tmp216 $tmp215 $const20 	%argrw{"wrr"}
-	add		$tmp217 $tmp214 $tmp216 	%argrw{"wrr"}
-	sqrt		___411_t1 $tmp217 	%argrw{"wr"}
-# material_common.h:156
-# 	float a2plusb2 = t1 / ni2;
+	sub		$tmp224 ___411_n2 $const12 	%line{154} %argrw{"wrr"}
+	mul		$tmp225 ___411_ni2 ___411_sin2_theta 	%argrw{"wrr"}
+	sub		___411_t0 $tmp224 $tmp225 	%argrw{"wrr"}
+	mul		$tmp226 ___411_t0 ___411_t0 	%line{155} %argrw{"wrr"}
+	mul		$tmp227 $const29 ___411_n2 	%argrw{"wrr"}
+	mul		$tmp228 $tmp227 $const12 	%argrw{"wrr"}
+	add		$tmp229 $tmp226 $tmp228 	%argrw{"wrr"}
+	sqrt		___411_t1 $tmp229 	%argrw{"wr"}
 	div		___411_a2plusb2 ___411_t1 ___411_ni2 	%line{156} %argrw{"wrr"}
-# material_common.h:157
-# 	float a2 = ( t1 + t0 ) / ( 2 * ni2 );
-	add		$tmp218 ___411_t1 ___411_t0 	%line{157} %argrw{"wrr"}
-	mul		$tmp219 $const28 ___411_ni2 	%argrw{"wrr"}
-	div		___411_a2 $tmp218 $tmp219 	%argrw{"wrr"}
-# material_common.h:158
-# 	float b2 = ( t1 - t0 ) / ( 2 * ni2 );
-	sub		$tmp220 ___411_t1 ___411_t0 	%line{158} %argrw{"wrr"}
-	mul		$tmp221 $const28 ___411_ni2 	%argrw{"wrr"}
-	div		___411_b2 $tmp220 $tmp221 	%argrw{"wrr"}
-# material_common.h:159
-# 	float a = sqrt( a2 );
+	add		$tmp230 ___411_t1 ___411_t0 	%line{157} %argrw{"wrr"}
+	mul		$tmp231 $const30 ___411_ni2 	%argrw{"wrr"}
+	div		___411_a2 $tmp230 $tmp231 	%argrw{"wrr"}
+	sub		$tmp232 ___411_t1 ___411_t0 	%line{158} %argrw{"wrr"}
+	mul		$tmp233 $const30 ___411_ni2 	%argrw{"wrr"}
+	div		___411_b2 $tmp232 $tmp233 	%argrw{"wrr"}
 	sqrt		___411_a ___411_a2 	%line{159} %argrw{"wr"}
-# material_common.h:161
-# 	float t2 = a2plusb2 + cos2_theta;
 	add		___411_t2 ___411_a2plusb2 ___411_cos2_theta 	%line{161} %argrw{"wrr"}
-# material_common.h:162
-# 	float t3 = 2 * a * cos_theta;
-	mul		$tmp222 $const28 ___411_a 	%line{162} %argrw{"wrr"}
-	mul		___411_t3 $tmp222 ___411_cos_theta 	%argrw{"wrr"}
-# material_common.h:163
-# 	float R_s = (t2 - t3) / (t2 + t3);
-	sub		$tmp223 ___411_t2 ___411_t3 	%line{163} %argrw{"wrr"}
-	add		$tmp224 ___411_t2 ___411_t3 	%argrw{"wrr"}
-	div		___411_R_s $tmp223 $tmp224 	%argrw{"wrr"}
-# material_common.h:165
-# 	float t4 = cos2_theta * a2plusb2 + sin2_theta * sin2_theta;
-	mul		$tmp225 ___411_cos2_theta ___411_a2plusb2 	%line{165} %argrw{"wrr"}
-	mul		$tmp226 ___411_sin2_theta ___411_sin2_theta 	%argrw{"wrr"}
-	add		___411_t4 $tmp225 $tmp226 	%argrw{"wrr"}
-# material_common.h:166
-# 	float t5 = t3 * sin2_theta;
+	mul		$tmp234 $const30 ___411_a 	%line{162} %argrw{"wrr"}
+	mul		___411_t3 $tmp234 ___411_cos_theta 	%argrw{"wrr"}
+	sub		$tmp235 ___411_t2 ___411_t3 	%line{163} %argrw{"wrr"}
+	add		$tmp236 ___411_t2 ___411_t3 	%argrw{"wrr"}
+	div		___411_R_s $tmp235 $tmp236 	%argrw{"wrr"}
+	mul		$tmp237 ___411_cos2_theta ___411_a2plusb2 	%line{165} %argrw{"wrr"}
+	mul		$tmp238 ___411_sin2_theta ___411_sin2_theta 	%argrw{"wrr"}
+	add		___411_t4 $tmp237 $tmp238 	%argrw{"wrr"}
 	mul		___411_t5 ___411_t3 ___411_sin2_theta 	%line{166} %argrw{"wrr"}
-# material_common.h:167
-# 	float R_p = R_s * (t4 - t5) / (t4 + t5);
-	sub		$tmp227 ___411_t4 ___411_t5 	%line{167} %argrw{"wrr"}
-	mul		$tmp228 ___411_R_s $tmp227 	%argrw{"wrr"}
-	add		$tmp229 ___411_t4 ___411_t5 	%argrw{"wrr"}
-	div		___411_R_p $tmp228 $tmp229 	%argrw{"wrr"}
-# material_common.h:169
-# 	return 0.5 * (R_p + R_s);
-	add		$tmp230 ___411_R_p ___411_R_s 	%line{169} %argrw{"wrr"}
-	mul		$tmp205 $const24 $tmp230 	%argrw{"wrr"}
-# dlPrincipled.osl:306
-# 		_reflect_color =
-	assign		_reflect_color $tmp205 	%filename{"dlPrincipled.osl"} %line{306} %argrw{"wr"}
-# dlPrincipled.osl:311
-# 			microfacet(
-	closure		c_reflect $const35 $const32 Nn_base anisotropy_udir roughness_u roughness_v ___446_reflect_ior $const1 $const34 _reflect_color 	%line{311} %argrw{"wrrrrrrrrrr"}
-# dlPrincipled.osl:321
-# 	closure color c_metallic_reflect = 0;
-	assign		c_metallic_reflect $const1 	%line{321} %argrw{"wr"}
-# dlPrincipled.osl:322
-# 	color _metallic_color = 0;
-	assign		_metallic_color $const1 	%line{322} %argrw{"wr"}
-# dlPrincipled.osl:324
-# 	if( i_color != 0 )
-	neq		$tmp231 i_color $const1 	%line{324} %argrw{"wrr"}
-	if		$tmp231 542 542 	%argrw{"r"}
-# dlPrincipled.osl:328
-# 		color metallic_edge = transformc("hsv", i_color);
-	functioncall	$const50 434 	%line{328} %argrw{"r"}
-# /users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h:326
-# color transformc (string to, color c) { return transformc ("rgb", to, c); }
-	transformc	___447_metallic_edge $const51 $const49 i_color 	%filename{"/users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h"} %line{326} %argrw{"wrrr"}
-# dlPrincipled.osl:330
-# 		metallic_edge[1] *= 0.5; // Reduce Saturation
-	compref		$tmp232 ___447_metallic_edge $const2 	%filename{"dlPrincipled.osl"} %line{330} %argrw{"wrr"}
-	mul		$tmp233 $tmp232 $const24 	%argrw{"wrr"}
-	compassign	___447_metallic_edge $const2 $tmp233 	%argrw{"wrr"}
-# dlPrincipled.osl:331
-# 		metallic_edge[2] = clamp(metallic_edge[2] * 1.2, 0, 1); // Increase Value
-	compref		$tmp235 ___447_metallic_edge $const3 	%line{331} %argrw{"wrr"}
-	mul		$tmp236 $tmp235 $const52 	%argrw{"wrr"}
-	functioncall	$const5 442 	%argrw{"r"}
-# /users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h:163
-# float  clamp (float x, float minval, float maxval) { return max(min(x,maxval),minval); }
-	min		$tmp237 $tmp236 $const19 	%filename{"/users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h"} %line{163} %argrw{"wrr"}
-	max		$tmp234 $tmp237 $const20 	%argrw{"wrr"}
-# dlPrincipled.osl:331
-# 		metallic_edge[2] = clamp(metallic_edge[2] * 1.2, 0, 1); // Increase Value
-	compassign	___447_metallic_edge $const3 $tmp234 	%filename{"dlPrincipled.osl"} %line{331} %argrw{"wrr"}
-# dlPrincipled.osl:332
-# 		metallic_edge = transformc("hsv","rgb", metallic_edge);
-	transformc	___447_metallic_edge $const49 $const51 ___447_metallic_edge 	%line{332} %argrw{"wrrr"}
-# dlPrincipled.osl:334
-# 		Gulbrandsen_Mapping(
-	functioncall	$const53 540 	%line{334} %argrw{"r"}
-# material_common.h:52
-# 	Gulbrandsen_Mapping( i_reflectivity[0], i_gamma[0], n_r, k2_r);
-	compref		$tmp238 i_color $const1 	%filename{"material_common.h"} %line{52} %argrw{"wrr"}
-	compref		$tmp239 ___447_metallic_edge $const1 	%argrw{"wrr"}
-	functioncall	$const53 476 	%argrw{"r"}
-# material_common.h:39
-# 	float rr = clamp(r, 0, 1 - 1e-3);
-	sub		$tmp240 $const19 $const54 	%line{39} %argrw{"wrr"}
-	functioncall	$const5 452 	%argrw{"r"}
-# /users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h:163
-# float  clamp (float x, float minval, float maxval) { return max(min(x,maxval),minval); }
-	min		$tmp241 $tmp238 $tmp240 	%filename{"/users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h"} %line{163} %argrw{"wrr"}
-	max		___403_rr $tmp241 $const20 	%argrw{"wrr"}
-# material_common.h:42
-# 	n = get_n(rr,g);
-	functioncall	$const55 466 	%filename{"material_common.h"} %line{42} %argrw{"r"}
-# material_common.h:26
-# 		return n_min(r)*g + (1-g)*n_max(r);
-	functioncall	$const56 457 	%line{26} %argrw{"r"}
-# material_common.h:17
-# 			return (1-r)/(1+r);
-	sub		$tmp243 $const19 ___403_rr 	%line{17} %argrw{"wrr"}
-	add		$tmp244 $const19 ___403_rr 	%argrw{"wrr"}
-	div		$tmp242 $tmp243 $tmp244 	%argrw{"wrr"}
-# material_common.h:26
-# 		return n_min(r)*g + (1-g)*n_max(r);
-	mul		$tmp245 $tmp242 $tmp239 	%line{26} %argrw{"wrr"}
-	sub		$tmp246 $const19 $tmp239 	%argrw{"wrr"}
-	functioncall	$const57 464 	%argrw{"r"}
-# material_common.h:22
-# 			float sqrtr = sqrt( r );
+	sub		$tmp239 ___411_t4 ___411_t5 	%line{167} %argrw{"wrr"}
+	mul		$tmp240 ___411_R_s $tmp239 	%argrw{"wrr"}
+	add		$tmp241 ___411_t4 ___411_t5 	%argrw{"wrr"}
+	div		___411_R_p $tmp240 $tmp241 	%argrw{"wrr"}
+	add		$tmp242 ___411_R_p ___411_R_s 	%line{169} %argrw{"wrr"}
+	mul		$tmp217 $const26 $tmp242 	%argrw{"wrr"}
+	assign		_reflect_color $tmp217 	%filename{"dlPrincipled.osl"} %line{373} %argrw{"wr"}
+	closure		c_reflect $const37 $const34 Nn_base anisotropy_udir roughness_u roughness_v ___449_reflect_ior $const1 $const36 _reflect_color 	%line{378} %argrw{"wrrrrrrrrrr"}
+	assign		c_metallic_reflect $const1 	%line{388} %argrw{"wr"}
+	assign		_metallic_color $const1 	%line{389} %argrw{"wr"}
+	neq		$tmp243 metallic $const1 	%line{391} %argrw{"wrr"}
+	neq		$tmp244 $tmp243 $const1 	%argrw{"wrr"}
+	if		$tmp244 455 455 	%argrw{"r"}
+	eq		$tmp245 __is_subsurface_ray $const1 	%argrw{"wrr"}
+	neq		$tmp246 $tmp245 $const1 	%argrw{"wrr"}
+	assign		$tmp244 $tmp246 	%argrw{"wr"}
+	if		$tmp244 566 566 	%argrw{"r"}
+	functioncall	$const55 458 	%line{395} %argrw{"r"}
+	transformc	___450_metallic_edge $const56 $const54 in_color 	%filename{"/users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h"} %line{326} %argrw{"wrrr"}
+	compref		$tmp247 ___450_metallic_edge $const2 	%filename{"dlPrincipled.osl"} %line{397} %argrw{"wrr"}
+	mul		$tmp248 $tmp247 $const26 	%argrw{"wrr"}
+	compassign	___450_metallic_edge $const2 $tmp248 	%argrw{"wrr"}
+	compref		$tmp250 ___450_metallic_edge $const3 	%line{398} %argrw{"wrr"}
+	mul		$tmp251 $tmp250 $const57 	%argrw{"wrr"}
+	functioncall	$const19 466 	%argrw{"r"}
+	min		$tmp252 $tmp251 $const18 	%filename{"/users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h"} %line{163} %argrw{"wrr"}
+	max		$tmp249 $tmp252 $const12 	%argrw{"wrr"}
+	compassign	___450_metallic_edge $const3 $tmp249 	%filename{"dlPrincipled.osl"} %line{398} %argrw{"wrr"}
+	transformc	___450_metallic_edge $const54 $const56 ___450_metallic_edge 	%line{399} %argrw{"wrrr"}
+	functioncall	$const58 564 	%line{401} %argrw{"r"}
+	compref		$tmp253 in_color $const1 	%filename{"material_common.h"} %line{52} %argrw{"wrr"}
+	compref		$tmp254 ___450_metallic_edge $const1 	%argrw{"wrr"}
+	functioncall	$const58 500 	%argrw{"r"}
+	sub		$tmp255 $const18 $const59 	%line{39} %argrw{"wrr"}
+	functioncall	$const19 476 	%argrw{"r"}
+	min		$tmp256 $tmp253 $tmp255 	%filename{"/users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h"} %line{163} %argrw{"wrr"}
+	max		___403_rr $tmp256 $const12 	%argrw{"wrr"}
+	functioncall	$const60 490 	%filename{"material_common.h"} %line{42} %argrw{"r"}
+	functioncall	$const61 481 	%line{26} %argrw{"r"}
+	sub		$tmp258 $const18 ___403_rr 	%line{17} %argrw{"wrr"}
+	add		$tmp259 $const18 ___403_rr 	%argrw{"wrr"}
+	div		$tmp257 $tmp258 $tmp259 	%argrw{"wrr"}
+	mul		$tmp260 $tmp257 $tmp254 	%line{26} %argrw{"wrr"}
+	sub		$tmp261 $const18 $tmp254 	%argrw{"wrr"}
+	functioncall	$const62 488 	%argrw{"r"}
 	sqrt		___406_sqrtr ___403_rr 	%line{22} %argrw{"wr"}
-# material_common.h:23
-# 			return (1+sqrtr)/(1-sqrtr);
-	add		$tmp248 $const19 ___406_sqrtr 	%line{23} %argrw{"wrr"}
-	sub		$tmp249 $const19 ___406_sqrtr 	%argrw{"wrr"}
-	div		$tmp247 $tmp248 $tmp249 	%argrw{"wrr"}
-# material_common.h:26
-# 		return n_min(r)*g + (1-g)*n_max(r);
-	mul		$tmp250 $tmp246 $tmp247 	%line{26} %argrw{"wrr"}
-	add		___408_n_r $tmp245 $tmp250 	%argrw{"wrr"}
-# material_common.h:43
-# 	k = sqrt(get_k2(rr,n));
-	functioncall	$const58 475 	%line{43} %argrw{"r"}
-# material_common.h:32
-# 		float nplusone = n+1;
-	add		___407_nplusone ___408_n_r $const19 	%line{32} %argrw{"wrr"}
-# material_common.h:33
-# 		float nminusone = n-1;
-	sub		___407_nminusone ___408_n_r $const19 	%line{33} %argrw{"wrr"}
-# material_common.h:34
-# 		float nr = nplusone*nplusone*r - nminusone*nminusone;
-	mul		$tmp252 ___407_nplusone ___407_nplusone 	%line{34} %argrw{"wrr"}
-	mul		$tmp253 $tmp252 ___403_rr 	%argrw{"wrr"}
-	mul		$tmp254 ___407_nminusone ___407_nminusone 	%argrw{"wrr"}
-	sub		___407_nr $tmp253 $tmp254 	%argrw{"wrr"}
-# material_common.h:35
-# 		return nr/(1-r);
-	sub		$tmp255 $const19 ___403_rr 	%line{35} %argrw{"wrr"}
-	div		$tmp251 ___407_nr $tmp255 	%argrw{"wrr"}
-# material_common.h:43
-# 	k = sqrt(get_k2(rr,n));
-	sqrt		___408_k2_r $tmp251 	%line{43} %argrw{"wr"}
-# material_common.h:53
-# 	Gulbrandsen_Mapping( i_reflectivity[1], i_gamma[1], n_g, k2_g);
-	compref		$tmp256 i_color $const2 	%line{53} %argrw{"wrr"}
-	compref		$tmp257 ___447_metallic_edge $const2 	%argrw{"wrr"}
-	functioncall	$const53 507 	%argrw{"r"}
-# material_common.h:39
-# 	float rr = clamp(r, 0, 1 - 1e-3);
-	sub		$tmp258 $const19 $const54 	%line{39} %argrw{"wrr"}
-	functioncall	$const5 483 	%argrw{"r"}
-# /users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h:163
-# float  clamp (float x, float minval, float maxval) { return max(min(x,maxval),minval); }
-	min		$tmp259 $tmp256 $tmp258 	%filename{"/users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h"} %line{163} %argrw{"wrr"}
-	max		___403_rr $tmp259 $const20 	%argrw{"wrr"}
-# material_common.h:42
-# 	n = get_n(rr,g);
-	functioncall	$const55 497 	%filename{"material_common.h"} %line{42} %argrw{"r"}
-# material_common.h:26
-# 		return n_min(r)*g + (1-g)*n_max(r);
-	functioncall	$const56 488 	%line{26} %argrw{"r"}
-# material_common.h:17
-# 			return (1-r)/(1+r);
-	sub		$tmp261 $const19 ___403_rr 	%line{17} %argrw{"wrr"}
-	add		$tmp262 $const19 ___403_rr 	%argrw{"wrr"}
-	div		$tmp260 $tmp261 $tmp262 	%argrw{"wrr"}
-# material_common.h:26
-# 		return n_min(r)*g + (1-g)*n_max(r);
-	mul		$tmp263 $tmp260 $tmp257 	%line{26} %argrw{"wrr"}
-	sub		$tmp264 $const19 $tmp257 	%argrw{"wrr"}
-	functioncall	$const57 495 	%argrw{"r"}
-# material_common.h:22
-# 			float sqrtr = sqrt( r );
+	add		$tmp263 $const18 ___406_sqrtr 	%line{23} %argrw{"wrr"}
+	sub		$tmp264 $const18 ___406_sqrtr 	%argrw{"wrr"}
+	div		$tmp262 $tmp263 $tmp264 	%argrw{"wrr"}
+	mul		$tmp265 $tmp261 $tmp262 	%line{26} %argrw{"wrr"}
+	add		___408_n_r $tmp260 $tmp265 	%argrw{"wrr"}
+	functioncall	$const63 499 	%line{43} %argrw{"r"}
+	add		___407_nplusone ___408_n_r $const18 	%line{32} %argrw{"wrr"}
+	sub		___407_nminusone ___408_n_r $const18 	%line{33} %argrw{"wrr"}
+	mul		$tmp267 ___407_nplusone ___407_nplusone 	%line{34} %argrw{"wrr"}
+	mul		$tmp268 $tmp267 ___403_rr 	%argrw{"wrr"}
+	mul		$tmp269 ___407_nminusone ___407_nminusone 	%argrw{"wrr"}
+	sub		___407_nr $tmp268 $tmp269 	%argrw{"wrr"}
+	sub		$tmp270 $const18 ___403_rr 	%line{35} %argrw{"wrr"}
+	div		$tmp266 ___407_nr $tmp270 	%argrw{"wrr"}
+	sqrt		___408_k2_r $tmp266 	%line{43} %argrw{"wr"}
+	compref		$tmp271 in_color $const2 	%line{53} %argrw{"wrr"}
+	compref		$tmp272 ___450_metallic_edge $const2 	%argrw{"wrr"}
+	functioncall	$const58 531 	%argrw{"r"}
+	sub		$tmp273 $const18 $const59 	%line{39} %argrw{"wrr"}
+	functioncall	$const19 507 	%argrw{"r"}
+	min		$tmp274 $tmp271 $tmp273 	%filename{"/users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h"} %line{163} %argrw{"wrr"}
+	max		___403_rr $tmp274 $const12 	%argrw{"wrr"}
+	functioncall	$const60 521 	%filename{"material_common.h"} %line{42} %argrw{"r"}
+	functioncall	$const61 512 	%line{26} %argrw{"r"}
+	sub		$tmp276 $const18 ___403_rr 	%line{17} %argrw{"wrr"}
+	add		$tmp277 $const18 ___403_rr 	%argrw{"wrr"}
+	div		$tmp275 $tmp276 $tmp277 	%argrw{"wrr"}
+	mul		$tmp278 $tmp275 $tmp272 	%line{26} %argrw{"wrr"}
+	sub		$tmp279 $const18 $tmp272 	%argrw{"wrr"}
+	functioncall	$const62 519 	%argrw{"r"}
 	sqrt		___406_sqrtr ___403_rr 	%line{22} %argrw{"wr"}
-# material_common.h:23
-# 			return (1+sqrtr)/(1-sqrtr);
-	add		$tmp266 $const19 ___406_sqrtr 	%line{23} %argrw{"wrr"}
-	sub		$tmp267 $const19 ___406_sqrtr 	%argrw{"wrr"}
-	div		$tmp265 $tmp266 $tmp267 	%argrw{"wrr"}
-# material_common.h:26
-# 		return n_min(r)*g + (1-g)*n_max(r);
-	mul		$tmp268 $tmp264 $tmp265 	%line{26} %argrw{"wrr"}
-	add		___408_n_g $tmp263 $tmp268 	%argrw{"wrr"}
-# material_common.h:43
-# 	k = sqrt(get_k2(rr,n));
-	functioncall	$const58 506 	%line{43} %argrw{"r"}
-# material_common.h:32
-# 		float nplusone = n+1;
-	add		___407_nplusone ___408_n_g $const19 	%line{32} %argrw{"wrr"}
-# material_common.h:33
-# 		float nminusone = n-1;
-	sub		___407_nminusone ___408_n_g $const19 	%line{33} %argrw{"wrr"}
-# material_common.h:34
-# 		float nr = nplusone*nplusone*r - nminusone*nminusone;
-	mul		$tmp270 ___407_nplusone ___407_nplusone 	%line{34} %argrw{"wrr"}
-	mul		$tmp271 $tmp270 ___403_rr 	%argrw{"wrr"}
-	mul		$tmp272 ___407_nminusone ___407_nminusone 	%argrw{"wrr"}
-	sub		___407_nr $tmp271 $tmp272 	%argrw{"wrr"}
-# material_common.h:35
-# 		return nr/(1-r);
-	sub		$tmp273 $const19 ___403_rr 	%line{35} %argrw{"wrr"}
-	div		$tmp269 ___407_nr $tmp273 	%argrw{"wrr"}
-# material_common.h:43
-# 	k = sqrt(get_k2(rr,n));
-	sqrt		___408_k2_g $tmp269 	%line{43} %argrw{"wr"}
-# material_common.h:54
-# 	Gulbrandsen_Mapping( i_reflectivity[2], i_gamma[2], n_b, k2_b);
-	compref		$tmp274 i_color $const3 	%line{54} %argrw{"wrr"}
-	compref		$tmp275 ___447_metallic_edge $const3 	%argrw{"wrr"}
-	functioncall	$const53 538 	%argrw{"r"}
-# material_common.h:39
-# 	float rr = clamp(r, 0, 1 - 1e-3);
-	sub		$tmp276 $const19 $const54 	%line{39} %argrw{"wrr"}
-	functioncall	$const5 514 	%argrw{"r"}
-# /users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h:163
-# float  clamp (float x, float minval, float maxval) { return max(min(x,maxval),minval); }
-	min		$tmp277 $tmp274 $tmp276 	%filename{"/users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h"} %line{163} %argrw{"wrr"}
-	max		___403_rr $tmp277 $const20 	%argrw{"wrr"}
-# material_common.h:42
-# 	n = get_n(rr,g);
-	functioncall	$const55 528 	%filename{"material_common.h"} %line{42} %argrw{"r"}
-# material_common.h:26
-# 		return n_min(r)*g + (1-g)*n_max(r);
-	functioncall	$const56 519 	%line{26} %argrw{"r"}
-# material_common.h:17
-# 			return (1-r)/(1+r);
-	sub		$tmp279 $const19 ___403_rr 	%line{17} %argrw{"wrr"}
-	add		$tmp280 $const19 ___403_rr 	%argrw{"wrr"}
-	div		$tmp278 $tmp279 $tmp280 	%argrw{"wrr"}
-# material_common.h:26
-# 		return n_min(r)*g + (1-g)*n_max(r);
-	mul		$tmp281 $tmp278 $tmp275 	%line{26} %argrw{"wrr"}
-	sub		$tmp282 $const19 $tmp275 	%argrw{"wrr"}
-	functioncall	$const57 526 	%argrw{"r"}
-# material_common.h:22
-# 			float sqrtr = sqrt( r );
+	add		$tmp281 $const18 ___406_sqrtr 	%line{23} %argrw{"wrr"}
+	sub		$tmp282 $const18 ___406_sqrtr 	%argrw{"wrr"}
+	div		$tmp280 $tmp281 $tmp282 	%argrw{"wrr"}
+	mul		$tmp283 $tmp279 $tmp280 	%line{26} %argrw{"wrr"}
+	add		___408_n_g $tmp278 $tmp283 	%argrw{"wrr"}
+	functioncall	$const63 530 	%line{43} %argrw{"r"}
+	add		___407_nplusone ___408_n_g $const18 	%line{32} %argrw{"wrr"}
+	sub		___407_nminusone ___408_n_g $const18 	%line{33} %argrw{"wrr"}
+	mul		$tmp285 ___407_nplusone ___407_nplusone 	%line{34} %argrw{"wrr"}
+	mul		$tmp286 $tmp285 ___403_rr 	%argrw{"wrr"}
+	mul		$tmp287 ___407_nminusone ___407_nminusone 	%argrw{"wrr"}
+	sub		___407_nr $tmp286 $tmp287 	%argrw{"wrr"}
+	sub		$tmp288 $const18 ___403_rr 	%line{35} %argrw{"wrr"}
+	div		$tmp284 ___407_nr $tmp288 	%argrw{"wrr"}
+	sqrt		___408_k2_g $tmp284 	%line{43} %argrw{"wr"}
+	compref		$tmp289 in_color $const3 	%line{54} %argrw{"wrr"}
+	compref		$tmp290 ___450_metallic_edge $const3 	%argrw{"wrr"}
+	functioncall	$const58 562 	%argrw{"r"}
+	sub		$tmp291 $const18 $const59 	%line{39} %argrw{"wrr"}
+	functioncall	$const19 538 	%argrw{"r"}
+	min		$tmp292 $tmp289 $tmp291 	%filename{"/users1/r2d2/src/3delight/Linux-x86_64/osl/stdosl.h"} %line{163} %argrw{"wrr"}
+	max		___403_rr $tmp292 $const12 	%argrw{"wrr"}
+	functioncall	$const60 552 	%filename{"material_common.h"} %line{42} %argrw{"r"}
+	functioncall	$const61 543 	%line{26} %argrw{"r"}
+	sub		$tmp294 $const18 ___403_rr 	%line{17} %argrw{"wrr"}
+	add		$tmp295 $const18 ___403_rr 	%argrw{"wrr"}
+	div		$tmp293 $tmp294 $tmp295 	%argrw{"wrr"}
+	mul		$tmp296 $tmp293 $tmp290 	%line{26} %argrw{"wrr"}
+	sub		$tmp297 $const18 $tmp290 	%argrw{"wrr"}
+	functioncall	$const62 550 	%argrw{"r"}
 	sqrt		___406_sqrtr ___403_rr 	%line{22} %argrw{"wr"}
-# material_common.h:23
-# 			return (1+sqrtr)/(1-sqrtr);
-	add		$tmp284 $const19 ___406_sqrtr 	%line{23} %argrw{"wrr"}
-	sub		$tmp285 $const19 ___406_sqrtr 	%argrw{"wrr"}
-	div		$tmp283 $tmp284 $tmp285 	%argrw{"wrr"}
-# material_common.h:26
-# 		return n_min(r)*g + (1-g)*n_max(r);
-	mul		$tmp286 $tmp282 $tmp283 	%line{26} %argrw{"wrr"}
-	add		___408_n_b $tmp281 $tmp286 	%argrw{"wrr"}
-# material_common.h:43
-# 	k = sqrt(get_k2(rr,n));
-	functioncall	$const58 537 	%line{43} %argrw{"r"}
-# material_common.h:32
-# 		float nplusone = n+1;
-	add		___407_nplusone ___408_n_b $const19 	%line{32} %argrw{"wrr"}
-# material_common.h:33
-# 		float nminusone = n-1;
-	sub		___407_nminusone ___408_n_b $const19 	%line{33} %argrw{"wrr"}
-# material_common.h:34
-# 		float nr = nplusone*nplusone*r - nminusone*nminusone;
-	mul		$tmp288 ___407_nplusone ___407_nplusone 	%line{34} %argrw{"wrr"}
-	mul		$tmp289 $tmp288 ___403_rr 	%argrw{"wrr"}
-	mul		$tmp290 ___407_nminusone ___407_nminusone 	%argrw{"wrr"}
-	sub		___407_nr $tmp289 $tmp290 	%argrw{"wrr"}
-# material_common.h:35
-# 		return nr/(1-r);
-	sub		$tmp291 $const19 ___403_rr 	%line{35} %argrw{"wrr"}
-	div		$tmp287 ___407_nr $tmp291 	%argrw{"wrr"}
-# material_common.h:43
-# 	k = sqrt(get_k2(rr,n));
-	sqrt		___408_k2_b $tmp287 	%line{43} %argrw{"wr"}
-# material_common.h:56
-# 	n = color(n_r, n_g, n_b);
-	color		___447_metallic_ior ___408_n_r ___408_n_g ___408_n_b 	%line{56} %argrw{"wrrr"}
-# material_common.h:57
-# 	k2 = color(k2_r, k2_g, k2_b);
-	color		___447_metallic_complex_ior ___408_k2_r ___408_k2_g ___408_k2_b 	%line{57} %argrw{"wrrr"}
-# dlPrincipled.osl:341
-# 		microfacet(
-	closure		c_metallic_reflect $const35 $const32 Nn_base anisotropy_udir roughness_u roughness_v $const20 $const1 $const59 $const19 $const60 $const19 $const61 ___447_metallic_ior $const62 ___447_metallic_complex_ior $const63 $const20 $const34 i_color 	%filename{"dlPrincipled.osl"} %line{341} %argrw{"wrrrrrrrrrrrrrrrrrrrr"}
-# dlPrincipled.osl:354
-# 		_metallic_color = 1;
-	assign		_metallic_color $const2 	%line{354} %argrw{"wr"}
-# dlPrincipled.osl:360
-# 		CIEluminance(_coating_color);
-	functioncall	$const37 551 	%line{360} %argrw{"r"}
-# utils.h:62
-# 		i_color[0] * 0.212671 +
-	compref		$tmp293 _coating_color $const1 	%filename{"utils.h"} %line{62} %argrw{"wrr"}
-	mul		$tmp294 $tmp293 $const38 	%argrw{"wrr"}
-# utils.h:63
-# 		i_color[1] * 0.715160 +
-	compref		$tmp295 _coating_color $const2 	%line{63} %argrw{"wrr"}
-	mul		$tmp296 $tmp295 $const39 	%argrw{"wrr"}
-# utils.h:62
-# 		i_color[0] * 0.212671 +
-	add		$tmp297 $tmp294 $tmp296 	%line{62} %argrw{"wrr"}
-# utils.h:64
-# 		i_color[2] * 0.072169;
-	compref		$tmp298 _coating_color $const3 	%line{64} %argrw{"wrr"}
-	mul		$tmp299 $tmp298 $const40 	%argrw{"wrr"}
-# utils.h:63
-# 		i_color[1] * 0.715160 +
-	add		$tmp292 $tmp297 $tmp299 	%line{63} %argrw{"wrr"}
-# dlPrincipled.osl:359
-# 		1 -
-	sub		$tmp300 $const19 $tmp292 	%filename{"dlPrincipled.osl"} %line{359} %argrw{"wrr"}
-# dlPrincipled.osl:360
-# 		CIEluminance(_coating_color);
-	mul		_reflect_color _reflect_color $tmp300 	%line{360} %argrw{"wrr"}
-# dlPrincipled.osl:365
-# 		CIEluminance(_coating_color);
-	functioncall	$const37 562 	%line{365} %argrw{"r"}
-# utils.h:62
-# 		i_color[0] * 0.212671 +
-	compref		$tmp302 _coating_color $const1 	%filename{"utils.h"} %line{62} %argrw{"wrr"}
-	mul		$tmp303 $tmp302 $const38 	%argrw{"wrr"}
-# utils.h:63
-# 		i_color[1] * 0.715160 +
-	compref		$tmp304 _coating_color $const2 	%line{63} %argrw{"wrr"}
-	mul		$tmp305 $tmp304 $const39 	%argrw{"wrr"}
-# utils.h:62
-# 		i_color[0] * 0.212671 +
-	add		$tmp306 $tmp303 $tmp305 	%line{62} %argrw{"wrr"}
-# utils.h:64
-# 		i_color[2] * 0.072169;
-	compref		$tmp307 _coating_color $const3 	%line{64} %argrw{"wrr"}
-	mul		$tmp308 $tmp307 $const40 	%argrw{"wrr"}
-# utils.h:63
-# 		i_color[1] * 0.715160 +
-	add		$tmp301 $tmp306 $tmp308 	%line{63} %argrw{"wrr"}
-# dlPrincipled.osl:364
-# 		1 -
-	sub		$tmp309 $const19 $tmp301 	%filename{"dlPrincipled.osl"} %line{364} %argrw{"wrr"}
-# dlPrincipled.osl:365
-# 		CIEluminance(_coating_color);
-	mul		_metallic_color _metallic_color $tmp309 	%line{365} %argrw{"wrr"}
-# dlPrincipled.osl:370
-# 		CIEluminance(_reflect_color);
-	functioncall	$const37 573 	%line{370} %argrw{"r"}
-# utils.h:62
-# 		i_color[0] * 0.212671 +
-	compref		$tmp311 _reflect_color $const1 	%filename{"utils.h"} %line{62} %argrw{"wrr"}
-	mul		$tmp312 $tmp311 $const38 	%argrw{"wrr"}
-# utils.h:63
-# 		i_color[1] * 0.715160 +
-	compref		$tmp313 _reflect_color $const2 	%line{63} %argrw{"wrr"}
-	mul		$tmp314 $tmp313 $const39 	%argrw{"wrr"}
-# utils.h:62
-# 		i_color[0] * 0.212671 +
-	add		$tmp315 $tmp312 $tmp314 	%line{62} %argrw{"wrr"}
-# utils.h:64
-# 		i_color[2] * 0.072169;
-	compref		$tmp316 _reflect_color $const3 	%line{64} %argrw{"wrr"}
-	mul		$tmp317 $tmp316 $const40 	%argrw{"wrr"}
-# utils.h:63
-# 		i_color[1] * 0.715160 +
-	add		$tmp310 $tmp315 $tmp317 	%line{63} %argrw{"wrr"}
-# dlPrincipled.osl:369
-# 		1 -
-	sub		diff_scale $const19 $tmp310 	%filename{"dlPrincipled.osl"} %line{369} %argrw{"wrr"}
-# dlPrincipled.osl:371
-# 	_diffuse_color *= diff_scale;
-	mul		_diffuse_color _diffuse_color diff_scale 	%line{371} %argrw{"wrr"}
-# dlPrincipled.osl:372
-# 	_sss_color *= diff_scale;
-	mul		_sss_color _sss_color diff_scale 	%line{372} %argrw{"wrr"}
-# dlPrincipled.osl:374
-# 	float transparency = 1 - opacity;
-	sub		transparency $const19 opacity 	%line{374} %argrw{"wrr"}
-# dlPrincipled.osl:376
-# 	if( raytype("shadow") )
-	raytype		$tmp318 $const64 	%line{376} %argrw{"wr"}
-	if		$tmp318 581 606 	%argrw{"r"}
-# dlPrincipled.osl:378
-# 		outColor = transparent() * transparency;
-	closure		$tmp319 $const65 	%line{378} %argrw{"wr"}
-	mul		outColor $tmp319 transparency 	%argrw{"wrr"}
-# dlPrincipled.osl:382
-# 		color cmo = coating_absorbed * (1 - metallic) * opacity;
-	sub		$tmp320 $const19 metallic 	%line{382} %argrw{"wrr"}
-	mul		$tmp321 coating_absorbed $tmp320 	%argrw{"wrr"}
-	mul		___449_cmo $tmp321 opacity 	%argrw{"wrr"}
-# dlPrincipled.osl:385
-# 			outputvariable( "diffuse", c_diffuse * _diffuse_color * cmo ) +
-	mul		$tmp323 c_diffuse _diffuse_color 	%line{385} %argrw{"wrr"}
-	mul		$tmp324 $tmp323 ___449_cmo 	%argrw{"wrr"}
-	closure		$tmp322 $const67 $const66 $tmp324 	%argrw{"wrrr"}
-# dlPrincipled.osl:386
-# 			outputvariable( "subsurface", c_sss * _sss_color * cmo );
-	mul		$tmp326 c_sss _sss_color 	%line{386} %argrw{"wrr"}
-	mul		$tmp327 $tmp326 ___449_cmo 	%argrw{"wrr"}
-	closure		$tmp325 $const67 $const15 $tmp327 	%argrw{"wrrr"}
-# dlPrincipled.osl:385
-# 			outputvariable( "diffuse", c_diffuse * _diffuse_color * cmo ) +
-	add		___449_aov_diffuse $tmp322 $tmp325 	%line{385} %argrw{"wrr"}
-# dlPrincipled.osl:391
-# 					c_coating * _coating_color * opacity +
-	mul		$tmp328 c_coating _coating_color 	%line{391} %argrw{"wrr"}
-	mul		$tmp329 $tmp328 opacity 	%argrw{"wrr"}
-# dlPrincipled.osl:392
-# 					c_reflect * _reflect_color * cmo +
-	mul		$tmp330 c_reflect _reflect_color 	%line{392} %argrw{"wrr"}
-	mul		$tmp331 $tmp330 ___449_cmo 	%argrw{"wrr"}
-# dlPrincipled.osl:391
-# 					c_coating * _coating_color * opacity +
-	add		$tmp332 $tmp329 $tmp331 	%line{391} %argrw{"wrr"}
-# dlPrincipled.osl:393
-# 					c_metallic_reflect * _metallic_color * metallic  * coating_absorbed * opacity )
-	mul		$tmp333 c_metallic_reflect _metallic_color 	%line{393} %argrw{"wrr"}
-	mul		$tmp334 $tmp333 metallic 	%argrw{"wrr"}
-	mul		$tmp335 $tmp334 coating_absorbed 	%argrw{"wrr"}
-	mul		$tmp336 $tmp335 opacity 	%argrw{"wrr"}
-# dlPrincipled.osl:392
-# 					c_reflect * _reflect_color * cmo +
-	add		$tmp337 $tmp332 $tmp336 	%line{392} %argrw{"wrr"}
-# dlPrincipled.osl:389
-# 			outputvariable(
-	closure		___449_aov_reflection $const67 $const68 $tmp337 	%line{389} %argrw{"wrrr"}
-# dlPrincipled.osl:397
-# 			aov_diffuse +
-	add		$tmp338 ___449_aov_diffuse ___449_aov_reflection 	%line{397} %argrw{"wrr"}
-# dlPrincipled.osl:399
-# 			transparency * transparent();
-	closure		$tmp339 $const65 	%line{399} %argrw{"wr"}
-	mul		$tmp340 $tmp339 transparency 	%argrw{"wrr"}
-# dlPrincipled.osl:398
-# 			aov_reflection +
-	add		outColor $tmp338 $tmp340 	%line{398} %argrw{"wrr"}
-# dlPrincipled.osl:403
-# 			c_incandescence * incandescence_color * coating_absorbed );
-	mul		$tmp342 c_incandescence incandescence_color 	%line{403} %argrw{"wrr"}
-	mul		$tmp343 $tmp342 coating_absorbed 	%argrw{"wrr"}
-# dlPrincipled.osl:402
-# 	outColor += outputvariable( "incandescence",
-	closure		$tmp341 $const67 $const69 $tmp343 	%line{402} %argrw{"wrrr"}
-# dlPrincipled.osl:403
-# 			c_incandescence * incandescence_color * coating_absorbed );
-	add		outColor outColor $tmp341 	%line{403} %argrw{"wrr"}
-# dlPrincipled.osl:405
-# 	outColor += aovGroup;
-	add		outColor outColor aovGroup 	%line{405} %argrw{"wrr"}
-# dlPrincipled.osl:406
-# 	Ci = outColor;
-	assign		Ci outColor 	%line{406} %argrw{"wr"}
+	add		$tmp299 $const18 ___406_sqrtr 	%line{23} %argrw{"wrr"}
+	sub		$tmp300 $const18 ___406_sqrtr 	%argrw{"wrr"}
+	div		$tmp298 $tmp299 $tmp300 	%argrw{"wrr"}
+	mul		$tmp301 $tmp297 $tmp298 	%line{26} %argrw{"wrr"}
+	add		___408_n_b $tmp296 $tmp301 	%argrw{"wrr"}
+	functioncall	$const63 561 	%line{43} %argrw{"r"}
+	add		___407_nplusone ___408_n_b $const18 	%line{32} %argrw{"wrr"}
+	sub		___407_nminusone ___408_n_b $const18 	%line{33} %argrw{"wrr"}
+	mul		$tmp303 ___407_nplusone ___407_nplusone 	%line{34} %argrw{"wrr"}
+	mul		$tmp304 $tmp303 ___403_rr 	%argrw{"wrr"}
+	mul		$tmp305 ___407_nminusone ___407_nminusone 	%argrw{"wrr"}
+	sub		___407_nr $tmp304 $tmp305 	%argrw{"wrr"}
+	sub		$tmp306 $const18 ___403_rr 	%line{35} %argrw{"wrr"}
+	div		$tmp302 ___407_nr $tmp306 	%argrw{"wrr"}
+	sqrt		___408_k2_b $tmp302 	%line{43} %argrw{"wr"}
+	color		___450_metallic_ior ___408_n_r ___408_n_g ___408_n_b 	%line{56} %argrw{"wrrr"}
+	color		___450_metallic_complex_ior ___408_k2_r ___408_k2_g ___408_k2_b 	%line{57} %argrw{"wrrr"}
+	closure		c_metallic_reflect $const37 $const34 Nn_base anisotropy_udir roughness_u roughness_v $const12 $const1 $const64 reflect_aovs $const65 $const18 $const66 $const18 $const67 ___450_metallic_ior $const68 ___450_metallic_complex_ior $const69 $const12 $const36 in_color 	%filename{"dlPrincipled.osl"} %line{408} %argrw{"wrrrrrrrrrrrrrrrrrrrrrr"}
+	assign		_metallic_color $const2 	%line{422} %argrw{"wr"}
+	assign		c_refract $const1 	%line{426} %argrw{"wr"}
+	assign		_refract_color $const2 	%line{427} %argrw{"wr"}
+	neq		$tmp307 refract_weight $const1 	%line{428} %argrw{"wrr"}
+	neq		$tmp308 $tmp307 $const1 	%argrw{"wrr"}
+	if		$tmp308 574 574 	%argrw{"r"}
+	eq		$tmp309 __is_subsurface_ray $const1 	%argrw{"wrr"}
+	neq		$tmp310 $tmp309 $const1 	%argrw{"wrr"}
+	assign		$tmp308 $tmp310 	%argrw{"wr"}
+	if		$tmp308 581 581 	%argrw{"r"}
+	mul		___451_refract_roughness2 refract_roughness refract_roughness 	%line{437} %argrw{"wrr"}
+	backfacing	$tmp311 	%line{445} %argrw{"w"}
+	if		$tmp311 579 580 	%argrw{"r"}
+	assign		___451_sides $const3 	%argrw{"wr"}
+	assign		___451_sides $const2 	%argrw{"wr"}
+	closure		c_refract $const37 $const34 Nn_base $const35 ___451_refract_roughness2 ___451_refract_roughness2 refract_ior ___451_sides $const64 transmit_aovs 	%line{448} %argrw{"wrrrrrrrrrr"}
+	sub		$tmp313 $const18 _sss_weight 	%line{458} %argrw{"wrr"}
+	sub		$tmp314 $const18 refract_weight 	%argrw{"wrr"}
+	mul		$tmp315 $tmp313 $tmp314 	%argrw{"wrr"}
+	mul		_diffuse_color _diffuse_color $tmp315 	%argrw{"wrr"}
+	sub		$tmp316 $const18 refract_weight 	%line{459} %argrw{"wrr"}
+	mul		$tmp317 _sss_weight $tmp316 	%argrw{"wrr"}
+	mul		_sss_color _sss_color $tmp317 	%argrw{"wrr"}
+	mul		_refract_color _refract_color refract_weight 	%line{460} %argrw{"wrr"}
+	functioncall	$const39 598 	%line{463} %argrw{"r"}
+	compref		$tmp319 _coating_color $const1 	%filename{"utils.h"} %line{62} %argrw{"wrr"}
+	mul		$tmp320 $tmp319 $const40 	%argrw{"wrr"}
+	compref		$tmp321 _coating_color $const2 	%line{63} %argrw{"wrr"}
+	mul		$tmp322 $tmp321 $const41 	%argrw{"wrr"}
+	add		$tmp323 $tmp320 $tmp322 	%line{62} %argrw{"wrr"}
+	compref		$tmp324 _coating_color $const3 	%line{64} %argrw{"wrr"}
+	mul		$tmp325 $tmp324 $const42 	%argrw{"wrr"}
+	add		$tmp318 $tmp323 $tmp325 	%line{63} %argrw{"wrr"}
+	sub		$tmp326 $const18 $tmp318 	%filename{"dlPrincipled.osl"} %line{463} %argrw{"wrr"}
+	mul		_reflect_color _reflect_color $tmp326 	%argrw{"wrr"}
+	functioncall	$const39 609 	%line{466} %argrw{"r"}
+	compref		$tmp328 _coating_color $const1 	%filename{"utils.h"} %line{62} %argrw{"wrr"}
+	mul		$tmp329 $tmp328 $const40 	%argrw{"wrr"}
+	compref		$tmp330 _coating_color $const2 	%line{63} %argrw{"wrr"}
+	mul		$tmp331 $tmp330 $const41 	%argrw{"wrr"}
+	add		$tmp332 $tmp329 $tmp331 	%line{62} %argrw{"wrr"}
+	compref		$tmp333 _coating_color $const3 	%line{64} %argrw{"wrr"}
+	mul		$tmp334 $tmp333 $const42 	%argrw{"wrr"}
+	add		$tmp327 $tmp332 $tmp334 	%line{63} %argrw{"wrr"}
+	sub		$tmp335 $const18 $tmp327 	%filename{"dlPrincipled.osl"} %line{466} %argrw{"wrr"}
+	mul		_metallic_color _metallic_color $tmp335 	%argrw{"wrr"}
+	functioncall	$const39 620 	%line{469} %argrw{"r"}
+	compref		$tmp337 _reflect_color $const1 	%filename{"utils.h"} %line{62} %argrw{"wrr"}
+	mul		$tmp338 $tmp337 $const40 	%argrw{"wrr"}
+	compref		$tmp339 _reflect_color $const2 	%line{63} %argrw{"wrr"}
+	mul		$tmp340 $tmp339 $const41 	%argrw{"wrr"}
+	add		$tmp341 $tmp338 $tmp340 	%line{62} %argrw{"wrr"}
+	compref		$tmp342 _reflect_color $const3 	%line{64} %argrw{"wrr"}
+	mul		$tmp343 $tmp342 $const42 	%argrw{"wrr"}
+	add		$tmp336 $tmp341 $tmp343 	%line{63} %argrw{"wrr"}
+	sub		base_scale $const18 $tmp336 	%filename{"dlPrincipled.osl"} %line{469} %argrw{"wrr"}
+	mul		_diffuse_color _diffuse_color base_scale 	%line{471} %argrw{"wrr"}
+	mul		_sss_color _sss_color base_scale 	%line{472} %argrw{"wrr"}
+	mul		_refract_color _refract_color base_scale 	%line{473} %argrw{"wrr"}
+	sub		transparency $const18 opacity 	%line{475} %argrw{"wrr"}
+	raytype		$tmp344 $const70 	%line{477} %argrw{"wr"}
+	if		$tmp344 637 666 	%argrw{"r"}
+	closure		$tmp345 $const71 	%line{479} %argrw{"wr"}
+	assign		$tmp347 transparency 	%line{480} %argrw{"wr"}
+	sub		$tmp348 $const18 _coating_color 	%line{481} %argrw{"wrr"}
+	sub		$tmp349 $const18 _reflect_color 	%line{482} %argrw{"wrr"}
+	mul		$tmp350 $tmp348 $tmp349 	%line{481} %argrw{"wrr"}
+	mul		$tmp351 $tmp350 coating_absorbed 	%line{482} %argrw{"wrr"}
+	sub		$tmp352 $const18 metallic 	%line{483} %argrw{"wrr"}
+	mul		$tmp353 $tmp351 $tmp352 	%argrw{"wrr"}
+	mix		$tmp346 $tmp347 $tmp353 refract_weight 	%line{480} %argrw{"wrrr"}
+	mul		outColor $tmp345 $tmp346 	%argrw{"wrr"}
+	sub		$tmp354 $const18 metallic 	%line{488} %argrw{"wrr"}
+	mul		$tmp355 coating_absorbed $tmp354 	%argrw{"wrr"}
+	mul		___453_cmo $tmp355 opacity 	%argrw{"wrr"}
+	mul		$tmp357 c_diffuse _diffuse_color 	%line{491} %argrw{"wrr"}
+	mul		$tmp358 $tmp357 ___453_cmo 	%argrw{"wrr"}
+	closure		$tmp356 $const73 $const72 $tmp358 	%argrw{"wrrr"}
+	mul		$tmp360 c_sss _sss_color 	%line{492} %argrw{"wrr"}
+	mul		$tmp361 $tmp360 ___453_cmo 	%argrw{"wrr"}
+	closure		$tmp359 $const73 $const17 $tmp361 	%argrw{"wrrr"}
+	add		___453_aov_diffuse $tmp356 $tmp359 	%line{491} %argrw{"wrr"}
+	mul		$tmp362 c_refract _refract_color 	%line{495} %argrw{"wrr"}
+	mul		$tmp363 $tmp362 ___453_cmo 	%argrw{"wrr"}
+	closure		___453_aov_refraction $const73 $const74 $tmp363 	%argrw{"wrrr"}
+	mul		$tmp364 c_coating _coating_color 	%line{500} %argrw{"wrr"}
+	mul		$tmp365 $tmp364 opacity 	%argrw{"wrr"}
+	mul		$tmp366 c_reflect _reflect_color 	%line{501} %argrw{"wrr"}
+	mul		$tmp367 $tmp366 ___453_cmo 	%argrw{"wrr"}
+	add		$tmp368 $tmp365 $tmp367 	%line{500} %argrw{"wrr"}
+	mul		$tmp369 c_metallic_reflect _metallic_color 	%line{502} %argrw{"wrr"}
+	mul		$tmp370 $tmp369 metallic 	%argrw{"wrr"}
+	mul		$tmp371 $tmp370 coating_absorbed 	%argrw{"wrr"}
+	mul		$tmp372 $tmp371 opacity 	%argrw{"wrr"}
+	add		$tmp373 $tmp368 $tmp372 	%line{501} %argrw{"wrr"}
+	closure		___453_aov_reflection $const73 $const75 $tmp373 	%line{498} %argrw{"wrrr"}
+	add		$tmp374 ___453_aov_diffuse ___453_aov_reflection 	%line{506} %argrw{"wrr"}
+	add		$tmp375 $tmp374 ___453_aov_refraction 	%line{507} %argrw{"wrr"}
+	closure		$tmp376 $const71 	%line{509} %argrw{"wr"}
+	mul		$tmp377 $tmp376 transparency 	%argrw{"wrr"}
+	add		outColor $tmp375 $tmp377 	%line{508} %argrw{"wrr"}
+	raytype		$tmp378 $const76 	%line{512} %argrw{"wr"}
+	neq		$tmp379 $tmp378 $const1 	%argrw{"wrr"}
+	if		$tmp379 669 672 	%argrw{"r"}
+	raytype		$tmp380 $const74 	%argrw{"wr"}
+	neq		$tmp381 $tmp380 $const1 	%argrw{"wrr"}
+	assign		$tmp379 $tmp381 	%argrw{"wr"}
+	if		$tmp379 677 677 	%argrw{"r"}
+	closure		$tmp382 $const78 $const77 	%line{513} %argrw{"wrr"}
+	mul		$tmp383 $tmp382 in_color 	%argrw{"wrr"}
+	mul		$tmp384 $tmp383 opacity 	%argrw{"wrr"}
+	add		outColor outColor $tmp384 	%argrw{"wrr"}
+	mul		$tmp386 c_incandescence incandescence_color 	%line{516} %argrw{"wrr"}
+	mul		$tmp387 $tmp386 coating_absorbed 	%argrw{"wrr"}
+	closure		$tmp385 $const73 $const79 $tmp387 	%line{515} %argrw{"wrrr"}
+	add		outColor outColor $tmp385 	%line{516} %argrw{"wrr"}
+	add		outColor outColor aovGroup 	%line{518} %argrw{"wrr"}
+	raytype		$tmp388 $const76 	%line{519} %argrw{"wr"}
+	if		$tmp388 686 686 	%argrw{"r"}
+	closure		$tmp389 $const81 Nn_base $const80 occlusion_distance 	%argrw{"wrrrr"}
+	add		outColor outColor $tmp389 	%argrw{"wrr"}
+	assign		Ci outColor 	%line{520} %argrw{"wr"}
 	end
