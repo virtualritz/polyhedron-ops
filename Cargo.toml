@@ -38,7 +38,7 @@ tobj = { version = "3.2.3", optional = true }
 [dev-dependencies]
 dirs = "4.0.0"
 slice_as_array = "1.1.0"
-smooth-bevy-cameras = "0.6.0"
+smooth-bevy-cameras = "0.7.0"
 
 [dev-dependencies.bevy]
 version = "0.9"
