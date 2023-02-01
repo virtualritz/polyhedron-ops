@@ -1,4 +1,5 @@
 #![allow(clippy::many_single_char_names)]
+#![feature(iter_array_chunks)]
 //! # Conway-Hart Polyhedron Operations
 //!
 //! This crate implements the [Conway Polyhedron
@@ -27,7 +28,7 @@
 //! // Export as ./polyhedron-gapcD.obj
 //! # #[cfg(feature = "obj")]
 //! # {
-//! polyhedron.write_to_obj(&Path::new("."), false);
+//! polyhedron.write_as_obj(&Path::new("."), false);
 //! # }
 //! ```
 //! The above code starts from a [dodecahedron](https://en.wikipedia.org/wiki/Dodecahedron)
@@ -49,10 +50,10 @@
 //!   See the `bevy` example. ```ignore Mesh::from(polyhedron) ```
 //!
 //! * `nsi` – Add supports for sending data to renderers implementing the [ɴsɪ](https://crates.io/crates/nsi/)
-//!   API. The function is called [`to_nsi()`](Polyhedron::to_nsi()).
+//!   API. The function is called [`to_nsi()`](Polyhedron::as_nsi()).
 //!
 //! * `obj` – Add support for output to [Wavefront OBJ](https://en.wikipedia.org/wiki/Wavefront_.obj_file)
-//!   via the [`write_to_obj()`](Polyhedron::write_to_obj()) function.
+//!   via the [`write_as_obj()`](Polyhedron::write_as_obj()) function.
 use itertools::Itertools;
 use num_traits::FloatConst;
 use rayon::prelude::*;
@@ -439,7 +440,7 @@ impl Polyhedron {
             .par_iter()
             .enumerate()
             .map(|point| {
-                let i = point.0 as u32;
+                let i = point.0 as _;
                 let v = point.1;
                 let vertex_faces = vertex_faces(i, &self.face_index)
                     .iter()
@@ -494,7 +495,6 @@ impl Polyhedron {
             .flat_map(|face| {
                 let face_positions = index_as_positions(face, &self.positions);
                 let centroid = centroid_ref(&face_positions);
-                // println!("{:?}", ep);
                 let mut result = Vec::new();
                 face.iter().enumerate().for_each(|face_point| {
                     let j = face_point.0;
@@ -569,7 +569,7 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{:.2}", ratio).unwrap();
+                write!(&mut params, "{ratio:.2}").unwrap();
             }
             self.name = format!("c{}{}", params, self.name);
         }
@@ -602,7 +602,7 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{:.2}", ratio).unwrap();
+                write!(&mut params, "{ratio:.2}").unwrap();
             }
             self.name = format!("e{}{}", params, self.name);
         }
@@ -1625,7 +1625,7 @@ impl Polyhedron {
     ///
     /// All the faces are disconnected. I.e. positions & normals are duplicated
     /// for each shared vertex.
-    pub fn to_triangle_mesh_buffers(&self) -> (Vec<u32>, Points, Normals) {
+    pub fn as_triangle_mesh_buffers(&self) -> (Vec<u32>, Points, Normals) {
         let (positions, normals): (Vec<_>, Vec<_>) = self
             .face_index
             .par_iter()
@@ -1687,7 +1687,7 @@ impl Polyhedron {
                 // Bitriangulate quadrilateral faces use shortest diagonal so
                 // triangles are most nearly equilateral.
                 4 => {
-                    let p = index_as_positions(&face, &positions);
+                    let p = index_as_positions(face.as_slice(), &positions);
 
                     if (*p[0] - *p[2]).mag_sq() < (*p[1] - *p[3]).mag_sq() {
                         vec![
@@ -1952,7 +1952,50 @@ impl Polyhedron {
     pub fn finalize(&self) -> Self {
         self.clone()
     }
+}
 
+/// Selection methods.
+impl Polyhedron {
+    /// Selects all faces within a half space defined by a plane through
+    /// `origin` and the the give plane `normal`.
+    pub fn select_faces_above_plane(
+        &self,
+        origin: Point,
+        normal: Vector,
+    ) -> Vec<FaceKey> {
+        #[inline]
+        fn is_inside_half_space(
+            point: Point,
+            plane_origin: Point,
+            plane_normal: Vector,
+        ) -> bool {
+            let point_to_plane = point - plane_origin;
+            let distance = point_to_plane.dot(plane_normal);
+            distance > 0.0
+        }
+
+        self.face_index
+            .iter()
+            .enumerate()
+            .filter_map(|(face_number, face)| {
+                if face.iter().all(|&vertex_key| {
+                    is_inside_half_space(
+                        self.positions[vertex_key as usize],
+                        origin,
+                        normal,
+                    )
+                }) {
+                    Some(face_number as _)
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+}
+
+/// Conversion methods.
+impl Polyhedron {
     /// Sends the polyhedron to the specified
     /// [ɴsɪ](https:://crates.io/crates/nsi) context.
     /// # Arguments
@@ -1963,11 +2006,11 @@ impl Polyhedron {
     ///
     /// * `corner_hardness` - The hardness of vertices (default: 0).
     ///
-    /// * `smooth_corners` - Whether to keep corners smooth, where more than two
+    /// * `smooth_corners` - Whether to keep corners smooth where more than two
     ///   edges meet. When set to `false` these automatically form a hard corner
     ///   with the same hardness as `crease_hardness`.
     #[cfg(feature = "nsi")]
-    pub fn to_nsi(
+    pub fn as_nsi(
         &self,
         ctx: &nsi::Context,
         handle: Option<&str>,
@@ -2100,14 +2143,11 @@ impl Polyhedron {
 
         handle
     }
+}
 
-    #[cfg(feature = "obj")]
-    pub fn read_from_obj(&self, source: &Path, reverse_winding: bool) {
-        //Result<Self, Box<dyn Error>> {
-
-        let obj = tobj::load_obj(source, &tobj::LoadOptions::default());
-    }
-
+/// OBJ writing/loading.
+#[cfg(feature = "obj")]
+impl Polyhedron {
     /// Write the polyhedron to a
     /// [Wavefront OBJ](https://en.wikipedia.org/wiki/Wavefront_.obj_file)
     /// file.
@@ -2123,7 +2163,7 @@ impl Polyhedron {
     /// The return value, on success, is the final, complete path of
     /// the OBJ file.
     #[cfg(feature = "obj")]
-    pub fn write_to_obj(
+    pub fn write_as_obj(
         &self,
         destination: &Path,
         reverse_winding: bool,
@@ -2163,6 +2203,61 @@ impl Polyhedron {
         Ok(path)
     }
 
+    pub fn read_from_obj(
+        source: &Path,
+        reverse_winding: bool,
+    ) -> Result<Self, tobj::LoadError> {
+        let (geometry, _) = tobj::load_obj(
+            source,
+            &tobj::LoadOptions {
+                single_index: false,
+                ignore_points: true,
+                ignore_lines: true,
+                ..Default::default()
+            },
+        )?;
+
+        Ok(Polyhedron {
+            face_index: {
+                let mut index = 0;
+                geometry[0]
+                    .mesh
+                    .face_arities
+                    .iter()
+                    .map(|&face_arity| {
+                        assert!(0 != face_arity);
+                        let face_arity = face_arity as usize;
+                        let mut face_indices = geometry[0].mesh.indices
+                            [index..index + face_arity]
+                            .to_vec();
+                        //println!("{:?}", face_indices);
+                        if reverse_winding {
+                            face_indices.reverse();
+                        }
+                        index = index + face_arity;
+
+                        face_indices
+                    })
+                    .collect()
+            },
+            positions: geometry[0]
+                .mesh
+                .positions
+                .iter()
+                .array_chunks::<3>()
+                .map(|p| {
+                    //println!("{x:.3}, {y:.3}, {z:.3}");
+                    Point::new(*p[0], *p[1], *p[2])
+                })
+                .collect(),
+            name: geometry[0].name.clone(),
+            ..Default::default()
+        })
+    }
+}
+
+/// Creation methods.
+impl Polyhedron {
     pub fn tetrahedron() -> Self {
         let c0 = 1.0;
 
@@ -2185,6 +2280,7 @@ impl Polyhedron {
     }
 
     #[inline]
+    /// Alias for [`hexhedron()`].
     pub fn cube() -> Self {
         Self::hexahedron()
     }
@@ -2358,7 +2454,7 @@ impl Polyhedron {
         }));
 
         Self {
-            name: format!("P{}", n),
+            name: format!("P{n}"),
             positions: (0..n)
                 .map(move |i| {
                     Point::new(
@@ -2392,7 +2488,7 @@ impl From<Polyhedron> for Mesh {
     fn from(mut polyhedron: Polyhedron) -> Self {
         polyhedron.reverse();
 
-        let (index, positions, normals) = polyhedron.to_triangle_mesh_buffers();
+        let (index, positions, normals) = polyhedron.as_triangle_mesh_buffers();
 
         let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
         mesh.set_indices(Some(Indices::U32(index)));
