@@ -63,7 +63,7 @@ In short: use at your own risk.
 
 * [x] Platonic solids
 * [x] Prisms
-* [ ] Antiprisms
+* [x] Antiprisms
 * [ ] Pyramids
 * [ ] Johnson Solids
 
