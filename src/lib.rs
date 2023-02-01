@@ -2380,7 +2380,7 @@ impl Polyhedron {
         };
 
         Self {
-            name: format!("{}{}", if anti { "AP" } else { "P" }, n),
+            name: format!("{}{}", if anti { "A" } else { "P" }, n),
             positions: (0..n)
                 .map(move |i| {
                     Point::new(
