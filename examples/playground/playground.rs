@@ -7,10 +7,9 @@ use kiss3d::{
     window::Window,
 };
 use na::{Point3, Vector3};
-use rayon::prelude::*;
-use std::{cell::RefCell, io, io::Write, rc::Rc};
-//extern crate polyhedron_ops;
 use polyhedron_ops::prelude::*;
+use rayon::prelude::*;
+use std::{cell::RefCell, env, error::Error, io, io::Write, rc::Rc};
 
 #[cfg(feature = "nsi")]
 mod nsi_render;
@@ -34,7 +33,7 @@ pub enum RenderType {
 }
 
 fn into_mesh(polyhedron: Polyhedron) -> Mesh {
-    let (face_index, points, normals) = polyhedron.to_triangle_mesh_buffers();
+    let (face_index, points, normals) = polyhedron.as_triangle_mesh_buffers();
 
     Mesh::new(
         // Duplicate points per face so we can
@@ -59,7 +58,17 @@ fn into_mesh(polyhedron: Polyhedron) -> Mesh {
     )
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
+    let args: Vec<String> = env::args().collect();
+
+    let mut poly = if args.len() > 1 {
+        Polyhedron::read_from_obj(&Path::new(&args[1]), true)?
+    } else {
+        Polyhedron::tetrahedron()
+    };
+
+    poly.normalize();
+
     let distance = 2.0f32;
     let eye = Point3::new(distance, distance, distance);
     let at = Point3::origin();
@@ -69,9 +78,6 @@ fn main() {
 
     let mut window = Window::new("Polyhedron Operations");
     window.set_light(Light::StickToCamera);
-
-    let mut poly = Polyhedron::tetrahedron();
-    poly.normalize();
 
     let mesh = Rc::new(RefCell::new(into_mesh(poly.clone())));
     let mut c = window.add_mesh(mesh, Vector3::new(1.0, 1.0, 1.0));
@@ -447,7 +453,7 @@ fn main() {
                         } else {
                             println!(
                                 "Exported to {}",
-                                poly.write_to_obj(&path, true)
+                                poly.write_as_obj(&path, true)
                                     .unwrap()
                                     .display()
                             );
@@ -643,4 +649,6 @@ fn main() {
             window.render_with_camera(&mut first_person);
         }
     }
+
+    Ok(())
 }

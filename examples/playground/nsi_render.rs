@@ -272,7 +272,7 @@ pub fn nsi_render(
 
     nsi_environment(&ctx);
 
-    let name = polyhedron.to_nsi(
+    let name = polyhedron.as_nsi(
         &ctx,
         Some(&(polyhedron.name().to_string() + "-mesh")),
         None,

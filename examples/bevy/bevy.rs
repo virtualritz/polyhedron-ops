@@ -55,5 +55,6 @@ fn setup(
             OrbitCameraController::default(),
             Vec3::new(-3.0, 3.0, 5.0),
             Vec3::new(0., 0., 0.),
+            Vec3::new(0., -1., 0.),
         ));
 }
