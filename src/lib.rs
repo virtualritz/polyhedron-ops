@@ -2430,11 +2430,13 @@ impl Polyhedron {
         }
     }
 
-    pub fn prism(n: usize) -> Self {
+    /// common code for prism and antiprism
+    fn protoprism(n: usize, anti: bool) -> Self {
         let n = if n < 3 { 3 } else { n };
 
-        // Angle.
+        // Angles.
         let theta = f32::TAU() / n as f32;
+        let twist = if anti { theta / 2.0 } else { 0.0 };
         // Half-edge.
         let h = (theta * 0.5).sin();
 
@@ -2444,17 +2446,37 @@ impl Polyhedron {
         ];
 
         // Sides.
-        face_index.extend((0..n).map(|i| {
-            vec![
-                i as VertexKey,
-                (i + n) as VertexKey,
-                ((i + 1) % n + n) as VertexKey,
-                ((i + 1) % n) as VertexKey,
-            ]
-        }));
+        if anti {
+            face_index.extend(
+                (0..n)
+                    .map(|i| {
+                        vec![
+                            i as VertexKey,
+                            (i + n) as VertexKey,
+                            ((i + 1) % n) as VertexKey,
+                        ]
+                    })
+                    .chain((0..n).map(|i| {
+                        vec![
+                            (i + n) as VertexKey,
+                            ((i + 1) % n + n) as VertexKey,
+                            ((i + 1) % n) as VertexKey,
+                        ]
+                    })),
+            );
+        } else {
+            face_index.extend((0..n).map(|i| {
+                vec![
+                    i as VertexKey,
+                    (i + n) as VertexKey,
+                    ((i + 1) % n + n) as VertexKey,
+                    ((i + 1) % n) as VertexKey,
+                ]
+            }));
+        };
 
         Self {
-            name: format!("P{n}"),
+            name: format!("{}{}", if anti { "A" } else { "P" }, n),
             positions: (0..n)
                 .map(move |i| {
                     Point::new(
@@ -2465,9 +2487,9 @@ impl Polyhedron {
                 })
                 .chain((0..n).map(move |i| {
                     Point::new(
-                        (i as f32 * theta).cos() as _,
+                        (twist + i as f32 * theta).cos() as _,
                         -h,
-                        (i as f32 * theta).sin() as _,
+                        (twist + i as f32 * theta).sin() as _,
                     )
                 }))
                 .collect(),
@@ -2475,6 +2497,14 @@ impl Polyhedron {
             face_index,
             face_set_index: Vec::new(),
         }
+    }
+
+    pub fn prism(n: usize) -> Self {
+        Self::protoprism(n, false)
+    }
+
+    pub fn antiprism(n: usize) -> Self {
+        Self::protoprism(n, true)
     }
 }
 
