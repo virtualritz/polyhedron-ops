@@ -1,5 +1,6 @@
 use crate::*;
-use ultraviolet::DVec3;
+use std::fmt::Display;
+use uv::DVec3;
 
 // Extend a vector with some element(s)
 // ```
