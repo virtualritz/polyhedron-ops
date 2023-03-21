@@ -9,7 +9,7 @@ use smooth_bevy_cameras::{
 
 fn main() {
     App::new()
-        .insert_resource(Msaa { samples: 4 })
+        .insert_resource(Msaa::Sample4)
         .add_plugins(DefaultPlugins)
         .add_plugin(LookTransformPlugin)
         .add_plugin(OrbitCameraPlugin::default())
@@ -24,14 +24,8 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     // chamfered_tetrahedron
-    let polyhedron = p_ops::Polyhedron::tetrahedron() // D
-        .kis(None, None, None, None, true)
-        .normalize()
-        .bevel(None, None, None, None, true)
-        .normalize()
-        .needle(None, None, None, true)
-        .normalize()
-        .gyro(None, None, true)
+    let polyhedron = p_ops::Polyhedron::dodecahedron() // D
+        .bevel(None, None, None, None, true) // b
         .normalize()
         .finalize();
 
