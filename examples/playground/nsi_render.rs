@@ -1,15 +1,24 @@
 pub use crate::*;
+use nsi::NodeType::*;
 use std::{
     env,
+    f64::consts::TAU,
     path::{Path, PathBuf},
 };
 use ultraviolet as uv;
 
+const FPS: u32 = 60;
+const TURNTABLE_SECONDS: u32 = 1;
+const FRAME_STEP: f64 =
+    360.0 / TURNTABLE_SECONDS as f64 / FPS as f64 * TAU / 90.0;
+
+/// Returns the name of the `screen` node that was created.
 fn nsi_globals_and_camera(
     c: &nsi::Context,
     name: &str,
     _camera_xform: &[f64; 16],
     render_quality: u32,
+    turntable: bool,
 ) {
     // Setup a camera transform.
     c.create("camera_xform", nsi::NodeType::Transform, &[]);
@@ -27,17 +36,32 @@ fn nsi_globals_and_camera(
     // Setup a camera.
     c.create("camera", nsi::NodeType::PerspectiveCamera, &[]);
 
-    c.set_attribute("camera", &[nsi::float!("fov", 35.)]);
+    c.set_attribute(
+        "camera",
+        &[
+            nsi::float!("fov", 35.),
+            nsi::doubles!("shutterrange", &[0.0, 1.0]), //.array_len(2),
+            nsi::doubles!("shutteropening", &[0.25, 0.75]), //.array_len(2)
+        ],
+    );
     c.connect("camera", "", "camera_xform", "objects", &[]);
 
     // Setup a screen.
     c.create("screen", nsi::NodeType::Screen, &[]);
     c.connect("screen", "", "camera", "screens", &[]);
+
     c.set_attribute(
         "screen",
         &[
-            nsi::integers!("resolution", &[2048, 2048]).array_len(2),
-            nsi::integer!("oversampling", 32),
+            nsi::integers!("resolution", &[512, 512]).array_len(2),
+            nsi::integer!(
+                "oversampling",
+                if turntable {
+                    1 << (3 + render_quality)
+                } else {
+                    32
+                }
+            ),
         ],
     );
 
@@ -100,7 +124,8 @@ fn nsi_globals_and_camera(
         "driver",
         &[
             nsi::string!("drivername", "idisplay"),
-            nsi::string!("filename", name.to_string() + ".exr"),
+            nsi::string!("imagefilename", name.to_string() + ".exr"),
+            //nsi::string!("filename", name.to_string() + ".exr"),
         ],
     );
 
@@ -268,11 +293,12 @@ pub fn nsi_render(
         polyhedron.name(),
         camera_xform,
         render_quality,
+        turntable,
     );
 
     nsi_environment(&ctx);
 
-    let name = polyhedron.as_nsi(
+    let name = polyhedron.to_nsi(
         &ctx,
         Some(&(polyhedron.name().to_string() + "-mesh")),
         None,
@@ -292,34 +318,45 @@ pub fn nsi_render(
             &name,
         )
         .0,
-    );
-
-    ctx.append(
-        &polyhedron.name(),
-        Some("outputdrivers"),
-        &ctx.node(
-            Some("exr-driver"),
-            nsi::NodeType::OutputDriver,
-            &[
-                nsi::string!("drivername", "r-display"),
-                nsi::string!("imagefilename", format!("{}-{:02}.exr", name, frame)),
-            ],
-        ),
     );*/
 
     if turntable {
         ctx.create("rotation", nsi::NodeType::Transform, &[]);
         ctx.connect("rotation", "", ".root", "objects", &[]);
-        ctx.connect(name, "", "rotation", "objects", &[]);
+        ctx.connect(name.clone(), "", "rotation", "objects", &[]);
 
-        for frame in 0..72 {
+        for frame in 0..TURNTABLE_SECONDS * FPS {
             ctx.set_attribute(
+                "driver",
+                &[nsi::string!(
+                    "filename",
+                    format!("{}_{:02}.exr", name, frame)
+                )],
+            );
+
+            ctx.set_attribute_at_time(
                 "rotation",
+                0.0,
                 &[nsi::double_matrix!(
                     "transformationmatrix",
                     uv::DMat4::from_angle_plane(
-                        (frame as f64 * 5.0 * core::f64::consts::TAU / 90.0)
-                            as _,
+                        (frame as f64 * FRAME_STEP) as _,
+                        uv::DBivec3::from_normalized_axis(uv::DVec3::new(
+                            0., 1., 0.
+                        ))
+                    )
+                    .transposed()
+                    .as_array()
+                )],
+            );
+
+            ctx.set_attribute_at_time(
+                "rotation",
+                1.0,
+                &[nsi::double_matrix!(
+                    "transformationmatrix",
+                    uv::DMat4::from_angle_plane(
+                        ((frame + 1) as f64 * FRAME_STEP) as _,
                         uv::DBivec3::from_normalized_axis(uv::DVec3::new(
                             0., 1., 0.
                         ))

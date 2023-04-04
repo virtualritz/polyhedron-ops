@@ -43,21 +43,26 @@ The resulting shape is shown below.
 
 ## Caveat
 
-This is in a rough shape. Probably buggy. Documentation sucks.
+This is in a semi-polised shape. Documentation could be better (open an issue
+if you feel something is particualrly lacking).
 
 In short: use at your own risk.
 
 ## Cargo Features
 
 * `bevy` – Adds support for converting a polyhedron into a
-           [`bevy`](https://bevyengine.org/)
-           [`Mesh`](https://docs.rs/bevy/latest/bevy/render/mesh/struct.Mesh.html).
+  [`bevy`](https://bevyengine.org/)
+  [`Mesh`](https://docs.rs/bevy/latest/bevy/render/mesh/struct.Mesh.html).
 
 * `nsi`  – Adds support for sending a polyhedron to an offline renderer
-           via the [ɴsɪ](https://crates.io/crates/nsi/) crate.
+  via the [ɴsɪ](https://crates.io/crates/nsi/) crate.
 
 * `obj`  – Adds support for writing data out as
-           [Wavefront OBJ](https://en.wikipedia.org/wiki/Wavefront_.obj_file).
+  [Wavefront OBJ](https://en.wikipedia.org/wiki/Wavefront_.obj_file).
+
+* `parser` – Add support for parsing strings in
+  [Conway Polyhedron Notation](https://en.wikipedia.org/wiki/Conway_polyhedron_notation).
+  This feature implements `Polyhedron::TryFrom<&str>`.
 
 ## Base Shapes
 
@@ -69,36 +74,37 @@ In short: use at your own risk.
 
 ## Supported Operators
 
-* [x] **a** - ambo
-* [x] **b** - bevel (equiv. to **ta**)
-* [x] **c** - chamfer
-* [x] **d** - dual
-* [x] **e** - expand (a.k.a. explode, equiv. to **aa**)
-* [x] **g** - gyro
-* [x] **i** - inset/loft (equiv. to **x,N**)
-* [x] **j** - join (equiv. to **dad**)
-* [x] **K** - Quick & dirty canonicalization
-* [x] **k** - kis
-* [x] **M** - medial (equiv. to **dta**)
-* [x] **m** - meta (equiv. to **k,,3j**)
-* [x] **n** - needle (equiv. to **dt**)
-* [x] **o** - ortho (equiv. to **jj**)
-* [x] **p** - propeller
-* [x] **q** - quinto
-* [x] **r** - reflect
-* [x] **s** - snub (equiv. to **dgd**)
-* [x] **t** - truncate (equiv. to **dkd**)
-* [x] **v** - subdivide (Catmull-Clark)
-* [x] **w** - whirl
-* [x] **x** - extrude
-* [x] **z** - zip (equiv. to **dk**)
+* [x] **a** – ambo
+* [x] **b** – bevel (equiv. to **ta**)
+* [x] **c** – chamfer
+* [x] **d** – dual
+* [x] **e** – expand (a.k.a. explode, equiv. to **aa**)
+* [x] **g** – gyro
+* [x] **i** – inset/loft (equiv. to **x,N**)
+* [x] **j** – join (equiv. to **dad**)
+* [x] **K** – Quick & dirty canonicalization
+* [x] **k** – kis
+* [x] **M** – medial (equiv. to **dta**)
+* [x] **m** – meta (equiv. to **k,,3j**)
+* [x] **n** – needle (equiv. to **dt**)
+* [x] **o** – ortho (equiv. to **jj**)
+* [x] **p** – propellor
+* [x] **q** – quinto
+* [x] **r** – reflect
+* [x] **S** – spherize
+* [x] **s** – snub (equiv. to **dgd**)
+* [x] **t** – truncate (equiv. to **dkd**)
+* [x] **v** – subdivide (Catmull-Clark)
+* [x] **w** – whirl
+* [x] **x** – extrude
+* [x] **z** – zip (equiv. to **dk**)
 
 ### Other Operators
 
-* [ ] **H** - hollow (called ‘intrude’ in Wings3D)
-* [ ] **h** - hexpropellor
-* [ ] **l** - stellate
-* [ ] **z** - triangulate
+* [ ] **H** – hollow (called ‘intrude’ in Wings3D)
+* [ ] **h** – hexpropellor
+* [ ] **l** – stellate
+* [ ] **?** – triangulate
 
 ## Playing
 

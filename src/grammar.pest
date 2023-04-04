@@ -1,0 +1,257 @@
+WHITESPACE = _{ " " | "\t" | "\n" | "\r" }
+float = @{ int ~ ("." ~ ASCII_DIGIT*)? ~ (^"e" ~ int)? }
+int = { ("+" | "-")? ~ ASCII_DIGIT+ }
+ufloat = @{ uint ~ ("." ~ ASCII_DIGIT*)? ~ (^"e" ~ int)? }
+uint = { ASCII_DIGIT+ }
+uint_array = _{
+    "["
+    ~
+    uint
+    ~ (
+        ","
+        ~
+        uint
+    )*
+    ~
+    "]"
+}
+bool = { "{t}" | "{f}" }
+tetrahedron = { "T" }
+hexahedron = { "C" }
+octahedron = { "O" }
+dodecahedron = { "D" }
+icosahedron = { "I" }
+prism = { "P" ~ uint }
+antiprism = { "A" ~ uint }
+//pyramid = { "Y" ~ uint }
+//johnson_solid = { "J" ~ uint }
+base_shape = _{ tetrahedron | hexahedron | octahedron | dodecahedron | icosahedron | prism | antiprism }
+separator = { "," }
+ambo = { "a" ~ (ufloat)? }
+// bevel uf_ratio, f_height, ui_vertex_degree, b_regular_faces_only
+bevel = { "b" ~
+    (
+        (ufloat)?
+        ~
+        (
+            separator
+            ~
+            (float)?
+            ~
+            (
+                separator
+                ~
+                (uint | uint_array)?
+                ~
+                (
+                    separator
+                    ~
+                    (bool)?
+                )?
+            )?
+        )?
+    )?
+}
+// Catmull-Clark subdivide
+catmull_clark_subdivide = { "v" }
+// chamfer uf_ratio
+chamfer = { "c" ~ (ufloat)? }
+dual = { "d" }
+expand = { "e" ~ (ufloat)? }
+// extrude f_height, f_offset, ui_face_arity_mask
+extrude = { "x" ~
+    (
+        (float)?
+        ~
+        (
+            separator
+            ~
+            (float)?
+            ~
+            (
+                separator
+                ~
+                (uint | uint_array)?
+            )?
+        )?
+    )?
+}
+// gyro uf_ratio, f_height
+gyro = { "g" ~ ( (ufloat)? ~ (separator ~ (float)? )? )? }
+// inset f_offset
+inset = { "i" ~ (ufloat)? }
+// join uf_ratio
+join = { "j" ~ (ufloat)? }
+// kis f_height, ui_face_arity_mask, ui_face_index_mask, b_regular_faces_only
+kis = { "k" ~
+    (
+        (float)?
+        ~
+        (
+            separator
+            ~
+            (uint | uint_array)?
+            ~
+            (
+                separator
+                ~
+                (uint | uint_array)?
+                ~
+                (
+                    separator
+                    ~
+                    (bool)?
+                )?
+            )?
+        )?
+    )?
+}
+// medial uf_ratio, f_height, ui_vertex_valence, b_regular_faces_only
+medial = { "M" ~
+    (
+        (ufloat)?
+        ~
+        (
+            separator
+            ~
+            (float)?
+            ~
+            (
+                separator
+                ~
+                (uint | uint_array)?
+                ~
+                (
+                    separator
+                    ~
+                    (bool)?
+                )?
+            )?
+        )?
+    )?
+}
+// meta uf_ratio, f_height, ui_vertex_valence, b_regular_faces_only
+meta = { "m" ~
+    (
+        (ufloat)?
+        ~
+        (
+            separator
+            ~
+            (float)?
+            ~
+            (
+                separator
+                ~
+                (uint | uint_array)?
+                ~
+                (
+                    separator
+                    ~
+                    (bool)?
+                )?
+            )?
+        )?
+    )?
+}
+// needle f_height, ui_vertex_valence, b_regular_faces_only
+needle = { "n" ~
+    (
+        (float)?
+        ~
+        (
+            separator
+            ~
+            (uint | uint_array)?
+            ~
+            (
+                separator
+                ~
+                (bool)?
+            )?
+        )?
+    )?
+}
+// ortho uf_ratio
+ortho = { "o" ~ (ufloat)? }
+// planarize ui_iterations
+planarize = { "K" ~ (uint)? }
+// propellor uf_ratio
+propellor = { "p" ~ (ufloat)? }
+// quinto f_height
+quinto = { "q" ~ (float)? }
+// reflect
+reflect = { "r" }
+// snub uf_ratio, f_height
+snub = { "s" ~ ( (ufloat)? ~ (separator ~ (float)? )? )? }
+// spherize uf_strength
+spherize = { "S" ~ (ufloat)? }
+// truncate f_height, ui_vertex_valence, b_regular_faces_only
+truncate = { "t" ~
+    (
+        (float)?
+        ~
+        (
+            separator
+            ~
+            (uint | uint_array)?
+            ~
+            (
+                separator
+                ~
+                (bool)?
+            )?
+        )?
+    )?
+}
+// whirl uf_ratio, f_height
+whirl = { "w" ~ ( (ufloat)? ~ (separator ~ (float)? )? )? }
+// zip f_height, ui_vertex_valence, b_regular_faces_only
+zip = { "z" ~
+    (
+        (float)?
+        ~
+        (
+            separator
+            ~
+            (uint | uint_array)?
+            ~
+            (
+                separator
+                ~
+                (bool)?
+            )?
+        )?
+    )?
+}
+operation = _{
+    ambo
+    | bevel
+    | catmull_clark_subdivide
+    | chamfer
+    | dual
+    | expand
+    | extrude
+    | gyro
+    | inset
+    | join
+    | kis
+    | medial
+    | meta
+    | needle
+    | ortho
+    | planarize
+    | propellor
+    | quinto
+    | reflect
+    | snub
+    | spherize
+    | truncate
+    | whirl
+    | zip
+}
+operation_chain = _{ operation ~ (operation)* }
+conway_notation_string = _{SOI ~ operation_chain ~ base_shape ~ EOI}
+
+
+//command = { operation ~ (num ~("," ~num)*)* }

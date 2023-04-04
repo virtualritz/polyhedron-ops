@@ -3,7 +3,7 @@
 //! # Conway-Hart Polyhedron Operations
 //!
 //! This crate implements the [Conway Polyhedron
-//! Operators](http://en.wikipedia.org/wiki/Conway_polyhedron_notation)
+//! Operators](https://en.wikipedia.org/wiki/Conway_polyhedron_notation)
 //! and their extensions by [George W. Hart](http://www.georgehart.com/) and others.
 //!
 //! The internal representation uses *n*-gon mesh buffers.  These need
@@ -47,25 +47,34 @@
 //!
 //! * `bevy` – A polyhedro can be converted into a [`bevy`](https://bevyengine.org/)
 //!   [`Mesh`](https://docs.rs/bevy/latest/bevy/render/mesh/struct.Mesh.html).
-//!   See the `bevy` example. ```ignore Mesh::from(polyhedron) ```
+//!   See the `bevy` example.
 //!
 //! * `nsi` – Add supports for sending data to renderers implementing the [ɴsɪ](https://crates.io/crates/nsi/)
 //!   API. The function is called [`to_nsi()`](Polyhedron::to_nsi()).
 //!
 //! * `obj` – Add support for output to [Wavefront OBJ](https://en.wikipedia.org/wiki/Wavefront_.obj_file)
 //!   via the [`write_obj()`](Polyhedron::write_obj()) function.
+//!
+//! * `parser` – Add support for parsing strings in [Conway Polyhedron Notation](https://en.wikipedia.org/wiki/Conway_polyhedron_notation).
+//!   This feature implements
+//!   [`Polyhedron::TryFrom<&str>`](Polyhedron::try_from<&str>).
+use crate::helpers::*;
 use itertools::Itertools;
 use rayon::prelude::*;
-use std::fmt::Write;
 use ultraviolet as uv;
-use crate::helpers::*;
+#[cfg(feature = "parser")]
+#[macro_use]
+extern crate pest_derive;
 
 mod base_polyhedra;
 mod helpers;
 mod io;
 mod mesh_buffers;
 mod operators;
+#[cfg(feature = "parser")]
+mod parser;
 mod selection;
+mod text_helpers;
 
 #[cfg(test)]
 mod tests;
@@ -225,7 +234,7 @@ impl Polyhedron {
     }
 
     #[inline]
-    pub fn positions_len(&self) -> usize {
+    pub(crate) fn positions_len(&self) -> usize {
         self.positions.len()
     }
 

@@ -33,7 +33,7 @@ pub enum RenderType {
 }
 
 fn into_mesh(polyhedron: Polyhedron) -> Mesh {
-    let (face_index, points, normals) = polyhedron.as_triangle_mesh_buffers();
+    let (face_index, points, normals) = polyhedron.to_triangle_mesh_buffers();
 
     Mesh::new(
         // Duplicate points per face so we can
@@ -62,7 +62,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
 
     let mut poly = if args.len() > 1 {
-        Polyhedron::read_from_obj(&Path::new(&args[1]), true)?
+        Polyhedron::read_obj(&Path::new(&args[1]), true)?
     } else {
         Polyhedron::tetrahedron()
     };
@@ -336,12 +336,12 @@ fn main() -> Result<(), Box<dyn Error>> {
                         last_poly = poly.clone();
                         if modifiers.intersects(Modifiers::Shift) {
                             last_op_value = 0.03;
-                            poly = Polyhedron::prism(3);
+                            poly = Polyhedron::prism(None);
                             poly.normalize();
                             last_op = 'P';
                         } else {
                             last_op_value = 1. / 3.;
-                            poly.propeller(None, true);
+                            poly.propellor(None, true);
                             poly.normalize();
                             last_op = 'p';
                         }
@@ -453,9 +453,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         } else {
                             println!(
                                 "Exported to {}",
-                                poly.write_as_obj(&path, true)
-                                    .unwrap()
-                                    .display()
+                                poly.write_obj(&path, true).unwrap().display()
                             );
                         }
                     }
@@ -559,11 +557,12 @@ fn main() -> Result<(), Box<dyn Error>> {
                             poly.ortho(Some(last_op_value), true);
                         }
                         'p' => {
-                            poly.propeller(Some(last_op_value), true);
+                            poly.propellor(Some(last_op_value), true);
                         }
                         'P' => {
-                            poly =
-                                Polyhedron::prism((last_op_value * 100.) as _);
+                            poly = Polyhedron::prism(Some(
+                                (last_op_value * 100.) as _,
+                            ));
                             poly.normalize();
                         }
                         'q' => {

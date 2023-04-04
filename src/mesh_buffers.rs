@@ -1,5 +1,6 @@
 use crate::*;
 
+/// # Mesh Buffer (GPU/realtime) Helpers
 impl Polyhedron {
     /// Returns a flat [`u32`] triangle index buffer and two matching point and
     /// normal buffers.

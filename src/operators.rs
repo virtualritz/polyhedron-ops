@@ -1,10 +1,12 @@
-use crate::{helpers::*, *};
+use crate::{helpers::*, text_helpers::*, *};
 use std::fmt::Write;
 
+/// # Operators
 impl Polyhedron {
     /// Creates vertices with valence (aka degree) four.
+    ///
     /// It is also called [rectification](https://en.wikipedia.org/wiki/Rectification_(geometry)),
-    /// or the  [medial graph](https://en.wikipedia.org/wiki/Medial_graph) in graph theory.
+    /// or the [medial graph](https://en.wikipedia.org/wiki/Medial_graph) in graph theory.
     #[inline]
     pub fn ambo(
         &mut self,
@@ -71,7 +73,7 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{:.2}", ratio).unwrap();
+                write!(&mut params, "{}", format_float(ratio)).unwrap();
             }
             self.name = format!("a{}{}", params, self.name);
         }
@@ -79,6 +81,7 @@ impl Polyhedron {
         self
     }
 
+    /// Adds faces at the center, original vertices, and along the edges.
     pub fn bevel(
         &mut self,
         ratio: Option<Float>,
@@ -93,16 +96,20 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{:.2}", ratio).unwrap();
+                write!(&mut params, "{}", format_float(ratio)).unwrap();
             }
             if let Some(height) = height {
-                write!(&mut params, ",{:.2}", height).unwrap();
+                write!(&mut params, ",{}", format_float(height)).unwrap();
             } else {
                 write!(&mut params, ",").unwrap();
             }
             if let Some(vertex_valence) = vertex_valence {
-                write!(&mut params, ",{}", format_slice(vertex_valence))
-                    .unwrap();
+                write!(
+                    &mut params,
+                    ",{}",
+                    format_integer_slice(vertex_valence)
+                )
+                .unwrap();
             } else {
                 write!(&mut params, ",").unwrap();
             }
@@ -120,15 +127,11 @@ impl Polyhedron {
         self
     }
 
-    /// Apply proper canoicalization. Typical number of `iterarations` are
+    /// Apply proper canonicalization. t yypical number of `iterarations` is
     /// `200`+.
     /// FIXME: this is b0rked atm.
     #[inline]
-    pub fn _canonicalize(
-        &mut self,
-        iterations: Option<usize>,
-        change_name: bool,
-    ) {
+    fn _canonicalize(&mut self, iterations: Option<usize>, change_name: bool) {
         let mut dual = self.clone().dual(false).finalize();
 
         for _ in 0..iterations.unwrap_or(200) {
@@ -258,6 +261,12 @@ impl Polyhedron {
         self
     }
 
+    /// [Chamfers](https://en.wikipedia.org/wiki/Chamfer_(geometry)) edges.
+    /// I.e. adds a new hexagonal face in place of each original edge.
+    ///
+    /// # Arguments
+    ///
+    /// * `ratio` - The ratio of the new faces to the old faces.
     pub fn chamfer(
         &mut self,
         ratio: Option<Float>,
@@ -348,7 +357,7 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{ratio:.2}").unwrap();
+                write!(&mut params, "{}", format_float(ratio)).unwrap();
             }
             self.name = format!("c{}{}", params, self.name);
         }
@@ -356,6 +365,7 @@ impl Polyhedron {
         self
     }
 
+    /// Creates the [dual](https://en.wikipedia.org/wiki/Dual_polyhedron).
     /// Replaces each face with a vertex, and each vertex with a face.
     pub fn dual(&mut self, change_name: bool) -> &mut Self {
         let new_positions = face_centers(&self.face_index, &self.positions);
@@ -370,6 +380,12 @@ impl Polyhedron {
         self
     }
 
+    /// [Cantellates](https://en.wikipedia.org/wiki/Cantellation_(geometry)).
+    /// I.e. creating a new facet in place of each edge and of each vertex.
+    ///
+    /// # Arguments
+    ///
+    /// * `ratio` - The ratio of the new faces to the old faces.
     pub fn expand(
         &mut self,
         ratio: Option<Float>,
@@ -381,9 +397,110 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{ratio:.2}").unwrap();
+                write!(&mut params, "{}", format_float(ratio)).unwrap();
             }
             self.name = format!("e{}{}", params, self.name);
+        }
+
+        self
+    }
+
+    /// Extrudes faces by `height` and shrinks the extruded faces by `distance`
+    /// from the original edges.
+    ///
+    /// # Arguments
+    ///
+    /// * `height` – The distance to extrude the faces. Default value is `0.3`.
+    /// * `offset` – The distance to inset the extruded faces. Default value is
+    ///   `0.0`.
+    /// * `face_arity_mask` – Only faces matching the given arities will be
+    ///   affected.
+    pub fn extrude(
+        &mut self,
+        height: Option<Float>,
+        offset: Option<Float>,
+        face_arity: Option<&[usize]>,
+        change_name: bool,
+    ) -> &mut Self {
+        let new_positions = self
+            .face_index
+            .par_iter()
+            .filter(|face| face_arity_matches(face, face_arity))
+            .flat_map(|face| {
+                let face_positions = index_as_positions(face, &self.positions);
+                let centroid = centroid_ref(&face_positions);
+                face.iter()
+                    .zip(&face_positions)
+                    .map(|face_vertex_point| {
+                        (
+                            extend![..face, *face_vertex_point.0],
+                            **face_vertex_point.1
+                                + offset.unwrap_or(0.0)
+                                    * (centroid - **face_vertex_point.1)
+                                + average_normal_ref(&face_positions).unwrap()
+                                    * height.unwrap_or(0.3),
+                        )
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>();
+
+        let new_ids =
+            vertex_ids_ref(&new_positions, self.positions_len() as VertexKey);
+
+        self.face_index = self
+            .face_index
+            .par_iter()
+            .flat_map(|face| {
+                if face_arity_matches(face, face_arity) {
+                    face.iter()
+                        .enumerate()
+                        .flat_map(|index_vertex| {
+                            let a = *index_vertex.1;
+                            let inset_a =
+                                vertex(&extend![..face, a], &new_ids).unwrap();
+                            let b = face[(index_vertex.0 + 1) % face.len()];
+                            let inset_b =
+                                vertex(&extend![..face, b], &new_ids).unwrap();
+                            if height.unwrap_or(0.3).is_sign_positive() {
+                                vec![vec![a, b, inset_b, inset_a]]
+                            } else {
+                                vec![vec![inset_a, inset_b, b, a]]
+                            }
+                        })
+                        .chain(vec![face
+                            .iter()
+                            .map(|v| {
+                                vertex(&extend![..face, *v], &new_ids).unwrap()
+                            })
+                            .collect::<Vec<_>>()])
+                        .collect::<Vec<_>>()
+                } else {
+                    vec![face.clone()]
+                }
+            })
+            .collect();
+
+        self.positions.extend(vertex_values_as_ref(&new_positions));
+
+        if change_name {
+            let mut params = String::new();
+            if let Some(height) = height {
+                write!(&mut params, "{}", format_float(height)).unwrap();
+            }
+            if let Some(offset) = offset {
+                write!(&mut params, ",{}", format_float(offset)).unwrap();
+            } else {
+                write!(&mut params, ",").unwrap();
+            }
+            if let Some(face_arity) = face_arity {
+                write!(&mut params, ",{}", format_integer_slice(face_arity))
+                    .unwrap();
+            } else {
+                write!(&mut params, ",").unwrap();
+            }
+            params = params.trim_end_matches(',').to_string();
+            self.name = format!("x{}{}", params, self.name);
         }
 
         self
@@ -392,12 +509,13 @@ impl Polyhedron {
     /// Splits each edge and connects new edges at the split point to the face
     /// centroid. Existing positions are retained.
     /// ![Gyro](https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Conway_gC.png/200px-Conway_gC.png)
+    ///
     /// # Arguments
+    ///
     /// * `ratio` – The ratio at which the adjacent edges get split.
     /// * `height` – An offset to add to the face centroid point along the face
     ///   normal.
-    /// * `regular_faces_only` – Only faces whose edges are 90% the same length,
-    ///   within the same face, are affected.
+    /// * `change_name` – Whether to change the name of the mesh.
     pub fn gyro(
         &mut self,
         ratio: Option<f32>,
@@ -480,10 +598,10 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{:.2}", ratio).unwrap();
+                write!(&mut params, "{}", format_float(ratio)).unwrap();
             }
             if let Some(height) = height {
-                write!(&mut params, ",{:.2}", height).unwrap();
+                write!(&mut params, ",{}", format_float(height)).unwrap();
             }
             self.name = format!("g{}{}", params, self.name);
         }
@@ -491,9 +609,50 @@ impl Polyhedron {
         self
     }
 
+    /// Inset faces by `offset` from the original edges.
+    ///
+    /// # Arguments
+    ///
+    /// * `offset` – The distance to inset the faces. Default value is `0.3`.
+    /// * `face_arity_mask` – Only faces matching the given arities will be
+    ///   affected.
+    pub fn inset(
+        &mut self,
+        offset: Option<Float>,
+        face_arity_mask: Option<&[usize]>,
+        change_name: bool,
+    ) -> &mut Self {
+        if change_name {
+            let mut params = String::new();
+            if let Some(offset) = offset {
+                write!(&mut params, "{}", format_float(offset)).unwrap();
+            }
+            if let Some(face_arity_mask) = &face_arity_mask {
+                write!(
+                    &mut params,
+                    ",{}",
+                    format_integer_slice(face_arity_mask)
+                )
+                .unwrap();
+            }
+            self.name = format!("i{}{}", params, self.name);
+        }
+
+        self.extrude(
+            Some(0.0),
+            Some(offset.unwrap_or(0.3)),
+            face_arity_mask,
+            false,
+        );
+
+        self
+    }
+
     /// Creates quadrilateral faces around each original edge. Original
     /// edges are discarded.
+    ///
     /// # Arguments
+    ///
     /// * `ratio` – The ratio at which the adjacent edges get split. Will be
     ///   clamped to `[0, 1]`. Default value is `0.5`.
     pub fn join(
@@ -508,7 +667,7 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{:.2}", ratio).unwrap();
+                write!(&mut params, "{}", format_float(ratio)).unwrap();
             }
             self.name = format!("j{}{}", params, self.name);
         }
@@ -516,12 +675,18 @@ impl Polyhedron {
         self
     }
 
-    /// Splits each face into triangles, one for each edge, which
+    /// Creates a [kleetrope](https://en.wikipedia.org/wiki/Kleetope) from the
+    /// input. Splits each face into triangles, one for each edge, which
     /// extend to the face centroid. Existing positions are retained.
+    ///
     /// # Arguments
+    ///
     /// * `height` - An offset to add to the face centroid point along the face
     ///   normal.
-    /// * `face_arity` - Only faces matching the given arities will be affected.
+    /// * `face_arity_mask` - Only faces matching the given arities will be
+    ///   affected.
+    /// * `face_index_mask` - Only faces matching the given indices will be
+    ///   affected.
     /// * `regular_faces_only` - Only faces whose edges are 90% the same length,
     ///   within the same face, are affected.
     pub fn kis(
@@ -584,17 +749,25 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(height) = height {
-                write!(&mut params, "{:.2}", height).unwrap();
+                write!(&mut params, "{}", format_float(height)).unwrap();
             }
             if let Some(face_arity_mask) = face_arity_mask {
-                write!(&mut params, ",{}", format_slice(face_arity_mask))
-                    .unwrap();
+                write!(
+                    &mut params,
+                    ",{}",
+                    format_integer_slice(face_arity_mask)
+                )
+                .unwrap();
             } else {
                 write!(&mut params, ",").unwrap();
             }
             if let Some(face_index_mask) = face_index_mask {
-                write!(&mut params, ",{}", format_slice(face_index_mask))
-                    .unwrap();
+                write!(
+                    &mut params,
+                    ",{}",
+                    format_integer_slice(face_index_mask)
+                )
+                .unwrap();
             } else {
                 write!(&mut params, ",").unwrap();
             }
@@ -612,146 +785,44 @@ impl Polyhedron {
         self
     }
 
-    // Inset faces by `offset` from the original edges.
-    pub fn inset(
-        &mut self,
-        offset: Option<Float>,
-        face_arity: Option<&[usize]>,
-        change_name: bool,
-    ) -> &mut Self {
-        if change_name {
-            let mut params = String::new();
-            if let Some(offset) = offset {
-                write!(&mut params, "{:.2}", offset).unwrap();
-            }
-            if let Some(face_arity) = &face_arity {
-                write!(&mut params, ",{}", format_slice(face_arity)).unwrap();
-            }
-            self.name = format!("i{}{}", params, self.name);
-        }
-
-        self.extrude(Some(0.0), Some(offset.unwrap_or(0.3)), face_arity, false);
-
-        self
-    }
-
-    // Extrudes faces by `height` and shrinks the extruded faces by `distance`
-    // from the original edges.
-    pub fn extrude(
-        &mut self,
-        height: Option<Float>,
-        offset: Option<Float>,
-        face_arity: Option<&[usize]>,
-        change_name: bool,
-    ) -> &mut Self {
-        let new_positions = self
-            .face_index
-            .par_iter()
-            .filter(|face| face_arity_matches(face, face_arity))
-            .flat_map(|face| {
-                let face_positions = index_as_positions(face, &self.positions);
-                let centroid = centroid_ref(&face_positions);
-                face.iter()
-                    .zip(&face_positions)
-                    .map(|face_vertex_point| {
-                        (
-                            extend![..face, *face_vertex_point.0],
-                            **face_vertex_point.1
-                                + offset.unwrap_or(0.0)
-                                    * (centroid - **face_vertex_point.1)
-                                + average_normal_ref(&face_positions).unwrap()
-                                    * height.unwrap_or(0.3),
-                        )
-                    })
-                    .collect::<Vec<_>>()
-            })
-            .collect::<Vec<_>>();
-
-        let new_ids =
-            vertex_ids_ref(&new_positions, self.positions_len() as VertexKey);
-
-        self.face_index = self
-            .face_index
-            .par_iter()
-            .flat_map(|face| {
-                if face_arity_matches(face, face_arity) {
-                    face.iter()
-                        .enumerate()
-                        .flat_map(|index_vertex| {
-                            let a = *index_vertex.1;
-                            let inset_a =
-                                vertex(&extend![..face, a], &new_ids).unwrap();
-                            let b = face[(index_vertex.0 + 1) % face.len()];
-                            let inset_b =
-                                vertex(&extend![..face, b], &new_ids).unwrap();
-                            if height.unwrap_or(0.3).is_sign_positive() {
-                                vec![vec![a, b, inset_b, inset_a]]
-                            } else {
-                                vec![vec![inset_a, inset_b, b, a]]
-                            }
-                        })
-                        .chain(vec![face
-                            .iter()
-                            .map(|v| {
-                                vertex(&extend![..face, *v], &new_ids).unwrap()
-                            })
-                            .collect::<Vec<_>>()])
-                        .collect::<Vec<_>>()
-                } else {
-                    vec![face.clone()]
-                }
-            })
-            .collect();
-
-        self.positions.extend(vertex_values_as_ref(&new_positions));
-
-        if change_name {
-            let mut params = String::new();
-            if let Some(height) = height {
-                write!(&mut params, "{:.2}", height).unwrap();
-            }
-            if let Some(offset) = offset {
-                write!(&mut params, ",{:.2}", offset).unwrap();
-            } else {
-                write!(&mut params, ",").unwrap();
-            }
-            if let Some(face_arity) = face_arity {
-                write!(&mut params, ",{}", format_slice(face_arity)).unwrap();
-            } else {
-                write!(&mut params, ",").unwrap();
-            }
-            params = params.trim_end_matches(',').to_string();
-            self.name = format!("x{}{}", params, self.name);
-        }
-
-        self
-    }
-
+    /// Adds edges from the center to each original vertex.
+    ///
+    /// # Arguments
+    ///
+    /// * `ratio` – The ratio of the new vertices to the original vertices.
+    /// * `height` – The height of the new vertices.
+    /// * `vertex_valence_mask` – Only vertices matching the given valences will
+    ///   be affected.
+    /// * `regular_faces_only` – Only regular faces will be affected.
     pub fn medial(
         &mut self,
         ratio: Option<Float>,
         height: Option<Float>,
-        vertex_valence: Option<&[usize]>,
+        vertex_valence_mask: Option<&[usize]>,
         regular_faces_only: Option<bool>,
         change_name: bool,
     ) -> &mut Self {
         self.dual(false);
-        self.truncate(height, vertex_valence, regular_faces_only, false);
+        self.truncate(height, vertex_valence_mask, regular_faces_only, false);
         self.ambo(ratio, false);
 
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{:.2}", ratio).unwrap();
+                write!(&mut params, "{}", format_float(ratio)).unwrap();
             }
             if let Some(height) = height {
-                write!(&mut params, ",{:.2}", height).unwrap();
+                write!(&mut params, ",{}", format_float(height)).unwrap();
             } else {
                 write!(&mut params, ",").unwrap();
             }
-            if let Some(vertex_valence) = vertex_valence {
-                write!(&mut params, ",{}", format_slice(vertex_valence))
-                    .unwrap();
+            if let Some(vertex_valence_mask) = vertex_valence_mask {
+                write!(
+                    &mut params,
+                    ",{}",
+                    format_integer_slice(vertex_valence_mask)
+                )
+                .unwrap();
             } else {
                 write!(&mut params, ",").unwrap();
             }
@@ -769,20 +840,29 @@ impl Polyhedron {
         self
     }
 
+    /// Adds vertices at the center and along the edges.
+    ///
+    /// # Arguments
+    ///
+    /// * `ratio` – The ratio of the new vertices to the original vertices.
+    /// * `height` – The height of the new vertices.
+    /// * `vertex_valence_mask` – Only vertices matching the given valences
+    ///  will be affected.
+    /// * `regular_faces_only` – Only regular faces will be affected.
     pub fn meta(
         &mut self,
         ratio: Option<Float>,
         height: Option<Float>,
-        vertex_valence: Option<&[usize]>,
+        vertex_valence_mask: Option<&[usize]>,
         regular_faces_only: Option<bool>,
         change_name: bool,
     ) -> &mut Self {
         self.kis(
             height,
-            match vertex_valence {
+            match vertex_valence_mask {
                 // By default meta works on vertices of valence three.
                 None => Some(&[3]),
-                _ => vertex_valence,
+                _ => vertex_valence_mask,
             },
             None,
             regular_faces_only,
@@ -793,16 +873,20 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{:.2}", ratio).unwrap();
+                write!(&mut params, "{}", format_float(ratio)).unwrap();
             }
             if let Some(height) = height {
-                write!(&mut params, ",{:.2}", height).unwrap();
+                write!(&mut params, ",{}", format_float(height)).unwrap();
             } else {
                 write!(&mut params, ",").unwrap();
             }
-            if let Some(vertex_valence) = vertex_valence {
-                write!(&mut params, ",{}", format_slice(vertex_valence))
-                    .unwrap();
+            if let Some(vertex_valence_mask) = vertex_valence_mask {
+                write!(
+                    &mut params,
+                    ",{}",
+                    format_integer_slice(vertex_valence_mask)
+                )
+                .unwrap();
             } else {
                 write!(&mut params, ",").unwrap();
             }
@@ -820,24 +904,36 @@ impl Polyhedron {
         self
     }
 
+    /// Like [`kis`] but also splits each edge in the middle.
+    ///
+    /// # Arguments
+    ///
+    /// * `height` – The offset of the new face centers.
+    /// * `vertex_valence_mask` – Only vertices matching the given valences will
+    ///   be affected.
+    /// * `regular_faces_only` – Only regular faces will be affected.
     pub fn needle(
         &mut self,
         height: Option<Float>,
-        vertex_valence: Option<&[usize]>,
+        vertex_valence_mask: Option<&[usize]>,
         regular_faces_only: Option<bool>,
         change_name: bool,
     ) -> &mut Self {
         self.dual(false);
-        self.truncate(height, vertex_valence, regular_faces_only, false);
+        self.truncate(height, vertex_valence_mask, regular_faces_only, false);
 
         if change_name {
             let mut params = String::new();
             if let Some(height) = height {
-                write!(&mut params, "{:.2}", height).unwrap();
+                write!(&mut params, "{}", format_float(height)).unwrap();
             }
-            if let Some(vertex_valence) = vertex_valence {
-                write!(&mut params, ",{}", format_slice(vertex_valence))
-                    .unwrap();
+            if let Some(vertex_valence_mask) = vertex_valence_mask {
+                write!(
+                    &mut params,
+                    ",{}",
+                    format_integer_slice(vertex_valence_mask)
+                )
+                .unwrap();
             } else {
                 write!(&mut params, ",").unwrap();
             }
@@ -855,6 +951,12 @@ impl Polyhedron {
         self
     }
 
+    /// Connects the center of each face to the center of each edge.
+    ///
+    /// # Arguments
+    ///
+    /// * `ratio` – The ratio of the new two parts each original edge is split
+    ///   into.
     pub fn ortho(
         &mut self,
         ratio: Option<Float>,
@@ -866,7 +968,7 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{:.2}", ratio).unwrap();
+                write!(&mut params, "{}", format_float(ratio)).unwrap();
             }
             self.name = format!("o{}{}", params, self.name);
         }
@@ -874,8 +976,12 @@ impl Polyhedron {
         self
     }
 
-    /// Apply quick and dirty canonicalization. Typical number of `iterations
-    /// are `100`+.
+    /// Applies quick and dirty canonicalization.
+    ///
+    /// # Arguments
+    ///
+    /// * `iterations` – The number of iterations to perform. Typical number of
+    ///   `iterations are `100`+. The default is `100`.
     #[inline]
     pub fn planarize(&mut self, iterations: Option<usize>, change_name: bool) {
         let mut dual = self.clone().dual(false).finalize();
@@ -897,7 +1003,13 @@ impl Polyhedron {
         }
     }
 
-    pub fn propeller(
+    /// Splits each edge into three parts and creates edges on each face
+    /// connecting the new vertices.
+    ///
+    /// # Arguments
+    ///
+    /// * `ratio` – The ratio of the edge splits.
+    pub fn propellor(
         &mut self,
         ratio: Option<Float>,
         change_name: bool,
@@ -972,7 +1084,7 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{:.2}", ratio).unwrap();
+                write!(&mut params, "{}", format_float(ratio)).unwrap();
             }
             self.name = format!("p{}{}", params, self.name);
         }
@@ -980,6 +1092,12 @@ impl Polyhedron {
         self
     }
 
+    /// Splits each edge in the middle and creates new faces in the middle of
+    /// each face then connects those.
+    ///
+    /// # Arguments
+    ///
+    /// * `height` – The offset of the new faces from the original face.
     pub fn quinto(
         &mut self,
         height: Option<Float>,
@@ -1080,8 +1198,8 @@ impl Polyhedron {
 
         if change_name {
             let mut params = String::new();
-            if let Some(h) = height {
-                write!(&mut params, "{:.2}", h).unwrap();
+            if let Some(height) = height {
+                write!(&mut params, "{}", format_float(height)).unwrap();
             }
             self.name = format!("q{}{}", params, self.name);
         }
@@ -1089,6 +1207,7 @@ impl Polyhedron {
         self
     }
 
+    /// [Reflects](https://en.wikipedia.org/wiki/Reflection_(mathematics) the shape.
     pub fn reflect(&mut self, change_name: bool) -> &mut Self {
         self.positions = self
             .positions
@@ -1104,6 +1223,12 @@ impl Polyhedron {
         self
     }
 
+    /// Applies a [snub](https://en.wikipedia.org/wiki/Snub_(geometry)) to the shape.
+    ///
+    /// # Arguments
+    ///
+    /// * `ratio` – The ratio at which the adjacent edges get split.
+    /// * `height` – The height of the newly created centers.
     pub fn snub(
         &mut self,
         ratio: Option<Float>,
@@ -1117,10 +1242,10 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{:.2}", ratio).unwrap();
+                write!(&mut params, "{}", format_float(ratio)).unwrap();
             }
             if let Some(height) = height {
-                write!(&mut params, ",{:.2}", height).unwrap();
+                write!(&mut params, ",{}", format_float(height)).unwrap();
             }
             self.name = format!("s{}{}", params, self.name);
         }
@@ -1130,8 +1255,11 @@ impl Polyhedron {
 
     /// Projects all positions on the unit sphere (at `strength` `1.0`).
     ///
-    /// If `strength` is zero this is a no-op and will neither change the
-    /// geometry nor the name. Even if `change_name` is `true`.
+    /// # Arguments
+    ///
+    /// * `strength` – The strength of the spherization. If `strength` is zero
+    ///   this is a no-op and will neither change the geometry nor the name.
+    ///   Even if `change_name` is `true`.
     pub fn spherize(
         &mut self,
         strength: Option<Float>,
@@ -1148,7 +1276,7 @@ impl Polyhedron {
             if change_name {
                 let mut params = String::new();
                 if let Some(strength) = strength {
-                    write!(&mut params, "{:.2}", strength).unwrap();
+                    write!(&mut params, "{}", format_float(strength)).unwrap();
                 }
                 self.name = format!("S{}{}", params, self.name);
             }
@@ -1157,25 +1285,38 @@ impl Polyhedron {
         self
     }
 
+    /// Cuts off the shape at its vertices but leaves a portion of the original
+    /// edges.
+    ///
+    /// # Arguments
+    ///
+    /// * `height` – The height of the newly created centers.
+    /// * `face_arity_mask` - Only faces matching the given arities will be
+    ///   affected.
+    /// * `regular_faces_only` – Only regular faces will be affected.
     pub fn truncate(
         &mut self,
         height: Option<Float>,
-        vertex_valence: Option<&[usize]>,
+        face_arity_mask: Option<&[usize]>,
         regular_faces_only: Option<bool>,
         change_name: bool,
     ) -> &mut Self {
         self.dual(false);
-        self.kis(height, vertex_valence, None, regular_faces_only, false);
+        self.kis(height, face_arity_mask, None, regular_faces_only, false);
         self.dual(false);
 
         if change_name {
             let mut params = String::new();
             if let Some(height) = height {
-                write!(&mut params, "{:.2}", height).unwrap();
+                write!(&mut params, "{}", format_float(height)).unwrap();
             }
-            if let Some(vertex_valence) = vertex_valence {
-                write!(&mut params, ",{}", format_slice(vertex_valence))
-                    .unwrap();
+            if let Some(face_arity_mask) = face_arity_mask {
+                write!(
+                    &mut params,
+                    ",{}",
+                    format_integer_slice(face_arity_mask)
+                )
+                .unwrap();
             } else {
                 write!(&mut params, ",").unwrap();
             }
@@ -1193,6 +1334,13 @@ impl Polyhedron {
         self
     }
 
+    /// Splits each edge into three parts and connexts the new vertices. But
+    /// also splits the newly formed connections and connects those.
+    ///
+    /// # Arguments
+    ///
+    /// * `ratio` – The ratio at which the adjacent edges get split.
+    /// * `height` – The height offset of the newly created vertices.
     pub fn whirl(
         &mut self,
         ratio: Option<Float>,
@@ -1293,10 +1441,10 @@ impl Polyhedron {
         if change_name {
             let mut params = String::new();
             if let Some(ratio) = ratio {
-                write!(&mut params, "{:.2}", ratio).unwrap();
+                write!(&mut params, "{}", format_float(ratio)).unwrap();
             }
             if let Some(height) = height {
-                write!(&mut params, ",{:.2}", height).unwrap();
+                write!(&mut params, ",{}", format_float(height)).unwrap();
             }
             self.name = format!("w{}{}", params, self.name);
         }
@@ -1304,24 +1452,35 @@ impl Polyhedron {
         self
     }
 
+    /// [Bitruncates](https://en.wikipedia.org/wiki/Bitruncation) the shape.
+    ///
+    /// # Arguments
+    ///
+    /// * `height` – The height offset of the newly created vertices.
+    /// * `face_arity_mask` – Only faces with the given arity will be affected.
+    /// * `regular_faces_only` – Only regular faces will be affected.
     pub fn zip(
         &mut self,
         height: Option<Float>,
-        vertex_valence: Option<&[usize]>,
+        face_arity_mask: Option<&[usize]>,
         regular_faces_only: Option<bool>,
         change_name: bool,
     ) -> &mut Self {
         self.dual(false);
-        self.kis(height, vertex_valence, None, regular_faces_only, false);
+        self.kis(height, face_arity_mask, None, regular_faces_only, false);
 
         if change_name {
             let mut params = String::new();
             if let Some(height) = height {
-                write!(&mut params, "{:.2}", height).unwrap();
+                write!(&mut params, "{}", format_float(height)).unwrap();
             }
-            if let Some(vertex_valence) = vertex_valence {
-                write!(&mut params, ",{}", format_slice(vertex_valence))
-                    .unwrap();
+            if let Some(face_arity_mask) = face_arity_mask {
+                write!(
+                    &mut params,
+                    ",{}",
+                    format_integer_slice(face_arity_mask)
+                )
+                .unwrap();
             } else {
                 write!(&mut params, ",").unwrap();
             }
@@ -1335,55 +1494,6 @@ impl Polyhedron {
             params = params.trim_end_matches(',').to_string();
             self.name = format!("z{}{}", params, self.name);
         }
-
-        self
-    }
-
-    #[inline]
-    pub fn triangulate(&mut self, shortest: Option<bool>) -> &mut Self {
-        self.face_index = self
-            .face_index
-            .par_iter()
-            .flat_map(|face| match face.len() {
-                // Bitriangulate quadrilateral faces use shortest diagonal so
-                // triangles are most nearly equilateral.
-                4 => {
-                    let p = index_as_positions(face, &self.positions);
-
-                    if shortest.unwrap_or(true)
-                        == ((*p[0] - *p[2]).mag_sq() < (*p[1] - *p[3]).mag_sq())
-                    {
-                        vec![
-                            vec![face[0], face[1], face[2]],
-                            vec![face[0], face[2], face[3]],
-                        ]
-                    } else {
-                        vec![
-                            vec![face[1], face[2], face[3]],
-                            vec![face[1], face[3], face[0]],
-                        ]
-                    }
-                }
-                5 => vec![
-                    vec![face[0], face[1], face[4]],
-                    vec![face[1], face[2], face[4]],
-                    vec![face[4], face[2], face[3]],
-                ],
-                // FIXME: a nicer way to triangulate n-gons.
-                _ => {
-                    let a = face[0];
-                    let mut bb = face[1];
-                    face.iter()
-                        .skip(2)
-                        .map(|c| {
-                            let b = bb;
-                            bb = *c;
-                            vec![a, b, *c]
-                        })
-                        .collect()
-                }
-            })
-            .collect();
 
         self
     }
@@ -1561,5 +1671,65 @@ impl Polyhedron {
               )
            ; // end openface
            */
+    }
+}
+
+/// # Triangulation
+impl Polyhedron {
+    #[inline]
+    /// Bitriangulates quadrilateral faces.
+    ///
+    /// N-gon trinagulation is naive and may yield inferor results.
+    ///
+    /// # Arguments
+    ///
+    /// * `shortest` - If `true`, use shortest diagonal so triangles are most
+    ///   nearly equilateral. On by default.
+    pub fn triangulate(&mut self, shortest: Option<bool>) -> &mut Self {
+        self.face_index = self
+            .face_index
+            .par_iter()
+            .flat_map(|face| match face.len() {
+                // Bitriangulate quadrilateral faces use shortest diagonal so
+                // triangles are most nearly equilateral.
+                4 => {
+                    let p = index_as_positions(face, &self.positions);
+
+                    if shortest.unwrap_or(true)
+                        == ((*p[0] - *p[2]).mag_sq() < (*p[1] - *p[3]).mag_sq())
+                    {
+                        vec![
+                            vec![face[0], face[1], face[2]],
+                            vec![face[0], face[2], face[3]],
+                        ]
+                    } else {
+                        vec![
+                            vec![face[1], face[2], face[3]],
+                            vec![face[1], face[3], face[0]],
+                        ]
+                    }
+                }
+                5 => vec![
+                    vec![face[0], face[1], face[4]],
+                    vec![face[1], face[2], face[4]],
+                    vec![face[4], face[2], face[3]],
+                ],
+                // FIXME: a nicer way to triangulate n-gons.
+                _ => {
+                    let a = face[0];
+                    let mut bb = face[1];
+                    face.iter()
+                        .skip(2)
+                        .map(|c| {
+                            let b = bb;
+                            bb = *c;
+                            vec![a, b, *c]
+                        })
+                        .collect()
+                }
+            })
+            .collect();
+
+        self
     }
 }

@@ -1,5 +1,4 @@
 use crate::*;
-use std::fmt::Display;
 use uv::DVec3;
 
 // Extend a vector with some element(s)
@@ -16,25 +15,6 @@ macro_rules! extend {
         )*
         tmp
     }}
-}
-
-pub(crate) fn format_slice<T: Display>(slice: &[T]) -> String {
-    if slice.is_empty() {
-        String::new()
-    } else {
-        let mut string = String::with_capacity(slice.len() * 2);
-        if 1 == slice.len() {
-            write!(&mut string, "{}", slice[0]).unwrap();
-        } else {
-            string.push('[');
-            write!(&mut string, "{}", slice[0]).unwrap();
-            for i in slice.get(1..).unwrap() {
-                write!(&mut string, ",{}", i).unwrap();
-            }
-            string.push(']');
-        }
-        string
-    }
 }
 
 #[inline]

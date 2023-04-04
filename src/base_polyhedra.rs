@@ -1,7 +1,9 @@
 use crate::*;
 use num_traits::float::FloatConst;
 
-/// Creation methods.
+/// # Base Shapes
+///
+/// Start shape creation methods.
 impl Polyhedron {
     pub fn tetrahedron() -> Self {
         let c0 = 1.0;
@@ -177,8 +179,8 @@ impl Polyhedron {
 
     /// common code for prism and antiprism
     #[inline]
-    fn protoprism(n: usize, anti: bool) -> Self {
-        let n = if n < 3 { 3 } else { n };
+    fn protoprism(n: Option<usize>, anti: bool) -> Self {
+        let n = n.unwrap_or(3);
 
         // Angles.
         let theta = f32::TAU() / n as f32;
@@ -245,11 +247,11 @@ impl Polyhedron {
         }
     }
 
-    pub fn prism(n: usize) -> Self {
+    pub fn prism(n: Option<usize>) -> Self {
         Self::protoprism(n, false)
     }
 
-    pub fn antiprism(n: usize) -> Self {
+    pub fn antiprism(n: Option<usize>) -> Self {
         Self::protoprism(n, true)
     }
 }
