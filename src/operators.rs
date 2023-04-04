@@ -82,15 +82,23 @@ impl Polyhedron {
     }
 
     /// Adds faces at the center, original vertices, and along the edges.
+    ///
+    /// # Arguments
+    ///
+    /// * `ratio` - The ratio of the new vertices to the original vertices.
+    /// * `height` - The height (depth) of the bevel.
+    /// * `face_arity_mask` - Only faces matching the given arities will be
+    ///   affected.
+    /// * `regular_faces_only` - Only regular faces will be affected.
     pub fn bevel(
         &mut self,
         ratio: Option<Float>,
         height: Option<Float>,
-        vertex_valence: Option<&[usize]>,
+        face_arity_mask: Option<&[usize]>,
         regular_faces_only: Option<bool>,
         change_name: bool,
     ) -> &mut Self {
-        self.truncate(height, vertex_valence, regular_faces_only, false);
+        self.truncate(height, face_arity_mask, regular_faces_only, false);
         self.ambo(ratio, false);
 
         if change_name {
@@ -103,11 +111,11 @@ impl Polyhedron {
             } else {
                 write!(&mut params, ",").unwrap();
             }
-            if let Some(vertex_valence) = vertex_valence {
+            if let Some(face_arity_mask) = face_arity_mask {
                 write!(
                     &mut params,
                     ",{}",
-                    format_integer_slice(vertex_valence)
+                    format_integer_slice(face_arity_mask)
                 )
                 .unwrap();
             } else {
@@ -151,7 +159,7 @@ impl Polyhedron {
         }
     }
 
-    /// Performs Catmull-Clark subdivision.
+    /// Performs [Catmull-Clark subdivision](https://en.wikipedia.org/wiki/Catmull%E2%80%93Clark_subdivision_surface).
     ///
     /// Each face is replaced with *n* quadralaterals based on edge midpositions
     /// vertices and centroid edge midpositions are average of edge endpositions
@@ -321,19 +329,14 @@ impl Polyhedron {
                         if v.0 < v.1 {
                             let a: VertexKey = *v.0;
                             let b: VertexKey = *v.1;
-                            let opposite_face = face_with_edge(&[b, a], &self.face_index);
-
-                            /*once(a)
-                            .chain(once(vertex(&extend![..opposite_face, a], &new_ids).unwrap()))
-                            .chain(once(vertex(&extend![..opposite_face, b], &new_ids).unwrap()))
-                            .chain(once(b))
-                            .chain(once(vertex(&extend![..face, b], &new_ids).unwrap()))
-                            .chain(once(vertex(&extend![..face, a], &new_ids).unwrap()))*/
-
+                            let opposite_face =
+                                face_with_edge(&[b, a], &self.face_index);
                             Some(vec![
                                 a,
-                                vertex(&extend![..opposite_face, a], &new_ids).unwrap(),
-                                vertex(&extend![..opposite_face, b], &new_ids).unwrap(),
+                                vertex(&extend![..opposite_face, a], &new_ids)
+                                    .unwrap(),
+                                vertex(&extend![..opposite_face, b], &new_ids)
+                                    .unwrap(),
                                 b,
                                 vertex(&extend![..face, b], &new_ids).unwrap(),
                                 vertex(&extend![..face, a], &new_ids).unwrap(),
@@ -381,7 +384,7 @@ impl Polyhedron {
     }
 
     /// [Cantellates](https://en.wikipedia.org/wiki/Cantellation_(geometry)).
-    /// I.e. creating a new facet in place of each edge and of each vertex.
+    /// I.e. creates a new facet in place of each edge and of each vertex.
     ///
     /// # Arguments
     ///
@@ -904,7 +907,7 @@ impl Polyhedron {
         self
     }
 
-    /// Like [`kis`] but also splits each edge in the middle.
+    /// Like [`kis`](Polyhedron::kis) but also splits each edge in the middle.
     ///
     /// # Arguments
     ///
@@ -1207,7 +1210,7 @@ impl Polyhedron {
         self
     }
 
-    /// [Reflects](https://en.wikipedia.org/wiki/Reflection_(mathematics) the shape.
+    /// [Reflects](https://en.wikipedia.org/wiki/Reflection_(mathematics)) the shape.
     pub fn reflect(&mut self, change_name: bool) -> &mut Self {
         self.positions = self
             .positions

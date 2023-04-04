@@ -45,7 +45,7 @@
 //! polyhedron-ops = { version = "0.3", features = [ "bevy", "nsi", "obj" ] }
 //! ```
 //!
-//! * `bevy` – A polyhedro can be converted into a [`bevy`](https://bevyengine.org/)
+//! * `bevy` – Adds support for converting a polyhedron into a [`bevy`](https://bevyengine.org/)
 //!   [`Mesh`](https://docs.rs/bevy/latest/bevy/render/mesh/struct.Mesh.html).
 //!   See the `bevy` example.
 //!
@@ -78,13 +78,6 @@ mod text_helpers;
 
 #[cfg(test)]
 mod tests;
-
-pub mod prelude {
-    //! Re-exports commonly used types and traits.
-    //!
-    //! Importing the contents of this module is recommended.
-    pub use crate::*;
-}
 
 static EPSILON: f32 = 0.00000001;
 
