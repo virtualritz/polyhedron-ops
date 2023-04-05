@@ -251,7 +251,7 @@ operation = _{
     | zip
 }
 operation_chain = _{ operation ~ (operation)* }
-conway_notation_string = _{SOI ~ operation_chain ~ base_shape ~ EOI}
+conway_notation_string = _{SOI ~ (operation_chain)? ~ base_shape ~ EOI}
 
 
 //command = { operation ~ (num ~("," ~num)*)* }

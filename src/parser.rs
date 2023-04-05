@@ -132,6 +132,12 @@ impl TryFrom<&str> for Polyhedron {
                 Rule::icosahedron => {
                     poly = Polyhedron::icosahedron();
                 }
+                Rule::prism => {
+                    poly = Polyhedron::prism(to_number(token).0);
+                }
+                Rule::antiprism => {
+                    poly = Polyhedron::antiprism(to_number(token).0);
+                }
                 Rule::ambo => {
                     poly.ambo(to_number(token).0, true);
                 }
@@ -330,6 +336,7 @@ impl TryFrom<&str> for Polyhedron {
                 }
                 _ => (),
             }
+            poly.normalize();
         });
 
         Ok(poly)
