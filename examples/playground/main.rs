@@ -7,7 +7,7 @@ use kiss3d::{
     window::Window,
 };
 use na::{Point3, Vector3};
-use polyhedron_ops::prelude::*;
+use polyhedron_ops::*;
 use rayon::prelude::*;
 use std::{cell::RefCell, env, error::Error, io, io::Write, rc::Rc};
 

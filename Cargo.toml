@@ -58,7 +58,6 @@ required-features = ["obj"]
 [[example]]
 name = "bevy"
 required-features = ["bevy"]
-
 #[[example]]
 #name = "bevy-playground"
 #required-features = ["bevy"]
