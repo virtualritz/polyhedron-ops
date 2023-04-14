@@ -1,6 +1,6 @@
 [package]
 name = "polyhedron-ops"
-version = "0.2.6"
+version = "0.2.7"
 authors = ["Moritz Moeller <virtualritz@gmail.com>"]
 edition = "2021"
 keywords = ["3d", "creative", "geometry", "graphics", "rendering"]
@@ -24,7 +24,7 @@ bevy = { version = "0.10", default-features = false, features = ["bevy_render"],
 bytemuck = "1.13.1"
 itertools = "0.10.5"
 # Add support to render polyhedra with NSI.
-nsi = { path = "../nsi-old", features = ["toolbelt", "download_lib3delight"], optional = true }
+nsi = { version = "0.7", path = "../nsi-old", features = ["toolbelt", "download_lib3delight"], optional = true }
 num-traits = "0.2.15"
 pest = { version = "2.5.7", features = ["thiserror", "pretty-print"], optional = true }
 pest_derive = { version = "2.5.7", optional = true }
@@ -48,7 +48,6 @@ opt-level = 3
 codegen-units = 1
 
 [profile.dev]
-#split-debuginfo = "unpacked"
 opt-level = 3
 
 [[example]]
@@ -58,9 +57,6 @@ required-features = ["obj"]
 [[example]]
 name = "bevy"
 required-features = ["bevy"]
-#[[example]]
-#name = "bevy-playground"
-#required-features = ["bevy"]
 
 [package.metadata.docs.rs]
 features = ["nsi", "obj", "parser"]
