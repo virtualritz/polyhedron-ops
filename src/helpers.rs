@@ -416,23 +416,23 @@ pub(crate) fn _are_collinear(v0: &Point, v1: &Point, v2: &Point) -> bool {
 }
 
 #[inline]
-pub(crate) fn tangent(v0: &Vector, v1: &Vector) -> Vector {
+pub(crate) fn _tangent(v0: &Vector, v1: &Vector) -> Vector {
     let distance = *v1 - *v0;
     *v0 - *v1 * (distance * *v0) / distance.mag_sq()
 }
 
 #[inline]
-pub(crate) fn edge_distance(v1: &Vector, v2: &Vector) -> Float {
-    tangent(v1, v2).mag()
+pub(crate) fn _edge_distance(v1: &Vector, v2: &Vector) -> Float {
+    _tangent(v1, v2).mag()
 }
 
 #[inline]
-pub(crate) fn average_edge_distance(positions: &PointsRefSlice) -> Float {
+pub(crate) fn _average_edge_distance(positions: &PointsRefSlice) -> Float {
     positions
         .iter()
         .circular_tuple_windows::<(_, _)>()
         .fold(0.0, |sum, edge_point| {
-            sum + edge_distance(edge_point.0, edge_point.1)
+            sum + _edge_distance(edge_point.0, edge_point.1)
         })
         / positions.len() as Float
 }
@@ -475,7 +475,7 @@ pub(crate) fn average_normal_ref(positions: &PointsRefSlice) -> Option<Normal> {
 }
 
 #[inline]
-pub(crate) fn angle_between(
+pub(crate) fn _angle_between(
     u: &Vector,
     v: &Vector,
     normal: Option<&Vector>,
@@ -499,7 +499,7 @@ pub(crate) fn angle_between(
 }
 
 #[inline]
-pub(crate) fn minimal_edge_length(
+pub(crate) fn _minimal_edge_length(
     face: &FaceSlice,
     positions: &PointsSlice,
 ) -> Float {
@@ -726,7 +726,7 @@ pub(crate) fn reciprocate_face_centers(
 }
 
 #[inline]
-pub(crate) fn reciprocate_faces(
+pub(crate) fn _reciprocate_faces(
     face_index: &FacesSlice,
     positions: &PointsSlice,
 ) -> Points {
@@ -737,7 +737,7 @@ pub(crate) fn reciprocate_faces(
             let centroid = centroid_ref(&face_positions);
             let normal = average_normal_ref(&face_positions).unwrap();
             let c_dot_n = centroid.dot(normal);
-            let edge_distance = average_edge_distance(&face_positions);
+            let edge_distance = _average_edge_distance(&face_positions);
             reciprocal(&(normal * c_dot_n)) * (1.0 + edge_distance) * 0.5
         })
         .collect()

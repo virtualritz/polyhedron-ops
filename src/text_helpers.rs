@@ -12,9 +12,16 @@ where
     if decimal_part.abs() < T::epsilon() {
         format!("{}", int_part.to_i64().unwrap())
     } else {
-        let decimal_digits = (-x.log10().floor()).to_usize().unwrap();
+        let decimal_digits = (-x.abs().log10().floor()).to_usize().unwrap();
         format!("{:.*}", decimal_digits, x)
     }
+}
+
+#[test]
+fn test_format_float() {
+    assert_eq!(format_float(1.0), "1");
+    assert_eq!(format_float(-0.2), "-0.2");
+    assert_eq!(format_float(0.30), "0.3");
 }
 
 pub(crate) fn _format_float_slice<T>(slice: &[T]) -> String

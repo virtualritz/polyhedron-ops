@@ -9,16 +9,15 @@ use kiss3d::{
 use na::{Point3, Vector3};
 use polyhedron_ops::*;
 use rayon::prelude::*;
-use std::{cell::RefCell, env, error::Error, io, io::Write, rc::Rc};
+use std::{
+    cell::RefCell, env, error::Error, io, io::Write, path::Path, rc::Rc,
+};
 
 #[cfg(feature = "nsi")]
 mod nsi_render;
 
 #[cfg(feature = "nsi")]
 use slice_as_array::*;
-
-#[cfg(feature = "nsi")]
-use std::path::Path;
 
 #[cfg(feature = "nsi")]
 use kiss3d::camera::Camera;

@@ -11,7 +11,7 @@ fn tetrahedron_to_terahedron() {
 
     #[cfg(feature = "obj")]
     tetrahedron
-        .write_to_obj(&std::path::PathBuf::from("."), false)
+        .write_obj(&std::path::PathBuf::from("."), false)
         .unwrap();
 }
 
@@ -21,7 +21,7 @@ fn cube_to_octahedron() {
 
     cube.dual(false);
     #[cfg(feature = "obj")]
-    cube.write_to_obj(&std::path::PathBuf::from("."), false)
+    cube.write_obj(&std::path::PathBuf::from("."), false)
         .unwrap();
 }
 
@@ -31,7 +31,7 @@ fn triangulate_cube() {
 
     cube.triangulate(Some(true));
     #[cfg(feature = "obj")]
-    cube.write_to_obj(&std::path::PathBuf::from("."), false)
+    cube.write_obj(&std::path::PathBuf::from("."), false)
         .unwrap();
 }
 
@@ -42,7 +42,7 @@ fn make_prisms() {
 
         #[cfg(feature = "obj")]
         prism
-            .write_to_obj(&std::path::PathBuf::from("."), false)
+            .write_obj(&std::path::PathBuf::from("."), false)
             .unwrap();
 
         let f = prism.faces().len();
@@ -62,7 +62,7 @@ fn make_antiprisms() {
 
         #[cfg(feature = "obj")]
         antiprism
-            .write_to_obj(&std::path::PathBuf::from("."), false)
+            .write_obj(&std::path::PathBuf::from("."), false)
             .unwrap();
 
         let f = antiprism.faces().len();

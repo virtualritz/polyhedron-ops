@@ -24,7 +24,7 @@ bevy = { version = "0.10", default-features = false, features = ["bevy_render"],
 bytemuck = "1.13.1"
 itertools = "0.10.5"
 # Add support to render polyhedra with NSI.
-nsi = { version = "0.6", features = ["toolbelt"], optional = true }
+nsi = { path = "../nsi-old", features = ["toolbelt", "download_lib3delight"], optional = true }
 num-traits = "0.2.15"
 pest = { version = "2.5.7", features = ["thiserror", "pretty-print"], optional = true }
 pest_derive = { version = "2.5.7", optional = true }

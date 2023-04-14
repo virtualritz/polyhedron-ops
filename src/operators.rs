@@ -145,9 +145,9 @@ impl Polyhedron {
         for _ in 0..iterations.unwrap_or(200) {
             // Reciprocate faces.
             dual.positions =
-                reciprocate_faces(&self.face_index, &self.positions);
+                _reciprocate_faces(&self.face_index, &self.positions);
             self.positions =
-                reciprocate_faces(&dual.face_index, &dual.positions);
+                _reciprocate_faces(&dual.face_index, &dual.positions);
         }
 
         if change_name {
@@ -1552,7 +1552,7 @@ impl Polyhedron {
             // Filter out faces that have an unwanted arity or are too small.
             .filter(|face| {
                 face_arity_matches(face, face_arity)
-                    && minimal_edge_length(face, &self.positions)
+                    && _minimal_edge_length(face, &self.positions)
                         > min_edge_length.unwrap_or(0.01)
             })
             .flat_map(|face| {
@@ -1570,7 +1570,7 @@ impl Polyhedron {
                         let p0 =
                             face_positions[(f.0 + face.len() - 1) % face.len()];
 
-                        let sa = angle_between(&(*p0 - *p), &(*p1 - *p), None);
+                        let sa = _angle_between(&(*p0 - *p), &(*p1 - *p), None);
                         let bv = 0.5
                             * ((*p1 - *p).normalized()
                                 + (*p0 - *p).normalized());

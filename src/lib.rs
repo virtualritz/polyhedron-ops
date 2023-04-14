@@ -28,7 +28,7 @@
 //! // Export as ./polyhedron-gapcD.obj
 //! # #[cfg(feature = "obj")]
 //! # {
-//! polyhedron.write_to_obj(&Path::new("."), false);
+//! polyhedron.write_obj(&Path::new("."), false);
 //! # }
 //! ```
 //! The above code starts from a [dodecahedron](https://en.wikipedia.org/wiki/Dodecahedron)

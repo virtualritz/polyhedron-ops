@@ -44,20 +44,25 @@ impl TryFrom<&str> for Polyhedron {
     /// * `uf_` – unsigned float
     /// * `i_` – integer
     /// * `ui_` – unsigned integer
-    /// * `[ui_, ...]` – array of unsigned integers or single unsigned integer
+    /// * `[ui_, …]` – array of unsigned integers or single unsigned integer
     ///
     /// ## Platonic Solids
     ///
-    /// * `T` – Tetrahedron
-    /// * `C` – Hexahedron (cube)
-    /// * `O` – Octahedron
-    /// * `D` – Dodecahedron
-    /// * `I` – Icosahedron
+    /// * `T` – tetrahedron
+    /// * `C` – hexahedron (cube)
+    /// * `O` – octahedron
+    /// * `D` – dodecahedron
+    /// * `I` – icosahedron
+    ///
+    /// ## Prisms & Antiprisms
+    ///
+    /// * `P` *`ui_number`* – prism with resp. number of sides
+    /// * `A` *`ui_number`* – antiprism with resp. number of sides
     ///
     /// ## Operators
     ///
     /// * `a` *`uf_ratio`* – ambo
-    /// * `b` *`f_ratio`*, *`f_height`*, *`[ui_vertex_valence_mask, ...]`*,
+    /// * `b` *`f_ratio`*, *`f_height`*, *`[ui_vertex_valence_mask, …]`*,
     ///   *`b_regular_faces_only`* – bevel (equiv. to `ta`)
     /// * `c` *`uf_ratio`* – chamfer
     /// * `d` – dual
@@ -66,13 +71,13 @@ impl TryFrom<&str> for Polyhedron {
     /// * `i` *`f_offset`* – inset/loft (equiv. to `x,N`)
     /// * `j` *`uf_ratio`* – join (equiv. to `dad`)
     /// * `K` *`ui_iterations`* – planarize (quick & dirty canonicalization)
-    /// * `k` *`f_height`*, *`[ui_face_arity_mask, ...]`*,
-    ///   *`ui_face_index_mask`*, *`b_regular_faces_only`* – kis
-    /// * `M` *`uf_ratio`*, *`f_height`*, *`[ui_vertex_valence_mask, ...]`*,
+    /// * `k` *`f_height`*, *`[ui_face_arity_mask, …]`*, *`[ui_face_index_mask,
+    ///   ]`*, *`b_regular_faces_only`* – kis
+    /// * `M` *`uf_ratio`*, *`f_height`*, *`[ui_vertex_valence_mask, …]`*,
     ///   *`b_regular_faces_only`* – medial (equiv. to `dta`)
-    /// * `m` *`uf_ratio`*, *`f_height`*, *`[ui_vertex_valence_mask, ...]`*,
+    /// * `m` *`uf_ratio`*, *`f_height`*, *`[ui_vertex_valence_mask, …]`*,
     ///   *`b_regular_faces_only`* – meta (equiv. to `k,,3j`)
-    /// * `n` *`f_height`*, *`[ui_vertex_valence_mask, ...]`*,
+    /// * `n` *`f_height`*, *`[ui_vertex_valence_mask, …]`*,
     ///   *`b_regular_faces_only`* – needle (equiv. to `dt`)
     /// * `o` *`uf_ratio`* – ortho (equiv. to `jj`)
     /// * `p` *`uf_ratio`* – propellor
@@ -80,13 +85,12 @@ impl TryFrom<&str> for Polyhedron {
     /// * `r` – reflect
     /// * `S` *`uf_strength`* – spherize
     /// * `s` *`uf_ratio`*, *`f_height`* – snub (equiv. to `dgd`)
-    /// * `t` *`f_height`*, *`[ui_vertex_valence_mask, ...]`*,
+    /// * `t` *`f_height`*, *`[ui_vertex_valence_mask, …]`*,
     ///   *`b_regular_faces_only`* – truncate (equiv. to `dkd`)
     /// * `v` – subdivide (Catmull-Clark)
     /// * `w` *`uf_ratio`*, *`f_height`* – whirl
-    /// * `x` *`f_height`*, *`f_offset`*, *`[ui_face_arity_mask, ...]`* –
-    ///   extrude
-    /// * `z` *`f_height`*, *`[ui_vertex_valence_mask, ...]`*,
+    /// * `x` *`f_height`*, *`f_offset`*, *`[ui_face_arity_mask, …]`* – extrude
+    /// * `z` *`f_height`*, *`[ui_vertex_valence_mask, …]`*,
     ///   *`b_regular_faces_only`* – zip (equiv. to `dk`)
     ///
     /// # Examples
@@ -343,9 +347,9 @@ impl TryFrom<&str> for Polyhedron {
     }
 }
 
-fn is_empty_or_comma<'a>(
-    mut tokens: Pairs<'a, Rule>,
-) -> (bool, Pairs<'a, Rule>) {
+fn is_empty_or_comma(
+    mut tokens: Pairs<'_, Rule>,
+) -> (bool, Pairs<'_, Rule>) {
     // No more tokens? Return None.
     match tokens.clone().next() {
         Some(token) => {
@@ -360,7 +364,7 @@ fn is_empty_or_comma<'a>(
     }
 }
 
-fn to_bool<'a>(tokens: Pairs<'a, Rule>) -> (Option<bool>, Pairs<'a, Rule>) {
+fn to_bool(tokens: Pairs<'_, Rule>) -> (Option<bool>, Pairs<'_, Rule>) {
     let (exit, mut tokens) = is_empty_or_comma(tokens);
 
     if exit {
@@ -376,7 +380,7 @@ fn to_bool<'a>(tokens: Pairs<'a, Rule>) -> (Option<bool>, Pairs<'a, Rule>) {
     (result, tokens)
 }
 
-fn to_number<'a, T>(tokens: Pairs<'a, Rule>) -> (Option<T>, Pairs<'a, Rule>)
+fn to_number<T>(tokens: Pairs<'_, Rule>) -> (Option<T>, Pairs<'_, Rule>)
 where
     T: FromStr,
     <T as FromStr>::Err: Debug,
@@ -396,7 +400,7 @@ where
     (Some(value), tokens)
 }
 
-fn to_vec<'a, T>(tokens: Pairs<'a, Rule>) -> (Vec<T>, Pairs<'a, Rule>)
+fn to_vec<T>(tokens: Pairs<'_, Rule>) -> (Vec<T>, Pairs<'_, Rule>)
 where
     T: FromStr,
     <T as FromStr>::Err: Debug,

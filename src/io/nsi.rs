@@ -26,7 +26,7 @@ impl Polyhedron {
     ) -> String {
         let handle = handle.unwrap_or(self.name.as_str()).to_string();
         // Create a new mesh node.
-        ctx.create(handle.clone(), nsi::NodeType::Mesh, &[]);
+        ctx.create(&handle, nsi::node::MESH, None);
 
         // Flatten point vector.
         // Fast, unsafe version. May exploce on some platforms.
@@ -47,7 +47,7 @@ impl Polyhedron {
         */
 
         ctx.set_attribute(
-            handle.clone(),
+            &handle,
             &[
                 // Positions.
                 nsi::points!("P", positions),
@@ -89,7 +89,7 @@ impl Polyhedron {
                 .flat_map(|edge| edge.to_vec())
                 .collect::<Vec<_>>();
             ctx.set_attribute(
-                handle.clone(),
+                &handle,
                 &[
                     nsi::integers!(
                         "subdivision.creasevertices",
@@ -113,7 +113,7 @@ impl Polyhedron {
                         .map(|(i, _)| i as u32)
                         .collect::<Vec<_>>();
                     ctx.set_attribute(
-                        handle.clone(),
+                        &handle,
                         &[
                             nsi::integers!(
                                 "subdivision.cornervertices",
@@ -130,7 +130,7 @@ impl Polyhedron {
 
             // Have the renderer semi create sharp corners automagically.
             None => ctx.set_attribute(
-                handle.clone(),
+                &handle,
                 &[
                     // Disabling below flag activates the specific
                     // deRose extensions for the C-C creasing
