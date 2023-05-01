@@ -29,7 +29,7 @@ num-traits = "0.2.15"
 pest = { version = "2.5.7", features = ["thiserror", "pretty-print"], optional = true }
 pest_derive = { version = "2.5.7", optional = true }
 rayon = "1.7.0"
-tobj = { version = "3.2.5", optional = true }
+tobj = { version = "4.0.0", optional = true }
 ultraviolet = { version = "0.9.1", features = ["f64"] }
 
 [dev-dependencies]
