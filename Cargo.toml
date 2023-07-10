@@ -20,7 +20,7 @@ parser = ["pest", "pest_derive"]
 
 [dependencies]
 # Add support to convert a Polyhedron into a bevy Mesh.
-bevy = { version = "0.10", default-features = false, features = ["bevy_render"], optional = true }
+bevy = { version = "0.11", default-features = false, features = ["bevy_render"], optional = true }
 bytemuck = "1.13.1"
 itertools = "0.10.5"
 # Add support to render polyhedra with NSI.
@@ -33,7 +33,7 @@ tobj = { version = "3.2.5", optional = true }
 ultraviolet = { version = "0.9.1", features = ["f64"] }
 
 [dev-dependencies]
-bevy = { version = "0.10", default-features = false, features = ["bevy_asset", "bevy_core_pipeline", "bevy_pbr", "bevy_winit"] }
+bevy = { version = "0.11", default-features = false, features = ["bevy_asset", "bevy_core_pipeline", "bevy_pbr", "bevy_winit"] }
 dirs = "5.0.0"
 kiss3d = "0.35.0"
 slice_as_array = "1.1.0"
