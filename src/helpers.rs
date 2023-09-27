@@ -643,10 +643,7 @@ pub(crate) fn vertex_edge(
     key: &Edge,
     entries: &[(&Edge, VertexKey)],
 ) -> Option<VertexKey> {
-    entries
-        .par_iter()
-        .find_first(|f| key == f.0)
-        .map(|entry| entry.1)
+    entries.par_iter().find_first(|f| key == f.0).map(|entry| entry.1)
 }
 
 #[inline]
@@ -678,24 +675,6 @@ pub(crate) fn face_arity_matches(
         || true,
         |face_arity_mask| face_arity_mask.contains(&face.len()),
     )
-}
-
-pub(crate) fn is_face_selected(
-    face: &Face,
-    index: usize,
-    positions: &Points,
-    face_arity_mask: Option<&[usize]>,
-    face_index_mask: Option<&[FaceKey]>,
-    regular_faces_only: Option<bool>,
-) -> bool {
-    face_arity_mask.map_or_else(
-        || true,
-        |face_arity_mask| face_arity_mask.contains(&face.len()),
-    ) && face_index_mask.map_or_else(
-        || true,
-        |face_index_mask| face_index_mask.contains(&(index as _)),
-    ) && (!regular_faces_only.unwrap_or(false)
-        || ((face_irregularity(face, positions) - 1.0).abs() < 0.1))
 }
 
 #[inline]

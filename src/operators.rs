@@ -1,4 +1,4 @@
-use crate::{helpers::*, text_helpers::*, *};
+use crate::{helpers::*, selection::*, text_helpers::*, *};
 use std::fmt::Write;
 
 /// # Operators
@@ -39,11 +39,10 @@ impl Polyhedron {
             .par_iter()
             .map(|face| {
                 let edges = distinct_face_edges(face);
-                let result = edges
+                edges
                     .iter()
                     .filter_map(|edge| vertex_edge(edge, &new_ids))
-                    .collect::<Vec<_>>();
-                result
+                    .collect::<Vec<_>>()
             })
             .chain(
                 self.positions
@@ -529,8 +528,6 @@ impl Polyhedron {
             Some(r) => r.clamp(0.0, 1.0),
             None => 1. / 3.,
         };
-        let height_ = height.unwrap_or(0.);
-
         let edges = self.to_edges();
         let reversed_edges: Edges =
             edges.par_iter().map(|edge| [edge[1], edge[0]]).collect();
@@ -545,7 +542,8 @@ impl Polyhedron {
                 (
                     face.as_slice(),
                     centroid_ref(&fp).normalized()
-                        + average_normal_ref(&fp).unwrap() * height_,
+                        + average_normal_ref(&fp).unwrap()
+                            * height.unwrap_or(0.),
                 )
             })
             .chain(edges.par_iter().enumerate().flat_map(|edge| {
@@ -1017,14 +1015,14 @@ impl Polyhedron {
         ratio: Option<Float>,
         change_name: bool,
     ) -> &mut Self {
-        let ratio_ = match ratio {
+        let ratio_clamped = match ratio {
             Some(r) => r.clamp(0.0, 1.0),
             None => 1. / 3.,
         };
 
         let edges = self.to_edges();
         let reversed_edges: Edges =
-            edges.iter().map(|edge| [edge[1], edge[0]]).collect();
+            edges.par_iter().map(|edge| [edge[1], edge[0]]).collect();
 
         let new_positions = edges
             .iter()
@@ -1035,13 +1033,13 @@ impl Polyhedron {
                     (
                         edge,
                         *edge_positions[0]
-                            + ratio_
+                            + ratio_clamped
                                 * (*edge_positions[1] - *edge_positions[0]),
                     ),
                     (
                         reversed_edge,
                         *edge_positions[1]
-                            + ratio_
+                            + ratio_clamped
                                 * (*edge_positions[0] - *edge_positions[1]),
                     ),
                 ]
@@ -1057,14 +1055,11 @@ impl Polyhedron {
             .face_index
             .par_iter()
             .map(|face| {
+                // Rotated face.
                 face.iter()
                     .circular_tuple_windows::<(_, _)>()
                     .map(|f| vertex_edge(&[*f.0, *f.1], &new_ids).unwrap())
                     .collect()
-
-                /*(0..face.len())
-                .map(|j| vertex_edge(&[face[j], face[(j + 1) % face.len()]], &new_ids).unwrap())
-                .collect()*/
             })
             .chain(self.face_index.par_iter().flat_map(|face| {
                 (0..face.len())
@@ -1072,11 +1067,10 @@ impl Polyhedron {
                         let a = face[j];
                         let b = face[(j + 1) % face.len()];
                         let z = face[(j + face.len() - 1) % face.len()];
-                        let eab = vertex_edge(&[a, b], &new_ids).unwrap();
-                        let eba = vertex_edge(&[b, a], &new_ids).unwrap();
-                        let eza = vertex_edge(&[z, a], &new_ids).unwrap();
-                        vec![eba, eab, eza, a]
-                        //vec![eza, eab, eba, a]
+                        let edge_ab = vertex_edge(&[a, b], &new_ids).unwrap();
+                        let edge_ba = vertex_edge(&[b, a], &new_ids).unwrap();
+                        let edge_za = vertex_edge(&[z, a], &new_ids).unwrap();
+                        vec![a, edge_ba, edge_ab, edge_za]
                     })
                     .collect::<Faces>()
             }))

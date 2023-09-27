@@ -347,9 +347,7 @@ impl TryFrom<&str> for Polyhedron {
     }
 }
 
-fn is_empty_or_comma(
-    mut tokens: Pairs<'_, Rule>,
-) -> (bool, Pairs<'_, Rule>) {
+fn is_empty_or_comma(mut tokens: Pairs<'_, Rule>) -> (bool, Pairs<'_, Rule>) {
     // No more tokens? Return None.
     match tokens.clone().next() {
         Some(token) => {

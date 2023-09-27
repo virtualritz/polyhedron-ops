@@ -268,6 +268,48 @@ impl Polyhedron {
         edges.into_iter().unique().collect()
     }
 
+    /// Compute the edges of the polyhedron.
+    #[inline]
+    pub fn to_edges_filtered(
+        &self,
+        face_arity_mask: Option<&[usize]>,
+        face_index_mask: Option<&[FaceKey]>,
+        regular_faces_only: Option<bool>,
+    ) -> Edges {
+        use crate::selection::is_face_selected;
+
+        let edges = self
+            .face_index
+            .iter()
+            .enumerate()
+            .filter_map(|(index, face)| {
+                if is_face_selected(
+                    face,
+                    index,
+                    &self.positions,
+                    face_arity_mask,
+                    face_index_mask,
+                    regular_faces_only,
+                ) {
+                    Some(
+                        face.iter()
+                            // Grab two index entries.
+                            .circular_tuple_windows::<(_, _)>()
+                            .filter(|t| t.0 < t.1)
+                            // Create an edge from them.
+                            .map(|t| [*t.0, *t.1])
+                            .collect::<Vec<_>>(),
+                    )
+                } else {
+                    None
+                }
+            })
+            .flatten()
+            .collect::<Vec<_>>();
+
+        edges.into_iter().unique().collect()
+    }
+
     /// Turns the builder into a final object.
     pub fn finalize(&self) -> Self {
         self.clone()
