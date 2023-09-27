@@ -1,7 +1,7 @@
 pub use crate::*;
+use nsi::*;
 use std::{f64::consts::TAU, path::Path};
 use ultraviolet as uv;
-use nsi::*;
 
 const FPS: u32 = 60;
 const TURNTABLE_SECONDS: u32 = 1;
@@ -149,7 +149,13 @@ fn nsi_environment(c: &Context) {
     c.connect("environment", None, "env_xform", "objects", None);
 
     c.create("env_attrib", ATTRIBUTES, None);
-    c.connect("env_attrib", None, "environment", "geometryattributes", None);
+    c.connect(
+        "env_attrib",
+        None,
+        "environment",
+        "geometryattributes",
+        None,
+    );
 
     c.set_attribute("env_attrib", &[integer!("visibility.camera", 0)]);
 
@@ -180,13 +186,7 @@ fn nsi_material(c: &Context, name: &str) {
     // Particle shader.
     let shader_name = format!("{}_shader", name);
     c.create(&shader_name, SHADER, None);
-    c.connect(
-        &shader_name,
-        None,
-        &attribute_name,
-        "surfaceshader",
-        None,
-    );
+    c.connect(&shader_name, None, &attribute_name, "surfaceshader", None);
 
     /*
     c.set_attribute(
@@ -255,9 +255,7 @@ pub fn nsi_render(
     let ctx = {
         match render_type {
             RenderType::Normal => Context::new(None),
-            RenderType::Cloud => {
-                Context::new(Some(&[integer!("cloud", 1)]))
-            }
+            RenderType::Cloud => Context::new(Some(&[integer!("cloud", 1)])),
             RenderType::Dump => Context::new(Some(&[
                 string!("type", "apistream"),
                 string!("streamfilename", destination.to_str().unwrap()),
@@ -306,10 +304,7 @@ pub fn nsi_render(
         for frame in 0..TURNTABLE_SECONDS * FPS {
             ctx.set_attribute(
                 "driver",
-                &[string!(
-                    "filename",
-                    format!("{}_{:02}.exr", name, frame)
-                )],
+                &[string!("filename", format!("{}_{:02}.exr", name, frame))],
             );
 
             ctx.set_attribute_at_time(
@@ -344,20 +339,20 @@ pub fn nsi_render(
                 )],
             );
 
-            ctx.render_control(&[string!("action", "synchronize")]);
-            ctx.render_control(&[string!("action", "start")]);
-            ctx.render_control(&[string!("action", "wait")]);
+            ctx.render_control(nsi::Action::Synchronize, None);
+            ctx.render_control(nsi::Action::Start, None);
+            ctx.render_control(nsi::Action::Wait, None);
         }
     } else {
         ctx.connect(&name, None, ROOT, "objects", None);
 
         //if RenderType::Dump != render_type {
-        ctx.render_control(&[string!("action", "start")]);
+        ctx.render_control(nsi::Action::Start, None);
         //}
     }
 
     //if RenderType::Dump != render_type {
-    ctx.render_control(&[string!("action", "wait")]);
+    ctx.render_control(nsi::Action::Wait, None);
     //}
 
     destination.to_string_lossy().to_string()

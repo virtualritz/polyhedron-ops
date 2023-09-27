@@ -17,7 +17,7 @@ use std::{
 mod nsi_render;
 
 #[cfg(feature = "nsi")]
-use slice_as_array::*;
+use slice_of_array::prelude::*;
 
 #[cfg(feature = "nsi")]
 use kiss3d::camera::Camera;
@@ -44,7 +44,7 @@ fn into_mesh(polyhedron: Polyhedron) -> Mesh {
         face_index
             .iter()
             .tuples::<(_, _, _)>()
-            .map(|i| na::Point3::<u16>::new(*i.0 as _, *i.1 as _, *i.2 as _))
+            .map(|i| na::Point3::<u32>::new(*i.0, *i.1, *i.2))
             .collect::<Vec<_>>(),
         Some(
             normals
@@ -105,7 +105,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         [C]ube (hexahedron)\n\
         [O]ctahedron\n\
         [D]dodecahedron\n\
-        [I]cosehedron\n\
+        [I]cosehedron              [G]eometry (if loaded)\n\
         ______________________________________________________ Operations ______\n\
         [a]mbo ↑↓\n\
         [b]evel ↑↓\n\
@@ -247,12 +247,20 @@ fn main() -> Result<(), Box<dyn Error>> {
                         last_op = 'e';
                     }
                     Key::G => {
-                        alter_last_op = false;
-                        last_poly = poly.clone();
-                        last_op_value = 0.;
-                        poly.gyro(None, None, true);
-                        poly.normalize();
-                        last_op = 'g';
+                        if modifiers.intersects(Modifiers::Shift) {
+                            poly = Polyhedron::read_obj(
+                                &Path::new(&args[1]),
+                                true,
+                            )?;
+                            poly.normalize();
+                        } else {
+                            alter_last_op = false;
+                            last_poly = poly.clone();
+                            last_op_value = 0.;
+                            poly.gyro(None, None, true);
+                            poly.normalize();
+                            last_op = 'g';
+                        }
                     }
                     Key::I => {
                         alter_last_op = false;
@@ -438,11 +446,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                                     nsi_render::nsi_render(
                                         &path,
                                         &poly,
-                                        slice_as_array!(
-                                            xform.as_slice(),
-                                            [f64; 16]
-                                        )
-                                        .unwrap(),
+                                        xform.as_array(),
                                         render_quality,
                                         RenderType::Dump,
                                         turntable,
@@ -486,8 +490,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         nsi_render::nsi_render(
                             Path::new(""),
                             &poly,
-                            slice_as_array!(xform.as_slice(), [f64; 16])
-                                .unwrap(),
+                            xform.as_array(),
                             render_quality,
                             if modifiers.intersects(Modifiers::Shift) {
                                 RenderType::Cloud

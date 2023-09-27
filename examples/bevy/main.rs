@@ -1,4 +1,15 @@
-use bevy::prelude::*;
+use bevy::{
+    app::{App, Startup},
+    asset::Assets,
+    core_pipeline::core_3d::Camera3dBundle,
+    ecs::system::{Commands, ResMut},
+    math::Vec3,
+    pbr::{DirectionalLightBundle, PbrBundle, StandardMaterial},
+    render::{color::Color, mesh::Mesh, view::Msaa},
+    transform::components::Transform,
+    DefaultPlugins,
+};
+
 use polyhedron_ops as p_ops;
 use smooth_bevy_cameras::{
     controllers::orbit::{
@@ -11,10 +22,9 @@ fn main() {
     App::new()
         .insert_resource(Msaa::Sample4)
         .add_plugins(DefaultPlugins)
-        .add_plugin(LookTransformPlugin)
-        .add_plugin(OrbitCameraPlugin::default())
-        .add_startup_system(setup)
-        .add_system(bevy::window::close_on_esc)
+        .add_plugins(LookTransformPlugin)
+        .add_plugins(OrbitCameraPlugin::default())
+        .add_systems(Startup, (setup, bevy::window::close_on_esc))
         .run();
 }
 
