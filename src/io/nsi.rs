@@ -38,14 +38,6 @@ impl Polyhedron {
             )
         };
 
-        /*
-        let positions: Vec<f32> = self
-            .positions
-            .into_par_iter()
-            .flat_map(|p3| once(p3.x as _).chain(once(p3.y as _)).chain(once(p3.z as _)))
-            .collect();
-        */
-
         ctx.set_attribute(
             &handle,
             &[

@@ -144,3 +144,7 @@ once your mesh hits this limit.
 
 Export & render will always yield a correct OBJ though. Which you can
 view in Wings, Blender or another DCC app.
+
+## Contributors
+
+[donbright](https://github.com/donbright)
