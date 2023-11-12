@@ -37,7 +37,7 @@ fn nsi_globals_and_camera(
         &[
             float!("fov", 35.),
             doubles!("shutterrange", &[0.0, 1.0]), //.array_len(2),
-            doubles!("shutteropening", &[0.25, 0.75]), //.array_len(2)
+            doubles!("shutteropening", &[0.5, 0.5]), //.array_len(2)
         ],
     );
     c.connect("camera", None, "camera_xform", "objects", None);
