@@ -9,7 +9,7 @@ and others.
 
 *Some brutalist polyhedron; rendered with
 [3Delight|ɴsɪ](https://www.3delight.com) and post processed in
-[Darktable](https://www.darktable.org/).*
+[Ansel](https://ansel.photos/).*
 
 This is an experiment to improve my understanding of iterators in Rust.
 It is based on [Kit Wallace](http://kitwallace.tumblr.com/tagged/conway)’s
