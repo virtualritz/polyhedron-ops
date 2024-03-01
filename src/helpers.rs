@@ -643,7 +643,10 @@ pub(crate) fn vertex_edge(
     key: &Edge,
     entries: &[(&Edge, VertexKey)],
 ) -> Option<VertexKey> {
-    entries.par_iter().find_first(|f| key == f.0).map(|entry| entry.1)
+    entries
+        .par_iter()
+        .find_first(|f| key == f.0)
+        .map(|entry| entry.1)
 }
 
 #[inline]

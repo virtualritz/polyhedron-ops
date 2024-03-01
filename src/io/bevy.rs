@@ -1,6 +1,7 @@
 use crate::*;
-use bevy::render::mesh::{
-    Indices, Mesh, PrimitiveTopology, VertexAttributeValues,
+use bevy::render::{
+    mesh::{Indices, Mesh, PrimitiveTopology, VertexAttributeValues},
+    render_asset::RenderAssetUsages,
 };
 
 /// Conversion to a bevy [`Mesh`].
@@ -10,8 +11,12 @@ impl From<Polyhedron> for Mesh {
 
         let (index, positions, normals) = polyhedron.to_triangle_mesh_buffers();
 
-        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
-        mesh.set_indices(Some(Indices::U32(index)));
+        let mut mesh = Mesh::new(
+            PrimitiveTopology::TriangleList,
+            RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
+        );
+
+        mesh.insert_indices(Indices::U32(index));
 
         mesh.insert_attribute(
             Mesh::ATTRIBUTE_POSITION,

@@ -7,23 +7,17 @@ use bevy::{
     pbr::{DirectionalLightBundle, PbrBundle, StandardMaterial},
     render::{color::Color, mesh::Mesh, view::Msaa},
     transform::components::Transform,
+    utils::default,
     DefaultPlugins,
 };
-
+use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use polyhedron_ops as p_ops;
-use smooth_bevy_cameras::{
-    controllers::orbit::{
-        OrbitCameraBundle, OrbitCameraController, OrbitCameraPlugin,
-    },
-    LookTransformPlugin,
-};
 
 fn main() {
     App::new()
         .insert_resource(Msaa::Sample4)
         .add_plugins(DefaultPlugins)
-        .add_plugins(LookTransformPlugin)
-        .add_plugins(OrbitCameraPlugin::default())
+        .add_plugins(PanOrbitCameraPlugin)
         .add_systems(Startup, (setup, bevy::window::close_on_esc))
         .run();
 }
@@ -41,24 +35,22 @@ fn setup(
 
     commands.spawn(PbrBundle {
         mesh: meshes.add(Mesh::from(polyhedron)),
-        material: materials.add(Color::rgb(0.4, 0.35, 0.3).into()),
+        material: materials.add(Color::rgb(0.4, 0.35, 0.3)),
         ..Default::default()
     });
 
-    commands
-        // light
-        .spawn(DirectionalLightBundle {
-            transform: Transform::from_translation(Vec3::new(4.0, 8.0, 4.0)),
-            ..Default::default()
-        });
+    // Light.
+    commands.spawn(DirectionalLightBundle {
+        transform: Transform::from_translation(Vec3::new(4.0, 8.0, 4.0)),
+        ..Default::default()
+    });
 
-    commands
-        // camera
-        .spawn(Camera3dBundle::default())
-        .insert(OrbitCameraBundle::new(
-            OrbitCameraController::default(),
-            Vec3::new(-3.0, 3.0, 5.0),
-            Vec3::new(0., 0., 0.),
-            Vec3::new(0., -1., 0.),
-        ));
+    // Camera.
+    commands.spawn((
+        Camera3dBundle {
+            transform: Transform::from_translation(Vec3::new(-3.0, 3.0, 5.0)),
+            ..default()
+        },
+        PanOrbitCamera::default(),
+    ));
 }

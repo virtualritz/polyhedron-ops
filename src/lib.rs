@@ -42,14 +42,14 @@
 //!
 //! ```toml
 //! [dependencies]
-//! polyhedron-ops = { version = "0.3", features = [ "bevy", "nsi", "obj" ] }
+//! polyhedron-ops = { version = "0.3", features = [ "bevy", "nsi", "obj", "parser" ] }
 //! ```
 //!
-//! * `bevy` – Adds support for converting a polyhedron into a [`bevy`](https://bevyengine.org/)
+//! * `bevy` – Add support for converting a polyhedron into a [`bevy`](https://bevyengine.org/)
 //!   [`Mesh`](https://docs.rs/bevy/latest/bevy/render/mesh/struct.Mesh.html).
 //!   See the `bevy` example.
 //!
-//! * `nsi` – Add supports for sending data to renderers implementing the [ɴsɪ](https://crates.io/crates/nsi/)
+//! * `nsi` – Add support for sending data to renderers implementing the [ɴsɪ](https://crates.io/crates/nsi/)
 //!   API. The function is called [`to_nsi()`](Polyhedron::to_nsi()).
 //!
 //! * `obj` – Add support for output to [Wavefront OBJ](https://en.wikipedia.org/wiki/Wavefront_.obj_file)

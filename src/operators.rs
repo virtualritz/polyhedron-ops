@@ -1070,6 +1070,7 @@ impl Polyhedron {
                         let edge_ab = vertex_edge(&[a, b], &new_ids).unwrap();
                         let edge_ba = vertex_edge(&[b, a], &new_ids).unwrap();
                         let edge_za = vertex_edge(&[z, a], &new_ids).unwrap();
+
                         vec![a, edge_ba, edge_ab, edge_za]
                     })
                     .collect::<Faces>()

@@ -17,7 +17,7 @@ impl Polyhedron {
     ///
     /// Depending on the target coordinate system (left- or right
     /// handed) the mesh’s winding order can be reversed with the
-    /// `reverse_face_winding` flag.
+    /// `reverse_winding` flag.
     ///
     /// The return value, on success, is the final, complete path of
     /// the OBJ file.

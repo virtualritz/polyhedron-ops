@@ -30,7 +30,7 @@ let polyhedron =
         .finalize();
 
 // Export as ./polyhedron-gapcD.obj
-polyhedron.write_to_obj(&Path::new("."), false);
+polyhedron.write_obj(&Path::new("."), false);
 ```
 
 The above code starts from a
@@ -137,10 +137,6 @@ installation](https://www.3delight.com/download)).
 Combine with `Shift` to render with 3Delight Cloud (requires registration).
 
 Press `Space` to save as `$HOME/polyhedron-<type>.obj`.
-
-I use `kiss3d` for realtime preview which, [for now](https://github.com/sebcrozet/kiss3d/issues/263),
-limits meshes to 64k vertices. This means the preview will be broken/missing bits
-once your mesh hits this limit.
 
 Export & render will always yield a correct OBJ though. Which you can
 view in Wings, Blender or another DCC app.

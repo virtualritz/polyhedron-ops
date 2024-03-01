@@ -1,6 +1,7 @@
 pub use crate::*;
 use nsi::*;
-use std::{f64::consts::TAU, path::Path};
+use nsi_core as nsi;
+use std::f64::consts::TAU;
 use ultraviolet as uv;
 
 const FPS: u32 = 60;

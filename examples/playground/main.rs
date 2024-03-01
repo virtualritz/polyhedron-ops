@@ -315,7 +315,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         last_poly = poly.clone();
                         last_op_value = 0.;
                         /*if modifiers.intersects(Modifiers::Shift) {
-                            poly.canonicalize(Some(1), true);
+                            //poly.canonicalize(Some(1), true);
                             poly.normalize();
                             last_op = 'N';
                         } else*/

@@ -17,30 +17,31 @@ default = []
 obj = ["tobj"]
 # Add support for parsing Conway notation strings and turning them back into polyhedra.
 parser = ["pest", "pest_derive"]
+nsi = ["nsi-core", "bytemuck"]
+bevy = ["dep:bevy", "bevy_panorbit_camera"]
 
 [dependencies]
 # Add support to convert a Polyhedron into a bevy Mesh.
-#bevy = { version = "0.11", default-features = false, features = ["bevy_render"], optional = true }
-bytemuck = "1.14"
-itertools = "0.11"
+bevy = { version = "0.13", default-features = false, features = ["bevy_pbr"], optional = true }
+bevy_panorbit_camera = { version = "0.16", optional = true }
+bytemuck = { version = "1.14", features = ["extern_crate_alloc"], optional = true }
+itertools = "0.12"
 # Add support to render polyhedra with NSI.
-nsi = { version = "0.8", features = ["toolbelt"], optional = true }
+nsi-core = { version = "0.8", optional = true }
 num-traits = "0.2"
 pest = { version = "2.7", features = ["pretty-print"], optional = true }
 pest_derive = { version = "2.7", optional = true }
-rayon = "1.8"
+rayon = "1"
 tobj = { version = "4", optional = true }
 ultraviolet = { version = "0.9", features = ["f64"] }
-bevy = { version = "0.12", default-features = false, optional = true }
 
 [dev-dependencies]
-bevy = { version = "0.12", default-features = false, features = ["bevy_asset", "bevy_core_pipeline", "bevy_pbr", "bevy_winit"] }
 dirs = "5.0"
 kiss3d = { version = "0.35", features = [ "vertex_index_u32" ] }
+bytemuck = "1.14.3"
 slice-of-array = "0.3"
-smooth-bevy-cameras = "0.10"
 
-[target.'cfg(target_os = "linux")'.dev-dependencies.bevy]
+[target.'cfg(target_os = "linux")'.dependencies.bevy]
 features = ["x11", "wayland"]
 
 [profile.release]
@@ -64,3 +65,4 @@ features = ["nsi", "obj", "parser"]
 
 [patch.crates-io]
 kiss3d = { git = "https://github.com/sebcrozet/kiss3d.git", branch = "master" }
+#nsi = { git = "https://github.com/virtualritz/nsi.git", branch = "master" }
