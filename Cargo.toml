@@ -20,16 +20,19 @@ parser = ["pest", "pest_derive"]
 nsi = ["nsi-core", "bytemuck"]
 bevy = ["dep:bevy", "bevy_panorbit_camera"]
 tilings = []
+console = ["bevy", "parser", "bevy_console", "clap"]
 
 [dependencies]
 # Add support to convert a Polyhedron into a bevy Mesh.
 bevy = { version = "0.14", default-features = false, features = [
     "bevy_pbr",
 ], optional = true }
+bevy_console = { version = "0.12", optional = true }
 bevy_panorbit_camera = { version = "0.19", optional = true }
 bytemuck = { version = "1.14", features = [
     "extern_crate_alloc",
 ], optional = true }
+clap = { version = "4.5", optional = true }
 itertools = "0.13"
 # Add support to render polyhedra with NSI.
 nsi-core = { version = "0.8", optional = true }
