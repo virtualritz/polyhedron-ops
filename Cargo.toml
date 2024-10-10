@@ -41,7 +41,6 @@ tobj = { version = "4", optional = true }
 ultraviolet = { version = "0.9", features = ["f64"] }
 
 [dev-dependencies]
-dirs = "5.0"
 kiss3d = { version = "0.35", features = ["vertex_index_u32"] }
 bytemuck = "1.14.3"
 slice-of-array = "0.3"
