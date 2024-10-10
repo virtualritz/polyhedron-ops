@@ -10,7 +10,8 @@ use na::{Point3, Vector3};
 use polyhedron_ops::*;
 use rayon::prelude::*;
 use std::{
-    cell::RefCell, env, error::Error, io, io::Write, path::Path, rc::Rc,
+    cell::RefCell, env, env::current_dir, error::Error, io, io::Write,
+    path::Path, rc::Rc,
 };
 
 #[cfg(feature = "nsi")]
@@ -93,7 +94,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut alter_last_op = false;
     let mut last_poly = poly.clone();
 
-    let path = dirs::home_dir().unwrap();
+    let path = current_dir()?;
     let mut render_quality = 0;
 
     let mut turntable = false;

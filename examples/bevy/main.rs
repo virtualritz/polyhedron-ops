@@ -1,11 +1,12 @@
 use bevy::{
     app::{App, Startup},
     asset::Assets,
+    color::Color,
     core_pipeline::core_3d::Camera3dBundle,
     ecs::system::{Commands, ResMut},
     math::Vec3,
     pbr::{DirectionalLightBundle, PbrBundle, StandardMaterial},
-    render::{color::Color, mesh::Mesh, view::Msaa},
+    render::{mesh::Mesh, view::Msaa},
     transform::components::Transform,
     utils::default,
     DefaultPlugins,
@@ -18,7 +19,7 @@ fn main() {
         .insert_resource(Msaa::Sample4)
         .add_plugins(DefaultPlugins)
         .add_plugins(PanOrbitCameraPlugin)
-        .add_systems(Startup, (setup, bevy::window::close_on_esc))
+        .add_systems(Startup, setup)
         .run();
 }
 
@@ -35,7 +36,7 @@ fn setup(
 
     commands.spawn(PbrBundle {
         mesh: meshes.add(Mesh::from(polyhedron)),
-        material: materials.add(Color::rgb(0.4, 0.35, 0.3)),
+        material: materials.add(Color::srgb(0.4, 0.35, 0.3)),
         ..Default::default()
     });
 
