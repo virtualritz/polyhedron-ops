@@ -6,21 +6,36 @@ use bevy::{
     ecs::system::{Commands, ResMut},
     math::Vec3,
     pbr::{DirectionalLightBundle, PbrBundle, StandardMaterial},
+    prelude::Component,
     render::{mesh::Mesh, view::Msaa},
     transform::components::Transform,
     utils::default,
     DefaultPlugins,
 };
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
-use polyhedron_ops as p_ops;
+use polyhedron_ops::Polyhedron;
+
+#[cfg(feature = "console")]
+mod console;
+#[cfg(feature = "console")]
+use console::prelude::*;
+
+#[derive(Component)]
+pub struct RootPolyhedron;
 
 fn main() {
-    App::new()
-        .insert_resource(Msaa::Sample4)
+    let mut app = App::new();
+
+    app.insert_resource(Msaa::Sample4)
         .add_plugins(DefaultPlugins)
         .add_plugins(PanOrbitCameraPlugin)
-        .add_systems(Startup, setup)
-        .run();
+        .add_systems(Startup, setup);
+
+    #[cfg(feature = "console")]
+    app.add_plugins(ConsolePlugin)
+        .add_console_command::<RenderCommand, _>(render_command);
+
+    app.run();
 }
 
 fn setup(
@@ -29,16 +44,19 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     // chamfered_tetrahedron
-    let polyhedron = p_ops::Polyhedron::dodecahedron() // D
+    let polyhedron = Polyhedron::dodecahedron() // D
         .bevel(None, None, None, None, true) // b
         .normalize()
         .finalize();
 
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(polyhedron)),
-        material: materials.add(Color::srgb(0.4, 0.35, 0.3)),
-        ..Default::default()
-    });
+    commands.spawn((
+        PbrBundle {
+            mesh: meshes.add(Mesh::from(polyhedron)),
+            material: materials.add(Color::srgb(0.4, 0.35, 0.3)),
+            ..Default::default()
+        },
+        RootPolyhedron,
+    ));
 
     // Light.
     commands.spawn(DirectionalLightBundle {
