@@ -1,6 +1,6 @@
 [package]
 name = "polyhedron-ops"
-version = "0.2.8"
+version = "0.2.9"
 authors = ["Moritz Moeller <virtualritz@gmail.com>"]
 edition = "2021"
 keywords = ["3d", "creative", "geometry", "graphics", "rendering"]
@@ -19,13 +19,18 @@ obj = ["tobj"]
 parser = ["pest", "pest_derive"]
 nsi = ["nsi-core", "bytemuck"]
 bevy = ["dep:bevy", "bevy_panorbit_camera"]
+tilings = []
 
 [dependencies]
 # Add support to convert a Polyhedron into a bevy Mesh.
-bevy = { version = "0.13", default-features = false, features = ["bevy_pbr"], optional = true }
-bevy_panorbit_camera = { version = "0.16", optional = true }
-bytemuck = { version = "1.14", features = ["extern_crate_alloc"], optional = true }
-itertools = "0.12"
+bevy = { version = "0.14", default-features = false, features = [
+    "bevy_pbr",
+], optional = true }
+bevy_panorbit_camera = { version = "0.19", optional = true }
+bytemuck = { version = "1.14", features = [
+    "extern_crate_alloc",
+], optional = true }
+itertools = "0.13"
 # Add support to render polyhedra with NSI.
 nsi-core = { version = "0.8", optional = true }
 num-traits = "0.2"
@@ -37,20 +42,29 @@ ultraviolet = { version = "0.9", features = ["f64"] }
 
 [dev-dependencies]
 dirs = "5.0"
-kiss3d = { version = "0.35", features = [ "vertex_index_u32" ] }
+kiss3d = { version = "0.35", features = ["vertex_index_u32"] }
 bytemuck = "1.14.3"
 slice-of-array = "0.3"
 
 [target.'cfg(target_os = "linux")'.dependencies.bevy]
+version = "*"
 features = ["x11", "wayland"]
 
-[profile.release]
-lto = true
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
 opt-level = 3
 codegen-units = 1
 
-[profile.dev]
-opt-level = 3
+[profile.release]
+codegen-units = 1
+lto = "thin"
+
+[profile.wasm-release]
+inherits = "release"
+opt-level = "s"
+strip = "debuginfo"
 
 [[example]]
 name = "playground"

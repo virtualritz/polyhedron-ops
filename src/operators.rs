@@ -97,8 +97,8 @@ impl Polyhedron {
         regular_faces_only: Option<bool>,
         change_name: bool,
     ) -> &mut Self {
-        self.truncate(height, face_arity_mask, regular_faces_only, false);
         self.ambo(ratio, false);
+        self.truncate(height, face_arity_mask, regular_faces_only, false);
 
         if change_name {
             let mut params = String::new();
@@ -803,9 +803,9 @@ impl Polyhedron {
         regular_faces_only: Option<bool>,
         change_name: bool,
     ) -> &mut Self {
-        self.dual(false);
-        self.truncate(height, vertex_valence_mask, regular_faces_only, false);
         self.ambo(ratio, false);
+        self.truncate(height, vertex_valence_mask, regular_faces_only, false);
+        self.dual(false);
 
         if change_name {
             let mut params = String::new();
@@ -858,6 +858,7 @@ impl Polyhedron {
         regular_faces_only: Option<bool>,
         change_name: bool,
     ) -> &mut Self {
+        self.join(ratio, false);
         self.kis(
             height,
             match vertex_valence_mask {
@@ -869,7 +870,6 @@ impl Polyhedron {
             regular_faces_only,
             false,
         );
-        self.join(ratio, false);
 
         if change_name {
             let mut params = String::new();
@@ -920,8 +920,8 @@ impl Polyhedron {
         regular_faces_only: Option<bool>,
         change_name: bool,
     ) -> &mut Self {
-        self.dual(false);
         self.truncate(height, vertex_valence_mask, regular_faces_only, false);
+        self.dual(false);
 
         if change_name {
             let mut params = String::new();
@@ -1464,8 +1464,8 @@ impl Polyhedron {
         regular_faces_only: Option<bool>,
         change_name: bool,
     ) -> &mut Self {
-        self.dual(false);
         self.kis(height, face_arity_mask, None, regular_faces_only, false);
+        self.dual(false);
 
         if change_name {
             let mut params = String::new();
