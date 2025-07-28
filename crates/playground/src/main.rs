@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy::render::camera::Viewport;
+use bevy::window::{Window, WindowPlugin};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use polyhedron_ops::Polyhedron;
@@ -79,6 +80,31 @@ impl OperatorType {
         }
     }
 
+    fn letter(&self) -> &'static str {
+        match self {
+            Self::Ambo => "a",
+            Self::Bevel => "b",
+            Self::Chamfer => "c",
+            Self::Dual => "d",
+            Self::Expand => "e",
+            Self::Gyro => "g",
+            Self::Inset => "I",
+            Self::Join => "j",
+            Self::Kis => "k",
+            Self::Meta => "m",
+            Self::Needle => "n",
+            Self::Ortho => "o",
+            Self::Propellor => "p",
+            Self::Quinto => "q",
+            Self::Reflect => "r",
+            Self::Snub => "s",
+            Self::Spherize => "S",
+            Self::Truncate => "t",
+            Self::Whirl => "w",
+            Self::Zip => "z",
+        }
+    }
+
     fn has_ratio(&self) -> bool {
         matches!(
             self,
@@ -120,7 +146,7 @@ impl OperatorType {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 struct Operator {
     op_type: OperatorType,
     ratio: Option<f32>,
@@ -253,6 +279,12 @@ impl BaseShape {
     }
 }
 
+#[derive(Clone, PartialEq)]
+struct EditableState {
+    base_shape: BaseShape,
+    operators: Vec<Operator>,
+}
+
 #[derive(Resource)]
 struct PlaygroundState {
     base_shape: BaseShape,
@@ -262,18 +294,68 @@ struct PlaygroundState {
     prism_sides: u8,
     antiprism_sides: u8,
     panel_width: f32,
+    nsi_render: bool,
+    undoer: egui::util::undoer::Undoer<EditableState>,
+}
+
+impl PlaygroundState {
+    fn save_state(&mut self) {
+        let state = EditableState {
+            base_shape: self.base_shape.clone(),
+            operators: self.operators.clone(),
+        };
+        self.undoer.add_undo(&state);
+    }
+    
+    fn current_state(&self) -> EditableState {
+        EditableState {
+            base_shape: self.base_shape.clone(),
+            operators: self.operators.clone(),
+        }
+    }
+    
+    fn undo(&mut self) -> bool {
+        let current = self.current_state();
+        if let Some(state) = self.undoer.undo(&current) {
+            self.base_shape = state.base_shape.clone();
+            self.operators = state.operators.clone();
+            self.selected_operator = None;
+            self.needs_rebuild = true;
+            true
+        } else {
+            false
+        }
+    }
+    
+    fn redo(&mut self) -> bool {
+        let current = self.current_state();
+        if let Some(state) = self.undoer.redo(&current) {
+            self.base_shape = state.base_shape.clone();
+            self.operators = state.operators.clone();
+            self.selected_operator = None;
+            self.needs_rebuild = true;
+            true
+        } else {
+            false
+        }
+    }
 }
 
 impl Default for PlaygroundState {
     fn default() -> Self {
+        let base_shape = BaseShape::Dodecahedron;
+        let operators = Vec::new();
+        
         Self {
-            base_shape: BaseShape::Dodecahedron,
-            operators: Vec::new(),
+            base_shape,
+            operators,
             selected_operator: None,
             needs_rebuild: true,
             prism_sides: 6,
             antiprism_sides: 6,
             panel_width: 500.0,
+            nsi_render: false,
+            undoer: egui::util::undoer::Undoer::default(),
         }
     }
 }
@@ -283,7 +365,13 @@ struct PolyhedronMesh;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                title: "Polyhedron Playground".to_string(),
+                ..default()
+            }),
+            ..default()
+        }))
         .add_plugins(EguiPlugin {
             enable_multipass_for_primary_context: false,
         })
@@ -294,6 +382,7 @@ fn main() {
         .add_systems(Update, rebuild_polyhedron)
         .add_systems(Update, handle_zoom)
         .add_systems(Update, update_camera_viewport.after(ui_system))
+        .add_systems(Update, viewport_overlay.after(ui_system))
         .run();
 }
 
@@ -302,15 +391,6 @@ fn setup(
     _meshes: ResMut<Assets<Mesh>>,
     _materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    // Light
-    commands.spawn((
-        PointLight {
-            shadows_enabled: true,
-            ..default()
-        },
-        Transform::from_xyz(4.0, 8.0, 4.0),
-    ));
-
     // Camera - positioned to look at origin  
     commands.spawn((
         Camera3d::default(),
@@ -319,7 +399,45 @@ fn setup(
             focus: Vec3::ZERO,
             ..default()
         },
-    ));
+    ))
+    .with_children(|parent| {
+        // Key light - main light from upper right relative to camera view
+        parent.spawn((
+            PointLight {
+                intensity: 1000000.0,
+                shadows_enabled: true,
+                ..default()
+            },
+            Transform::from_xyz(5.0, 3.0, -8.0),
+        ));
+        
+        // Fill light - softer light from the left relative to camera view
+        parent.spawn((
+            PointLight {
+                intensity: 400000.0,
+                shadows_enabled: false,
+                ..default()
+            },
+            Transform::from_xyz(-4.0, 1.0, -6.0),
+        ));
+        
+        // Back light - rim lighting from behind the subject
+        parent.spawn((
+            PointLight {
+                intensity: 600000.0,
+                shadows_enabled: false,
+                ..default()
+            },
+            Transform::from_xyz(0.0, 5.0, -15.0),
+        ));
+    });
+    
+    // Add subtle ambient light for overall illumination
+    commands.insert_resource(AmbientLight {
+        color: Color::WHITE,
+        brightness: 0.05,
+        affects_lightmapped_meshes: false,
+    });
 }
 
 fn ui_system(
@@ -340,92 +458,120 @@ fn ui_system(
         .default_width(500.0)
         .resizable(true)
         .show(contexts.ctx_mut(), |ui| {
-            ui.heading("Polyhedron Playground");
-            ui.separator();
-            
-            // Base shape section with grid layout
-            egui::Grid::new("base_shape_grid")
-                .num_columns(2)
-                .spacing([40.0, 4.0])
-                .striped(true)
-                .show(ui, |ui| {
-                    ui.label("Base Shape:");
-                    egui::ComboBox::from_label("")
-                        .selected_text(state.base_shape.name())
-                        .show_ui(ui, |ui| {
-                            for shape in [
-                                BaseShape::Tetrahedron,
-                                BaseShape::Cube,
-                                BaseShape::Octahedron,
-                                BaseShape::Dodecahedron,
-                                BaseShape::Icosahedron,
-                            ] {
-                                if ui.selectable_value(&mut state.base_shape, shape, shape.name()).clicked() {
+            // Base shape as first "operator" - always pinned at top
+            ui.group(|ui| {
+                ui.set_width(ui.available_width());
+                
+                ui.horizontal(|ui| {
+                    // No drag handle for base shape
+                    ui.label("📦"); // Icon for base shape
+                    
+                    // Always enabled
+                    ui.add_enabled(false, egui::Checkbox::new(&mut true, ""));
+                    
+                    // "Polyhedron" label
+                    ui.label(egui::RichText::new("Polyhedron").strong());
+                });
+                
+                // Parameters section
+                ui.separator();
+                egui::Grid::new("polyhedron_params")
+                    .num_columns(2)
+                    .spacing([40.0, 4.0])
+                    .show(ui, |ui| {
+                        ui.label("Shape:");
+                        egui::ComboBox::from_label("")
+                            .selected_text(state.base_shape.name())
+                            .show_ui(ui, |ui| {
+                                for shape in [
+                                    BaseShape::Tetrahedron,
+                                    BaseShape::Cube,
+                                    BaseShape::Octahedron,
+                                    BaseShape::Dodecahedron,
+                                    BaseShape::Icosahedron,
+                                ] {
+                                    if ui.selectable_value(&mut state.base_shape, shape, shape.name()).clicked() {
+                                        state.save_state();
+                                        state.needs_rebuild = true;
+                                    }
+                                }
+                                
+                                if ui.selectable_value(
+                                    &mut state.base_shape,
+                                    BaseShape::Prism(prism_sides),
+                                    format!("{}-Prism", prism_sides)
+                                ).clicked() {
+                                    state.save_state();
                                     state.needs_rebuild = true;
                                 }
-                            }
-                            
-                            if ui.selectable_value(
-                                &mut state.base_shape,
-                                BaseShape::Prism(prism_sides),
-                                format!("{}-Prism", prism_sides)
-                            ).clicked() {
+                                
+                                if ui.selectable_value(
+                                    &mut state.base_shape,
+                                    BaseShape::Antiprism(antiprism_sides),
+                                    format!("{}-Antiprism", antiprism_sides)
+                                ).clicked() {
+                                    state.save_state();
+                                    state.needs_rebuild = true;
+                                }
+                            });
+                        ui.end_row();
+                        
+                        // Prism sides control
+                        if matches!(state.base_shape, BaseShape::Prism(_)) {
+                            ui.label("Sides:");
+                            if ui.add(egui::Slider::new(&mut state.prism_sides, 3..=20)).changed() {
+                                state.base_shape = BaseShape::Prism(state.prism_sides);
                                 state.needs_rebuild = true;
                             }
-                            
-                            if ui.selectable_value(
-                                &mut state.base_shape,
-                                BaseShape::Antiprism(antiprism_sides),
-                                format!("{}-Antiprism", antiprism_sides)
-                            ).clicked() {
+                            ui.end_row();
+                        }
+                        
+                        // Antiprism sides control
+                        if matches!(state.base_shape, BaseShape::Antiprism(_)) {
+                            ui.label("Sides:");
+                            if ui.add(egui::Slider::new(&mut state.antiprism_sides, 3..=20)).changed() {
+                                state.base_shape = BaseShape::Antiprism(state.antiprism_sides);
                                 state.needs_rebuild = true;
                             }
-                        });
-                    ui.end_row();
-                    
-                    // Prism sides control
-                    if matches!(state.base_shape, BaseShape::Prism(_)) {
-                        ui.label("Prism sides:");
-                        if ui.add(egui::Slider::new(&mut state.prism_sides, 3..=20)).changed() {
-                            state.base_shape = BaseShape::Prism(state.prism_sides);
-                            state.needs_rebuild = true;
+                            ui.end_row();
                         }
-                        ui.end_row();
-                    }
-                    
-                    // Antiprism sides control
-                    if matches!(state.base_shape, BaseShape::Antiprism(_)) {
-                        ui.label("Antiprism sides:");
-                        if ui.add(egui::Slider::new(&mut state.antiprism_sides, 3..=20)).changed() {
-                            state.base_shape = BaseShape::Antiprism(state.antiprism_sides);
-                            state.needs_rebuild = true;
-                        }
-                        ui.end_row();
-                    }
-                });
+                    });
+            });
             
             ui.separator();
             ui.heading("Operators");
             
-            // Add operator section
-            ui.horizontal(|ui| {
-                egui::ComboBox::from_label("Add Operator")
-                    .selected_text("Choose...")
-                    .show_ui(ui, |ui| {
-                        for op_type in &operator_types_list {
-                            if ui.button(op_type.name()).clicked() {
-                                state.operators.push(Operator::new(op_type.clone()));
-                                state.needs_rebuild = true;
-                            }
+            // Grid of operator buttons
+            egui::Grid::new("operator_buttons")
+                .num_columns(8)
+                .spacing([4.0, 4.0])
+                .show(ui, |ui| {
+                    for (i, op_type) in operator_types_list.iter().enumerate() {
+                        let response = ui.add_sized(
+                            [32.0, 32.0],
+                            egui::Button::new(
+                                egui::RichText::new(op_type.letter())
+                                    .size(16.0)
+                                    .strong()
+                            )
+                        );
+                        
+                        if response.clicked() {
+                            state.save_state();
+                            state.operators.push(Operator::new(op_type.clone()));
+                            // Select the newly added operator to show its parameters
+                            state.selected_operator = Some(state.operators.len() - 1);
+                            state.needs_rebuild = true;
                         }
-                    });
-                
-                if ui.button("Clear All").clicked() {
-                    state.operators.clear();
-                    state.selected_operator = None;
-                    state.needs_rebuild = true;
-                }
-            });
+                        
+                        response.on_hover_text(op_type.name());
+                        
+                        // New row every 8 buttons
+                        if (i + 1) % 8 == 0 {
+                            ui.end_row();
+                        }
+                    }
+                });
             
             ui.separator();
             
@@ -452,54 +598,51 @@ fn ui_system(
                             ui.group(|ui| {
                                 ui.set_width(ui.available_width());
                                 
-                                // Operator header with grid layout
-                                egui::Grid::new(("operator_grid", i))
-                                    .num_columns(2)
-                                    .spacing([10.0, 4.0])
-                                    .show(ui, |ui| {
-                                        ui.horizontal(|ui| {
-                                            // Drag handle (only this is draggable)
-                                            let drag_response = ui.dnd_drag_source(item_id, i, |ui| {
-                                                ui.label("☰");
-                                            }).response;
+                                // Operator header
+                                ui.horizontal(|ui| {
+                                    // Drag handle (only this is draggable)
+                                    let drag_response = ui.dnd_drag_source(item_id, i, |ui| {
+                                        ui.label("☰");
+                                    }).response;
+                                    
+                                    // Handle drop on this item
+                                    if let Some(pointer_pos) = ui.ctx().pointer_interact_pos() {
+                                        if let Some(_source) = drag_response.dnd_hover_payload::<usize>() {
+                                            // Visual feedback for drop location
+                                            let rect = ui.min_rect();
+                                            let stroke = egui::Stroke::new(2.0, egui::Color32::WHITE);
                                             
-                                            // Handle drop on this item
-                                            if let Some(pointer_pos) = ui.ctx().pointer_interact_pos() {
-                                                if let Some(_source) = drag_response.dnd_hover_payload::<usize>() {
-                                                    // Visual feedback for drop location
-                                                    let rect = ui.min_rect();
-                                                    let stroke = egui::Stroke::new(2.0, egui::Color32::WHITE);
-                                                    
-                                                    if pointer_pos.y < rect.center().y {
-                                                        ui.painter().hline(rect.x_range(), rect.top(), stroke);
-                                                    } else {
-                                                        ui.painter().hline(rect.x_range(), rect.bottom(), stroke);
-                                                    }
-                                                    
-                                                    if let Some(released) = drag_response.dnd_release_payload::<usize>() {
-                                                        source_row = Some(*released);
-                                                        dest_row = Some(if pointer_pos.y < rect.center().y { i } else { i + 1 });
-                                                    }
-                                                }
+                                            if pointer_pos.y < rect.center().y {
+                                                ui.painter().hline(rect.x_range(), rect.top(), stroke);
+                                            } else {
+                                                ui.painter().hline(rect.x_range(), rect.bottom(), stroke);
                                             }
                                             
-                                            // Enable checkbox
-                                            if ui.checkbox(&mut operator.enabled, "").changed() {
-                                                changed = true;
+                                            if let Some(released) = drag_response.dnd_release_payload::<usize>() {
+                                                source_row = Some(*released);
+                                                dest_row = Some(if pointer_pos.y < rect.center().y { i } else { i + 1 });
                                             }
-                                            
-                                            // Operator name button
-                                            if ui.selectable_label(is_selected, operator.op_type.name()).clicked() {
-                                                new_selected = if is_selected { None } else { Some(i) };
-                                            }
-                                        });
-                                        
-                                        // Remove button
-                                        if ui.small_button("❌").clicked() {
+                                        }
+                                    }
+                                    
+                                    // Enable checkbox
+                                    if ui.checkbox(&mut operator.enabled, "").changed() {
+                                        changed = true;
+                                    }
+                                    
+                                    // Operator name button
+                                    if ui.selectable_label(is_selected, operator.op_type.name()).clicked() {
+                                        new_selected = if is_selected { None } else { Some(i) };
+                                    }
+                                    
+                                    // Fill remaining space
+                                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                        // Remove button with trash icon
+                                        if ui.small_button("🗑").on_hover_text("Remove operator").clicked() {
                                             to_remove = Some(i);
                                         }
-                                        ui.end_row();
                                     });
+                                });
                                 
                                 // Parameters section (when selected)
                                 if is_selected {
@@ -591,6 +734,34 @@ fn ui_system(
             if changed {
                 state.needs_rebuild = true;
             }
+            
+            // Add some space before bottom buttons
+            ui.add_space(ui.available_height() - 100.0);
+            
+            ui.separator();
+            
+            // Export button
+            if ui.add_sized(
+                [ui.available_width(), 40.0],
+                egui::Button::new("Export...")
+            ).clicked() {
+                // TODO: Implement export dialog
+            }
+            
+            ui.separator();
+            
+            // Clear All button at the bottom
+            if ui.add_sized(
+                [ui.available_width(), 40.0],
+                egui::Button::new("Clear All Operators")
+            ).clicked() {
+                state.save_state();
+                state.operators.clear();
+                state.selected_operator = None;
+                state.needs_rebuild = true;
+            }
+            
+            ui.separator();
         });
     
     // Update panel width
@@ -642,19 +813,35 @@ fn rebuild_polyhedron(
 fn handle_zoom(
     mut contexts: EguiContexts,
     keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut state: ResMut<PlaygroundState>,
 ) {
     let ctx = contexts.ctx_mut();
     
-    // Handle zoom with Ctrl+Plus/Ctrl+Minus
-    if keyboard_input.pressed(KeyCode::ControlLeft) || keyboard_input.pressed(KeyCode::ControlRight) {
+    let ctrl_pressed = keyboard_input.pressed(KeyCode::ControlLeft) || keyboard_input.pressed(KeyCode::ControlRight);
+    let shift_pressed = keyboard_input.pressed(KeyCode::ShiftLeft) || keyboard_input.pressed(KeyCode::ShiftRight);
+    
+    if ctrl_pressed {
         let current_scale = ctx.pixels_per_point();
         
         if keyboard_input.just_pressed(KeyCode::Equal) || keyboard_input.just_pressed(KeyCode::NumpadAdd) {
             // Zoom in
-            ctx.set_pixels_per_point((current_scale * 1.1).min(3.0));
+            let new_scale = (current_scale * 1.2).min(3.0);
+            ctx.set_pixels_per_point(new_scale);
         } else if keyboard_input.just_pressed(KeyCode::Minus) || keyboard_input.just_pressed(KeyCode::NumpadSubtract) {
-            // Zoom out
-            ctx.set_pixels_per_point((current_scale / 1.1).max(0.5));
+            // Zoom out  
+            let new_scale = (current_scale / 1.2).max(0.5);
+            ctx.set_pixels_per_point(new_scale);
+        } else if keyboard_input.just_pressed(KeyCode::KeyZ) {
+            if shift_pressed {
+                // Redo with Ctrl+Shift+Z
+                state.redo();
+            } else {
+                // Undo with Ctrl+Z
+                state.undo();
+            }
+        } else if keyboard_input.just_pressed(KeyCode::KeyY) {
+            // Redo with Ctrl+Y
+            state.redo();
         }
     }
 }
@@ -665,7 +852,7 @@ fn update_camera_viewport(
     mut contexts: EguiContexts,
     mut camera_query: Query<&mut Camera, With<Camera3d>>,
 ) {
-    if let Ok(window) = windows.get_single() {
+    if let Ok(window) = windows.single() {
         let ctx = contexts.ctx_mut();
         let pixels_per_point = ctx.pixels_per_point();
         
@@ -681,5 +868,36 @@ fn update_camera_viewport(
                 depth: 0.0..1.0,
             });
         }
+    }
+}
+
+fn viewport_overlay(
+    mut contexts: EguiContexts,
+    mut state: ResMut<PlaygroundState>,
+    windows: Query<&Window>,
+) {
+    if let Ok(window) = windows.single() {
+        let ctx = contexts.ctx_mut();
+        
+        // Position the overlay in the top-right of the viewport
+        let panel_width = state.panel_width;
+        let window_width = window.width();
+        let viewport_width = window_width - panel_width;
+        
+        egui::Area::new(egui::Id::new("viewport_overlay"))
+            .fixed_pos(egui::pos2(panel_width + viewport_width - 100.0, 10.0))
+            .show(ctx, |ui| {
+                ui.horizontal(|ui| {
+                    let response = ui.toggle_value(&mut state.nsi_render, "NSI");
+                    if response.changed() {
+                        // TODO: Toggle NSI rendering
+                        if state.nsi_render {
+                            println!("NSI rendering enabled");
+                        } else {
+                            println!("NSI rendering disabled");
+                        }
+                    }
+                });
+            });
     }
 }
