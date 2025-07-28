@@ -1,0 +1,45 @@
+[package]
+name = "polyhedron-ops"
+version = "0.2.9"
+authors = ["Moritz Moeller <virtualritz@gmail.com>"]
+edition = "2024"
+keywords = ["3d", "creative", "geometry", "graphics", "rendering"]
+categories = ["graphics", "mathematics", "multimedia", "rendering"]
+license = "MIT OR Apache-2.0 OR Zlib"
+description = "Conway/Hart Polyhedron Operations"
+readme = "../../README.md"
+repository = "https://github.com/virtualritz/polyhedron-ops/"
+documentation = "https://docs.rs/polyhedron-ops/"
+
+[features]
+default = []
+# Add support for converting a Polyhedron into a bevy Mesh.
+bevy = ["dep:bevy"]
+# Add support for reading/writing a mesh out as a Wavefront OBJ.
+obj = ["tobj"]
+# Add support for parsing Conway notation strings and turning them back into polyhedra.
+parser = ["pest", "pest_derive"]
+nsi = ["nsi-core", "bytemuck"]
+tilings = []
+
+[dependencies]
+bevy = { workspace = true, optional = true, features = ["bevy_render", "bevy_pbr", "bevy_asset"] }
+bytemuck = { version = "1", features = ["extern_crate_alloc"], optional = true }
+itertools = { workspace = true }
+# Add support to render polyhedra with NSI.
+nsi-core = { version = "0.8", optional = true }
+num-traits = "0.2"
+pest = { version = "2.8", features = ["pretty-print"], optional = true }
+pest_derive = { version = "2.8", optional = true }
+rayon = { workspace = true }
+tobj = { version = "4", optional = true }
+ultraviolet = { workspace = true }
+
+[dev-dependencies]
+bevy = { workspace = true }
+kiss3d = { version = "0.35", features = ["vertex_index_u32"] }
+bytemuck = "1"
+slice-of-array = "0.3"
+
+[package.metadata.docs.rs]
+features = ["nsi", "obj", "parser"]

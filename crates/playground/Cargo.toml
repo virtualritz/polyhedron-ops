@@ -1,0 +1,25 @@
+[package]
+name = "playground"
+version = "0.1.0"
+edition = "2024"
+publish = false
+default-run = "playground"
+
+[[bin]]
+name = "playground"
+path = "src/main.rs"
+
+[dependencies]
+polyhedron-ops = { workspace = true, features = ["bevy"] }
+bevy = { workspace = true, features = [
+    "bevy_pbr",
+    "bevy_asset",
+    "bevy_core_pipeline",
+    "bevy_render",
+    "bevy_winit",
+    "x11",
+    "wayland",
+    "multi_threaded",
+] }
+bevy_egui = { workspace = true }
+bevy_panorbit_camera = { workspace = true }

@@ -481,16 +481,7 @@ pub(crate) fn _angle_between(
     normal: Option<&Vector>,
 ) -> Float {
     // Protection against inaccurate computation.
-    let x = u.normalized().dot(v.normalized());
-    let y = if x <= -1.0 {
-        -1.0
-    } else if x >= 1.0 {
-        1.0
-    } else {
-        x
-    };
-
-    let angle = y.acos();
+    let angle = u.normalized().dot(v.normalized()).clamp(-1.0, 1.0).acos();
 
     match normal {
         None => angle,
