@@ -230,13 +230,12 @@ pub(crate) fn ordered_face_edges(face: &FaceSlice) -> Edges {
 
 #[inline]
 pub(crate) fn face_with_edge(edge: &Edge, faces: &FacesSlice) -> Face {
-    let result = faces
+    faces
         .par_iter()
         .filter(|face| ordered_face_edges(face).contains(edge))
         .flatten()
         .cloned()
-        .collect();
-    result
+        .collect()
 }
 
 #[inline]

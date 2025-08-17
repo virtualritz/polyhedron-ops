@@ -1,5 +1,5 @@
 use crate::*;
-use nsi_core as nsi;
+use nsi;
 
 /// Conversion to [ɴsɪ](https:://crates.io/crates/nsi).
 impl<'a> Polyhedron {
@@ -36,11 +36,12 @@ impl<'a> Polyhedron {
         // Create a new mesh node.
         ctx.create(&handle, nsi::node::MESH, None);
 
-        // Flatten point vector.
+        // Convert positions to [[f32; 3]] for nsi-old API.
+        // AIDEV-NOTE: ultraviolet::Vec3 is laid out as [f32; 3] in memory.
         let position = unsafe {
             std::slice::from_raw_parts(
-                self.positions.as_ptr().cast::<f32>(),
-                self.positions_len() * 3,
+                self.positions.as_ptr() as *const [f32; 3],
+                self.positions.len(),
             )
         };
 
@@ -203,11 +204,12 @@ impl<'a> Polyhedron {
         Option<Vec<i32>>,
         Option<Vec<f32>>,
     ) {
-        // Flatten point vector.
+        // Convert positions to [[f32; 3]] for nsi-old API.
+        // AIDEV-NOTE: ultraviolet::Vec3 is laid out as [f32; 3] in memory.
         let position = unsafe {
             std::slice::from_raw_parts(
-                self.positions.as_ptr().cast::<[f32; 3]>(),
-                self.positions_len(),
+                self.positions.as_ptr() as *const [f32; 3],
+                self.positions.len(),
             )
         };
 

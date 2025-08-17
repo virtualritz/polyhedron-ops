@@ -33,7 +33,7 @@ impl From<Polyhedron> for Mesh {
             VertexAttributeValues::Float32x3(
                 normals
                     .par_iter()
-                    .map(|n| [-n.x, -n.y, -n.z])  // Flip normals
+                    .map(|n| [-n.x, -n.y, -n.z]) // Flip normals
                     .collect::<Vec<_>>(),
             ),
         );

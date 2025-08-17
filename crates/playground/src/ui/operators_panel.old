@@ -1,0 +1,842 @@
+use crate::nsi::start_nsi_render;
+use crate::operators::{BaseShape, Operator, OperatorType};
+use crate::state::{NsiRenderCommand, PlaygroundState};
+use bevy::prelude::*;
+use bevy::render::camera::Viewport;
+use bevy_egui::{egui, EguiContexts};
+use bevy_panorbit_camera::PanOrbitCamera;
+
+pub fn ui_system(
+    mut contexts: EguiContexts,
+    mut state: ResMut<PlaygroundState>,
+    mut operator_types: Local<Vec<OperatorType>>,
+    windows: Query<&Window>,
+    mut camera_query: Query<(&mut Camera, &Transform, &Projection), (With<Camera3d>, With<PanOrbitCamera>)>,
+) -> Result<(), anyhow::Error> {
+    if operator_types.is_empty() {
+        *operator_types = OperatorType::all();
+    }
+    let operator_types_list = operator_types.clone();
+
+    // Extract values to avoid borrow checker issues
+    let prism_sides = state.prism_sides;
+    let antiprism_sides = state.antiprism_sides;
+
+    let ctx = contexts.ctx_mut()?;
+    
+    let panel_response = egui::SidePanel::left("operators_panel")
+        .default_width(500.0)
+        .resizable(true)
+        .show(ctx, |ui| {
+            // Base shape as first "operator" - always pinned at top
+            ui.group(|ui| {
+                ui.set_width(ui.available_width());
+
+                ui.horizontal(|ui| {
+                    // No drag handle for base shape
+                    ui.label("📦"); // Icon for base shape
+
+                    // Always enabled
+                    ui.add_enabled(false, egui::Checkbox::new(&mut true, ""));
+
+                    // "Polyhedron" label
+                    ui.label(egui::RichText::new("Polyhedron").strong());
+                });
+
+                // Parameters section
+                ui.separator();
+                egui::Grid::new("polyhedron_params")
+                    .num_columns(2)
+                    .spacing([40.0, 4.0])
+                    .show(ui, |ui| {
+                        ui.label("Shape:");
+                        egui::ComboBox::from_label("")
+                            .selected_text(state.base_shape.name())
+                            .show_ui(ui, |ui| {
+                                for shape in [
+                                    BaseShape::Tetrahedron,
+                                    BaseShape::Cube,
+                                    BaseShape::Octahedron,
+                                    BaseShape::Dodecahedron,
+                                    BaseShape::Icosahedron,
+                                ] {
+                                    if ui
+                                        .selectable_value(
+                                            &mut state.base_shape,
+                                            shape,
+                                            shape.name(),
+                                        )
+                                        .clicked()
+                                    {
+                                        state.save_state();
+                                        state.needs_rebuild = true;
+                                    }
+                                }
+
+                                if ui
+                                    .selectable_value(
+                                        &mut state.base_shape,
+                                        BaseShape::Prism(prism_sides),
+                                        format!("{}-Prism", prism_sides),
+                                    )
+                                    .clicked()
+                                {
+                                    state.save_state();
+                                    state.needs_rebuild = true;
+                                }
+
+                                if ui
+                                    .selectable_value(
+                                        &mut state.base_shape,
+                                        BaseShape::Antiprism(antiprism_sides),
+                                        format!(
+                                            "{}-Antiprism",
+                                            antiprism_sides
+                                        ),
+                                    )
+                                    .clicked()
+                                {
+                                    state.save_state();
+                                    state.needs_rebuild = true;
+                                }
+                            });
+                        ui.end_row();
+
+                        // Prism sides control
+                        if matches!(state.base_shape, BaseShape::Prism(_)) {
+                            ui.label("Sides:");
+                            if ui
+                                .add(egui::Slider::new(
+                                    &mut state.prism_sides,
+                                    3..=20,
+                                ))
+                                .changed()
+                            {
+                                state.base_shape =
+                                    BaseShape::Prism(state.prism_sides);
+                                state.needs_rebuild = true;
+                            }
+                            ui.end_row();
+                        }
+
+                        // Antiprism sides control
+                        if matches!(state.base_shape, BaseShape::Antiprism(_)) {
+                            ui.label("Sides:");
+                            if ui
+                                .add(egui::Slider::new(
+                                    &mut state.antiprism_sides,
+                                    3..=20,
+                                ))
+                                .changed()
+                            {
+                                state.base_shape =
+                                    BaseShape::Antiprism(state.antiprism_sides);
+                                state.needs_rebuild = true;
+                            }
+                            ui.end_row();
+                        }
+                    });
+            });
+
+            ui.separator();
+            ui.heading("Operators");
+
+            // Grid of operator buttons
+            egui::Grid::new("operator_buttons")
+                .num_columns(8)
+                .spacing([4.0, 4.0])
+                .show(ui, |ui| {
+                    for (i, op_type) in operator_types_list.iter().enumerate() {
+                        let response = ui.add_sized(
+                            [32.0, 32.0],
+                            egui::Button::new(
+                                egui::RichText::new(op_type.letter())
+                                    .size(16.0)
+                                    .strong(),
+                            ),
+                        );
+
+                        if response.clicked() {
+                            state.save_state();
+                            state.operators.push(Operator::new(*op_type));
+                            // Select the newly added operator to show its
+                            // parameters
+                            state.selected_operator =
+                                Some(state.operators.len() - 1);
+                            state.needs_rebuild = true;
+                        }
+
+                        response.on_hover_text(op_type.name());
+
+                        // New row every 8 buttons
+                        if (i + 1) % 8 == 0 {
+                            ui.end_row();
+                        }
+                    }
+                });
+
+            ui.separator();
+
+            // Operators list with drag and drop
+            let mut to_remove = None;
+            let mut changed = false;
+
+            // Track drag and drop
+            let mut source_row = None;
+            let mut dest_row = None;
+
+            let selected_operator = state.selected_operator;
+            let mut new_selected = selected_operator;
+
+            egui::ScrollArea::vertical()
+                .auto_shrink([false, false])
+                .show(ui, |ui| {
+                    // Drop zone for the entire list
+                    let _response = ui.scope(|ui| {
+                        for (i, operator) in
+                            state.operators.iter_mut().enumerate()
+                        {
+                            let item_id = egui::Id::new(("operator", i));
+                            let is_selected = selected_operator == Some(i);
+
+                            ui.group(|ui| {
+                                ui.set_width(ui.available_width());
+
+                                // Operator header
+                                ui.horizontal(|ui| {
+                                    // Drag handle (only this is draggable)
+                                    let drag_response = ui
+                                        .add(egui::Label::new("≡").sense(
+                                            egui::Sense::click_and_drag(),
+                                        ));
+
+                                    // Check for drag
+                                    if drag_response.drag_started() {
+                                        ui.ctx().set_dragged_id(item_id);
+                                        source_row = Some(i);
+                                    }
+
+                                    // Check for drop
+                                    let dropped_id = ui.ctx().drag_stopped_id();
+                                    if let Some(dropped_id) = dropped_id {
+                                        if drag_response.hovered()
+                                            && dropped_id != item_id
+                                        {
+                                            dest_row = Some(i);
+                                        }
+                                    }
+
+                                    // Enabled checkbox
+                                    if ui
+                                        .checkbox(&mut operator.enabled, "")
+                                        .changed()
+                                    {
+                                        state.needs_rebuild = true;
+                                    }
+
+                                    // Operator name (clickable)
+                                    let name_response = ui.selectable_label(
+                                        is_selected,
+                                        egui::RichText::new(
+                                            operator.op_type.name(),
+                                        )
+                                        .strong(),
+                                    );
+
+                                    if name_response.clicked() {
+                                        new_selected = Some(i);
+                                    }
+
+                                    // Delete button
+                                    ui.with_layout(
+                                        egui::Layout::right_to_left(
+                                            egui::Align::Center,
+                                        ),
+                                        |ui| {
+                                            if ui
+                                                .small_button("❌")
+                                                .on_hover_text("Remove operator")
+                                                .clicked()
+                                            {
+                                                to_remove = Some(i);
+                                            }
+                                        },
+                                    );
+                                });
+
+                                // Parameters section (only if selected and enabled)
+                                if is_selected && operator.enabled {
+                                    ui.separator();
+                                    egui::Grid::new(("operator_params", i))
+                                        .num_columns(2)
+                                        .spacing([40.0, 4.0])
+                                        .show(ui, |ui| {
+                                            let op_type = operator.op_type;
+
+                                            // Ratio parameter
+                                            if op_type.has_ratio() {
+                                                ui.label("Ratio:");
+                                                if ui
+                                                    .add(
+                                                        egui::Slider::new(
+                                                            operator
+                                                                .ratio
+                                                                .as_mut()
+                                                                .unwrap(),
+                                                            0.0..=1.0,
+                                                        )
+                                                        .step_by(0.01),
+                                                    )
+                                                    .changed()
+                                                {
+                                                    changed = true;
+                                                }
+                                                ui.end_row();
+                                            }
+
+                                            // Height parameter
+                                            if op_type.has_height() {
+                                                ui.label("Height:");
+                                                if ui
+                                                    .add(
+                                                        egui::Slider::new(
+                                                            operator
+                                                                .height
+                                                                .as_mut()
+                                                                .unwrap(),
+                                                            0.0..=2.0,
+                                                        )
+                                                        .step_by(0.01),
+                                                    )
+                                                    .changed()
+                                                {
+                                                    changed = true;
+                                                }
+                                                ui.end_row();
+                                            }
+
+                                            // Regular faces parameter
+                                            if op_type.has_regular_faces_param() {
+                                                ui.label("Regular faces:");
+                                                if ui
+                                                    .checkbox(
+                                                        &mut operator.regular_faces,
+                                                        "",
+                                                    )
+                                                    .changed()
+                                                {
+                                                    changed = true;
+                                                }
+                                                ui.end_row();
+                                            }
+                                        });
+                                }
+                            });
+
+                            // Visual separator between operators
+                            if i < state.operators.len() - 1 {
+                                ui.add_space(4.0);
+                            }
+                        }
+                    });
+                });
+
+            // Handle drag and drop
+            let dragged_id = ui.ctx().drag_stopped_id();
+            if dragged_id.is_some() {
+                if let (Some(src), Some(dst)) = (source_row, dest_row) {
+                    if src != dst
+                        && dragged_id == Some(egui::Id::new(("operator", src)))
+                    {
+                        state.save_state();
+                        let op = state.operators.remove(src);
+                        let insert_idx = if src < dst { dst - 1 } else { dst };
+                        state.operators.insert(insert_idx, op);
+
+                        // Update selected index if needed
+                        if let Some(sel) = selected_operator {
+                            if sel == src {
+                                new_selected = Some(insert_idx);
+                            } else if src < sel && sel <= dst {
+                                new_selected = Some(sel - 1);
+                            } else if dst <= sel && sel < src {
+                                new_selected = Some(sel + 1);
+                            }
+                        }
+
+                        state.needs_rebuild = true;
+                    }
+                }
+            }
+
+            // Update selected operator
+            if new_selected != selected_operator {
+                state.selected_operator = new_selected;
+            }
+
+            // Remove operator if requested
+            if let Some(idx) = to_remove {
+                state.save_state();
+                state.operators.remove(idx);
+                // Update selection
+                if let Some(sel) = state.selected_operator {
+                    if sel == idx {
+                        state.selected_operator = None;
+                    } else if sel > idx {
+                        state.selected_operator = Some(sel - 1);
+                    }
+                }
+                state.needs_rebuild = true;
+            }
+
+            if changed {
+                state.needs_rebuild = true;
+            }
+
+            ui.separator();
+
+            // Clear button
+            if ui
+                .button("Clear All Operators")
+                .on_hover_text("Remove all operators")
+                .clicked()
+            {
+                state.save_state();
+                state.operators.clear();
+                state.selected_operator = None;
+                state.needs_rebuild = true;
+            }
+
+            ui.separator();
+
+            // Conway notation display
+            ui.horizontal(|ui| {
+                ui.label("Conway notation:");
+                let notation = state
+                    .operators
+                    .iter()
+                    .filter(|op| op.enabled)
+                    .map(|op| op.op_type.letter())
+                    .collect::<Vec<_>>()
+                    .join("");
+                let polyhedron_letter = match state.base_shape {
+                    BaseShape::Tetrahedron => "T",
+                    BaseShape::Cube => "C",
+                    BaseShape::Octahedron => "O",
+                    BaseShape::Dodecahedron => "D",
+                    BaseShape::Icosahedron => "I",
+                    BaseShape::Prism(n) => {
+                        ui.label(format!("P{}", n));
+                        return;
+                    }
+                    BaseShape::Antiprism(n) => {
+                        ui.label(format!("A{}", n));
+                        return;
+                    }
+                };
+                ui.label(
+                    egui::RichText::new(format!("{}{}", notation, polyhedron_letter))
+                        .monospace()
+                        .strong(),
+                );
+            });
+
+            ui.separator();
+
+            // Undo/Redo buttons
+            ui.horizontal(|ui| {
+                if ui
+                    .button("↶ Undo")
+                    .on_hover_text("Undo last change (Ctrl+Z)")
+                    .clicked()
+                {
+                    state.undo();
+                }
+                if ui
+                    .button("↷ Redo")
+                    .on_hover_text("Redo last change (Ctrl+Y)")
+                    .clicked()
+                {
+                    state.redo();
+                }
+            });
+
+            // NSI rendering toggle
+            ui.separator();
+            ui.heading("Rendering");
+
+            // Create polyhedron for NSI if needed
+            let polyhedron = if state.needs_rebuild {
+                None
+            } else {
+                let mut poly = state.base_shape.create();
+                for operator in &state.operators {
+                    operator.apply(&mut poly);
+                }
+                poly.finalize();
+                Some(poly)
+            };
+
+            ui.horizontal(|ui| {
+                let prev_nsi = state.nsi_render;
+                if ui.toggle_value(&mut state.nsi_render, "NSI").clicked() {
+                    println!("NSI toggle changed to: {}", state.nsi_render);
+                    if state.nsi_render && !prev_nsi {
+                        // Start NSI render
+                        println!(
+                            "NSI enabled, is_rendering: {}",
+                            state.nsi_state.is_rendering
+                        );
+                        if let Some(polyhedron) = polyhedron {
+                            if let Ok(window) = windows.single() {
+                                if let Ok((_, camera_transform, camera_projection)) = camera_query.single()
+                                {
+                                    println!("Starting NSI render");
+                                    // Start render in background thread
+                                    // Calculate physical viewport size
+                                    let panel_width_physical = (state.panel_width * window.scale_factor()) as u32;
+                                    let viewport_width_physical = window.physical_width().saturating_sub(panel_width_physical);
+                                    let viewport_height_physical = window.physical_height();
+                                    
+                                    start_nsi_render(
+                                        &mut state,
+                                        polyhedron,
+                                        viewport_width_physical,
+                                        viewport_height_physical,
+                                        *camera_transform,
+                                        camera_projection,
+                                    );
+                                }
+                            }
+                        }
+                    } else if !state.nsi_render && prev_nsi {
+                        // Stop NSI render
+                        if let Some(tx) = &state.nsi_state.render_thread_tx {
+                            let _ = tx.send(NsiRenderCommand::Stop);
+                        }
+                        state.nsi_state.is_rendering = false;
+                    }
+                }
+
+                if state.nsi_state.is_rendering {
+                    ui.label(format!(
+                        "Progress: {:.0}%",
+                        state.nsi_state.progress
+                    ));
+                }
+            });
+
+            ui.separator();
+
+            // Export button
+            ui.heading("Export");
+            if ui.button("Export as .obj").clicked() {
+                if let Some(polyhedron) = polyhedron {
+                    match rfd::FileDialog::new()
+                        .add_filter("Wavefront OBJ", &["obj"])
+                        .set_file_name(&format!(
+                            "{}.obj",
+                            polyhedron.name()
+                        ))
+                        .save_file()
+                    {
+                        Some(path) => {
+                            match polyhedron.write_obj(
+                                path.parent().unwrap(),
+                                false,
+                            ) {
+                                Ok(_) => {
+                                    println!(
+                                        "Exported polyhedron to: {}",
+                                        path.display()
+                                    );
+                                }
+                                Err(e) => {
+                                    eprintln!("Failed to export: {}", e);
+                                }
+                            }
+                        }
+                        None => {
+                            println!("Export cancelled");
+                        }
+                    }
+                }
+            }
+
+            if ui.button("Export as .nsi").clicked() {
+                if let Some(polyhedron) = polyhedron {
+                    match rfd::FileDialog::new()
+                        .add_filter("NSI Scene", &["nsi"])
+                        .set_file_name(&format!(
+                            "{}.nsi",
+                            polyhedron.name()
+                        ))
+                        .save_file()
+                    {
+                        Some(path) => {
+                            // Create NSI context for export
+                            let ctx = nsi::Context::new(None).unwrap();
+
+                            // Set up stream to file
+                            ctx.set_attribute(
+                                nsi::ROOT,
+                                &[
+                                    nsi::string!(
+                                        "streamfilename",
+                                        path.to_str().unwrap()
+                                    ),
+                                    nsi::integer!("streamcompression", 1),
+                                    nsi::integer!("streamindentation", 1),
+                                ],
+                            );
+
+                            // Create screen
+                            ctx.create("screen", nsi::SCREEN, None);
+                            ctx.set_attribute(
+                                "screen",
+                                &[
+                                    nsi::integers!("resolution", &[1920, 1080]).array_len(2),
+                                    nsi::integer!("oversampling", 32),
+                                ],
+                            );
+
+                            ctx.create("beauty", nsi::OUTPUT_LAYER, None);
+                            ctx.set_attribute(
+                                "beauty",
+                                &[
+                                    nsi::string!("variablename", "Ci"),
+                                    nsi::integer!("withalpha", 1),
+                                    nsi::string!("scalarformat", "float"),
+                                ],
+                            );
+                            ctx.connect("beauty", None, "screen", "outputlayers", None);
+
+                            // Setup output driver
+                            ctx.create("driver", nsi::OUTPUT_DRIVER, None);
+                            ctx.set_attribute(
+                                "driver",
+                                &[
+                                    nsi::string!("drivername", "exr"),
+                                    nsi::string!("imagefilename", "output.exr"),
+                                ],
+                            );
+                            ctx.connect("driver", None, "beauty", "outputdrivers", None);
+
+                            // Add the polyhedron
+                            let poly_handle = polyhedron
+                                .to_nsi(&ctx, None, Some(10.0), None, None);
+
+                            // Camera setup with better default position
+                            if let Ok((_, camera_transform, _)) = camera_query.single()
+                            {
+                                // Use current camera position
+                                ctx.create("camera_xform", nsi::TRANSFORM, None);
+                                ctx.connect(
+                                    "camera_xform",
+                                    None,
+                                    nsi::ROOT,
+                                    "objects",
+                                    None,
+                                );
+
+                                let nsi_position = camera_transform.translation;
+                                let look_dir = camera_transform.forward();
+                                let distance = nsi_position.length();
+                                let nsi_target =
+                                    nsi_position + look_dir.as_vec3() * distance;
+                                let nsi_up = camera_transform.up();
+
+                                let forward =
+                                    (nsi_target - nsi_position).normalize();
+                                let right =
+                                    forward.cross(nsi_up.into()).normalize();
+                                let up = right.cross(forward);
+
+                                let transform_matrix = [
+                                    right.x as f64,
+                                    right.y as f64,
+                                    right.z as f64,
+                                    0.0,
+                                    up.x as f64,
+                                    up.y as f64,
+                                    up.z as f64,
+                                    0.0,
+                                    -forward.x as f64,
+                                    -forward.y as f64,
+                                    -forward.z as f64,
+                                    0.0,
+                                    nsi_position.x as f64,
+                                    nsi_position.y as f64,
+                                    nsi_position.z as f64,
+                                    1.0,
+                                ];
+
+                                ctx.set_attribute(
+                                    "camera_xform",
+                                    &[nsi::doubles!(
+                                        "transformationmatrix",
+                                        &transform_matrix
+                                    )
+                                    .array_len(16)],
+                                );
+
+                                ctx.create(
+                                    "camera",
+                                    nsi::PERSPECTIVE_CAMERA,
+                                    None,
+                                );
+                                ctx.connect(
+                                    "camera",
+                                    None,
+                                    "camera_xform",
+                                    "objects",
+                                    None,
+                                );
+                                ctx.set_attribute(
+                                    "camera",
+                                    &[nsi::float!("fov", 60.0)],
+                                );
+
+                                ctx.connect(
+                                    "screen",
+                                    None,
+                                    "camera",
+                                    "screens",
+                                    None,
+                                );
+                            }
+
+                            // Create basic shading
+                            ctx.create("plastic_shader", nsi::SHADER, None);
+                            ctx.set_attribute(
+                                "plastic_shader",
+                                &[
+                                    nsi::string!(
+                                        "shaderfilename",
+                                        "${DELIGHT}/osl/dlPrincipled"
+                                    ),
+                                    nsi::color!("baseColor", &[0.18, 0.18, 0.8]),
+                                    nsi::float!("roughness", 0.2),
+                                    nsi::float!("metallic", 0.0),
+                                    nsi::float!("specular", 0.5),
+                                ],
+                            );
+
+                            ctx.create("poly_attrib", nsi::ATTRIBUTES, None);
+                            ctx.connect(
+                                "poly_attrib",
+                                None,
+                                &poly_handle,
+                                "geometryattributes",
+                                None,
+                            );
+                            ctx.connect(
+                                "plastic_shader",
+                                None,
+                                "poly_attrib",
+                                "surfaceshader",
+                                None,
+                            );
+
+                            // Basic environment light
+                            ctx.create("env_xform", nsi::TRANSFORM, None);
+                            ctx.connect(
+                                "env_xform",
+                                None,
+                                nsi::ROOT,
+                                "objects",
+                                None,
+                            );
+
+                            ctx.create("environment", nsi::ENVIRONMENT, None);
+                            ctx.connect(
+                                "environment",
+                                None,
+                                "env_xform",
+                                "objects",
+                                None,
+                            );
+
+                            ctx.create("env_shader", nsi::SHADER, None);
+                            ctx.set_attribute(
+                                "env_shader",
+                                &[
+                                    nsi::string!(
+                                        "shaderfilename",
+                                        "${DELIGHT}/osl/environmentLight"
+                                    ),
+                                    nsi::float!("intensity", 1.0),
+                                ],
+                            );
+
+                            ctx.create("env_attrib", nsi::ATTRIBUTES, None);
+                            ctx.connect(
+                                "env_attrib",
+                                None,
+                                "environment",
+                                "geometryattributes",
+                                None,
+                            );
+                            ctx.connect(
+                                "env_shader",
+                                None,
+                                "env_attrib",
+                                "surfaceshader",
+                                None,
+                            );
+
+                            // Add render control statements
+                            ctx.render_control(nsi::Action::Start, None);
+                            ctx.render_control(nsi::Action::Wait, None);
+
+                            println!(
+                                "Exported NSI scene to: {}",
+                                path.display()
+                            );
+                        }
+                        None => {
+                            println!("Export cancelled");
+                        }
+                    }
+                }
+            }
+
+            ui.separator();
+        });
+
+    // Update panel width
+    let panel_width = panel_response.response.rect.width();
+    
+    // Check for keyboard shortcuts after UI has been drawn
+    if ctx.input(|i| i.modifiers.ctrl && i.key_pressed(egui::Key::Z)) {
+        state.undo();
+    }
+    if ctx.input(|i| i.modifiers.ctrl && i.key_pressed(egui::Key::Y)) {
+        state.redo();
+    }
+    
+    // Update camera viewport to exclude the panel
+    if let Ok((mut camera, _, _)) = camera_query.single_mut() {
+        // Calculate the viewport considering window size and panel width
+        if let Ok(window) = windows.single() {
+            // Convert logical pixels to physical pixels
+            let scale_factor = window.scale_factor();
+            let panel_width_physical = (panel_width * scale_factor) as u32;
+            let window_width_physical = window.physical_width();
+            let window_height_physical = window.physical_height();
+            
+            // The viewport should start after the panel and use the remaining width
+            let viewport_width = window_width_physical.saturating_sub(panel_width_physical);
+            
+            camera.viewport = Some(Viewport {
+                physical_position: UVec2::new(panel_width_physical, 0),
+                physical_size: UVec2::new(viewport_width, window_height_physical),
+                ..default()
+            });
+        }
+    }
+    
+    state.panel_width = panel_width;
+
+    Ok(())
+}

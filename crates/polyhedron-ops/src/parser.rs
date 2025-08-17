@@ -1,5 +1,5 @@
 use crate::*;
-use pest::{iterators::Pairs, Parser};
+use pest::{Parser, iterators::Pairs};
 use std::{fmt::Debug, str::FromStr};
 
 #[derive(Parser)]

@@ -321,9 +321,10 @@ impl Polyhedron {
     /// [`FaceSetIndex`].
     #[inline]
     fn append_new_face_set(&mut self, size: usize) {
-        self.face_set_index
-            .append(&mut vec![((self.face_index.len() as VertexKey)
+        self.face_set_index.append(&mut vec![
+            ((self.face_index.len() as VertexKey)
                 ..((self.face_index.len() + size) as VertexKey))
-                .collect()]);
+                .collect(),
+        ]);
     }
 }

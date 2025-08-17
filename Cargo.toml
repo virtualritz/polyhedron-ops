@@ -5,8 +5,8 @@ resolver = "2"
 [workspace.dependencies]
 polyhedron-ops = { path = "./crates/polyhedron-ops" }
 bevy = { version = "0.16" }
-bevy_egui = { version = "0.34" }
-bevy_panorbit_camera = { version = "0.26", features = ["bevy_egui"] }
+bevy_egui = { version = "0.35" }
+bevy_panorbit_camera = { version = "0.27", features = ["bevy_egui"] }
 ultraviolet = { version = "0.10", features = ["f64"] }
 itertools = "0.14"
 rayon = "1"

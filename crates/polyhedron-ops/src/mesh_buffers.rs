@@ -90,18 +90,25 @@ impl Polyhedron {
                     face[0], face[1], face[4], face[1], face[2], face[4],
                     face[4], face[2], face[3],
                 ],
-                // FIXME: a nicer way to triangulate n-gons.
+                // AIDEV-TODO: Implement ear-clipping algorithm for better
+                // handling of concave polygons.
+                // Current implementation uses fan triangulation which works for
+                // convex polygons.
                 _ => {
-                    let a = face[0];
-                    let mut bb = face[1];
-                    face.iter()
-                        .skip(2)
-                        .flat_map(|c| {
-                            let b = bb;
-                            bb = *c;
-                            vec![a, b, *c]
-                        })
-                        .collect()
+                    if face.len() < 3 {
+                        vec![]
+                    } else {
+                        let a = face[0];
+                        let mut bb = face[1];
+                        face.iter()
+                            .skip(2)
+                            .flat_map(|c| {
+                                let b = bb;
+                                bb = *c;
+                                vec![a, b, *c]
+                            })
+                            .collect()
+                    }
                 }
             })
             .collect();

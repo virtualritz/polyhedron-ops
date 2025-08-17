@@ -1,12 +1,12 @@
 use crate::RootPolyhedron;
-use bevy::prelude::{error, info, Assets, Handle, Mesh, Query, ResMut, With};
+use bevy::prelude::{Assets, Handle, Mesh, Query, ResMut, With, error, info};
 use bevy_console::ConsoleCommand;
 use clap::Parser;
 use polyhedron_ops::Polyhedron;
 use std::{error::Error, mem::replace};
 
 pub mod prelude {
-    pub use crate::console::{render_command, RenderCommand};
+    pub use crate::console::{RenderCommand, render_command};
     pub use bevy_console::{AddConsoleCommand, ConsolePlugin};
 }
 

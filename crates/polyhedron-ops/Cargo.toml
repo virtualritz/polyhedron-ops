@@ -19,7 +19,7 @@ bevy = ["dep:bevy"]
 obj = ["tobj"]
 # Add support for parsing Conway notation strings and turning them back into polyhedra.
 parser = ["pest", "pest_derive"]
-nsi = ["nsi-core", "bytemuck"]
+nsi = ["dep:nsi", "bytemuck"]
 tilings = []
 
 [dependencies]
@@ -27,7 +27,7 @@ bevy = { workspace = true, optional = true, features = ["bevy_render", "bevy_pbr
 bytemuck = { version = "1", features = ["extern_crate_alloc"], optional = true }
 itertools = { workspace = true }
 # Add support to render polyhedra with NSI.
-nsi-core = { version = "0.8", optional = true }
+nsi = { path = "../../../nsi-old", optional = true }
 num-traits = "0.2"
 pest = { version = "2.8", features = ["pretty-print"], optional = true }
 pest_derive = { version = "2.8", optional = true }

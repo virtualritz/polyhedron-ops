@@ -87,7 +87,27 @@ Add specially formatted comments throughout the codebase, where appropriate, for
 
 ### Guidelines:
 
-- ALWAYS run `cargo clippy --fix` before committing. If clippy brings up any issues, fix them, then repeat untile there are no more issues brought up by clippy. Finally run `cargo fmt`, then commit.
+- **Test Naming Convention**: Test functions should NOT be prefixed with `test_`. The `#[test]` attribute already indicates it's a test. Use descriptive names without the prefix.
+
+- **CRITICAL: ALWAYS run `cargo test` and ensure the code compiles and tests pass WITHOUT ANY WARNINGS BEFORE committing!** Never commit code that doesn't build, has failing tests, or produces warnings. The code must be completely warning-free across all tests, examples, benches, and the library itself. This is non-negotiable.
+  - First run: `cargo test` to ensure everything compiles and passes without warnings
+  - Also run: `cargo build --all-targets` to check examples and benches are warning-free
+  - Then run: `cargo fmt` to format the code
+  - Then run: `cargo clippy --all-targets -- -W warnings` and fix any issues
+  - Finally run: `cargo test` one more time to verify everything is clean
+  - Only then commit the changes when there are ZERO warnings and all tests pass
+
+- **CRITICAL: Address ALL warnings before EVERY commit!** This includes:
+  - Unused imports, variables, and functions
+  - Dead code warnings
+  - Deprecated API usage
+  - Type inference ambiguities
+  - Missing documentation (if configured)
+  - Any clippy warnings or suggestions
+  - Run `cargo build 2>&1 | grep warning` to catch all warnings
+  - Never use `#[allow(warnings)]` or similar suppressions without explicit user approval
+
+- ALWAYS run `cargo clippy --fix` before committing. If clippy brings up any issues, fix them, then repeat until there are no more issues brought up by clippy. Finally run `cargo fmt`, then commit.
 
 - Use `AIDEV-NOTE:`, `AIDEV-TODO:`, or `AIDEV-QUESTION:` (all-caps prefix) for comments aimed at AI and developers.
 - **Important:** Before scanning files, always first try to **grep for existing anchors** `AIDEV-*` in relevant subdirectories.
@@ -104,7 +124,7 @@ Add specially formatted comments throughout the codebase, where appropriate, for
 
 - Write idiomatic and canonical Rust code. I.e. avoid patterns common in imperative languages like C/C++/JS/TS that can be expressed more elegantly, concise and with more leeway for the compiler to optimize, in Rust.
 
-- PREFER functional style over imperative style. I.e. use for_each or map instead of for loops, use collect instead of pre-allocating a Vec and using push.
+- PREFER functional style over imperative style. I.e. use `for_each` or `map` instead of for loops, use `collect` instead of pre-allocating a `Vec` and using `push`. NEVER use `Vec::with_capacity` followed by `push` in a loop when you can use iterators with `collect`.
 
 - USE rayon to parallelize whenever larger amounts of data are being processed.
 
@@ -117,6 +137,8 @@ Add specially formatted comments throughout the codebase, where appropriate, for
 - Prefer using the stack, use SmallVec whenever it makes sense.
 
 - NAMING follows the rules laid out in this document: https://raw.githubusercontent.com/rust-lang/api-guidelines/refs/heads/master/src/naming.md
+
+- IMPORTS: External crate imports come before internal crate imports. Do not add blank lines between any use statements so rustfmt can properly sort them. This ensures crate imports appear at the top after formatting.
 
 ## Domain Glossary (Claude, learn these!)
 

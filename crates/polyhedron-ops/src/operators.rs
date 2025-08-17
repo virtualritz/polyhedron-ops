@@ -1,5 +1,5 @@
 use crate::{helpers::*, selection::*, text_helpers::*, *};
-use std::fmt::Write;
+use std::{collections::HashMap, fmt::Write};
 
 /// # Operators
 impl Polyhedron {
@@ -134,19 +134,72 @@ impl Polyhedron {
         self
     }
 
-    /// Apply proper canonicalization. t yypical number of `iterarations` is
-    /// `200`+.
-    /// FIXME: this is b0rked atm.
+    /// Apply proper canonicalization using edge tangent flow.
+    /// Typical number of `iterations` is `200`+.
+    ///
+    /// AIDEV-NOTE: Canonicalization uses tangent flow to make edges more
+    /// uniform and faces more planar. Each iteration adjusts vertices based
+    /// on edge tangents.
     #[inline]
     fn _canonicalize(&mut self, iterations: Option<usize>, change_name: bool) {
-        let mut dual = self.clone().dual(false).finalize();
+        use crate::helpers::_tangent;
+        use std::collections::HashSet;
 
-        for _ in 0..iterations.unwrap_or(200) {
-            // Reciprocate faces.
-            dual.positions =
-                _reciprocate_faces(&self.face_index, &self.positions);
-            self.positions =
-                _reciprocate_faces(&dual.face_index, &dual.positions);
+        let iters = iterations.unwrap_or(200);
+
+        for _ in 0..iters {
+            // Build vertex adjacency using functional style.
+            let vertex_neighbors: Vec<HashSet<VertexKey>> = (0..self
+                .positions
+                .len())
+                .map(|i| {
+                    self.face_index
+                        .iter()
+                        .flat_map(|face| {
+                            let last_edge = vec![face[face.len() - 1], face[0]];
+                            face.windows(2)
+                                .map(|w| vec![w[0], w[1]])
+                                .chain(std::iter::once(last_edge))
+                                .filter_map(move |edge| {
+                                    if edge[0] == i as VertexKey {
+                                        Some(edge[1])
+                                    } else if edge[1] == i as VertexKey {
+                                        Some(edge[0])
+                                    } else {
+                                        None
+                                    }
+                                })
+                        })
+                        .collect()
+                })
+                .collect();
+
+            // Calculate new positions based on tangent flow.
+            self.positions = self
+                .positions
+                .par_iter()
+                .enumerate()
+                .map(|(i, pos)| {
+                    let neighbors = &vertex_neighbors[i];
+                    if neighbors.is_empty() {
+                        *pos
+                    } else {
+                        // Sum tangent vectors from all connected edges.
+                        let tangent_sum = neighbors
+                            .iter()
+                            .map(|&neighbor_idx| {
+                                let neighbor_pos =
+                                    &self.positions[neighbor_idx as usize];
+                                _tangent(pos, neighbor_pos)
+                            })
+                            .fold(Vector::zero(), |acc, t| acc + t);
+
+                        // Move vertex by average tangent scaled down for
+                        // stability
+                        *pos + tangent_sum / (neighbors.len() as Float * 2.0)
+                    }
+                })
+                .collect();
         }
 
         if change_name {
@@ -312,7 +365,7 @@ impl Polyhedron {
             .face_index
             .par_iter()
             .map(|face| {
-                // FIXME: use iterators with double collect
+                // AIDEV-TODO: Use iterators with double collect.
                 let mut new_face = Vec::with_capacity(face.len());
                 face.iter().for_each(|vertex_key| {
                     let mut face_key = face.clone();
@@ -373,7 +426,7 @@ impl Polyhedron {
         let new_positions = face_centers(&self.face_index, &self.positions);
         self.face_index = positions_to_faces(&self.positions, &self.face_index);
         self.positions = new_positions;
-        // FIXME: FaceSetIndex
+        // AIDEV-TODO: FaceSetIndex.
 
         if change_name {
             self.name = format!("d{}", self.name);
@@ -382,13 +435,15 @@ impl Polyhedron {
         self
     }
 
-    /// [Cantellates](https://en.wikipedia.org/wiki/Cantellation_(geometry)).
-    /// I.e. creates a new facet in place of each edge and of each vertex.
+    /// Explodes the shape using ambo twice (cantellation).
+    ///
+    /// AIDEV-NOTE: This was previously named "expand" but actually implements
+    /// cantellation/explosion (ambo-ambo). True expand moves faces outward.
     ///
     /// # Arguments
     ///
     /// * `ratio` - The ratio of the new faces to the old faces.
-    pub fn expand(
+    pub fn explode(
         &mut self,
         ratio: Option<Float>,
         change_name: bool,
@@ -401,6 +456,150 @@ impl Polyhedron {
             if let Some(ratio) = ratio {
                 write!(&mut params, "{}", format_float(ratio)).unwrap();
             }
+            self.name = format!("x{}{}", params, self.name);
+        }
+
+        self
+    }
+
+    /// Expands faces outward along their normals.
+    ///
+    /// Creates new faces at vertices and edges while moving original faces
+    /// outward by `height` along their normal vectors.
+    ///
+    /// # Arguments
+    ///
+    /// * `height` - The distance to move faces outward along their normals.
+    pub fn expand(
+        &mut self,
+        height: Option<Float>,
+        change_name: bool,
+    ) -> &mut Self {
+        use crate::helpers::{
+            average_normal_ref, centroid_ref, index_as_positions,
+            ordered_vertex_faces, vertex_faces,
+        };
+
+        let height = height.unwrap_or(0.5);
+
+        // Move each face outward along its normal
+        let mut new_vertex_map: HashMap<(FaceKey, VertexKey), VertexKey> =
+            HashMap::new();
+        let mut new_positions = Vec::new();
+
+        // Create moved vertices for each face
+        self.face_index
+            .iter()
+            .enumerate()
+            .for_each(|(face_idx, face)| {
+                let face_positions = index_as_positions(face, &self.positions);
+                let _centroid = centroid_ref(&face_positions);
+                let normal = average_normal_ref(&face_positions)
+                    .unwrap_or(Vector::zero());
+
+                // Move face vertices along normal
+                face.iter().for_each(|&vertex_key| {
+                    let pos = self.positions[vertex_key as usize];
+                    let new_pos = pos + normal * height;
+                    let new_idx = new_positions.len() as u32;
+                    new_positions.push(new_pos);
+                    new_vertex_map
+                        .insert((face_idx as FaceKey, vertex_key), new_idx);
+                });
+            });
+
+        // Build new faces
+        // Add expanded original faces
+        let mut new_faces: Vec<Face> = self
+            .face_index
+            .iter()
+            .enumerate()
+            .map(|(face_idx, face)| {
+                face.iter()
+                    .map(|&v| new_vertex_map[&(face_idx as FaceKey, v)])
+                    .collect()
+            })
+            .collect();
+
+        // Add vertex faces - connect corresponding vertices from faces meeting
+        // at a vertex
+        (0..self.positions.len()).for_each(|v_idx| {
+            let v_idx = v_idx as VertexKey;
+            let v_faces = vertex_faces(v_idx, &self.face_index);
+
+            if !v_faces.is_empty() {
+                let ordered = ordered_vertex_faces(v_idx, &v_faces);
+                let vertex_face: Face = ordered
+                    .iter()
+                    .filter_map(|face| {
+                        self.face_index.iter().position(|f| f == face).map(
+                            |face_idx| {
+                                new_vertex_map[&(face_idx as FaceKey, v_idx)]
+                            },
+                        )
+                    })
+                    .collect();
+
+                if vertex_face.len() >= 3 {
+                    new_faces.push(vertex_face);
+                }
+            }
+        });
+
+        // Add edge faces - connect corresponding vertices from two faces
+        // sharing an edge
+        let edges = self.to_edges();
+        edges.iter().for_each(|edge| {
+            let edge_vertices: Vec<VertexKey> = self
+                .face_index
+                .iter()
+                .enumerate()
+                .flat_map(|(face_idx, face)| {
+                    let mut vertices = Vec::new();
+                    if let Some(pos0) = face.iter().position(|&v| v == edge[0])
+                        && let Some(pos1) =
+                            face.iter().position(|&v| v == edge[1])
+                    {
+                        // Check if edge is in correct order in this face
+                        if pos1 == (pos0 + 1) % face.len() {
+                            // Forward edge
+                            vertices.push(
+                                new_vertex_map[&(face_idx as FaceKey, edge[0])],
+                            );
+                            vertices.push(
+                                new_vertex_map[&(face_idx as FaceKey, edge[1])],
+                            );
+                        } else if pos0 == (pos1 + 1) % face.len() {
+                            // Reverse edge
+                            vertices.push(
+                                new_vertex_map[&(face_idx as FaceKey, edge[1])],
+                            );
+                            vertices.push(
+                                new_vertex_map[&(face_idx as FaceKey, edge[0])],
+                            );
+                        }
+                    }
+                    vertices
+                })
+                .collect();
+
+            // Create quad from the 4 vertices (2 from each face)
+            if edge_vertices.len() == 4 {
+                new_faces.push(vec![
+                    edge_vertices[0],
+                    edge_vertices[1],
+                    edge_vertices[3],
+                    edge_vertices[2],
+                ]);
+            }
+        });
+
+        self.positions = new_positions;
+        self.face_index = new_faces;
+
+        if change_name {
+            let mut params = String::new();
+            write!(&mut params, "{}", format_float(height)).unwrap();
             self.name = format!("e{}{}", params, self.name);
         }
 
@@ -470,12 +669,14 @@ impl Polyhedron {
                                 vec![vec![inset_a, inset_b, b, a]]
                             }
                         })
-                        .chain(vec![face
-                            .iter()
-                            .map(|v| {
-                                vertex(&extend![..face, *v], &new_ids).unwrap()
-                            })
-                            .collect::<Vec<_>>()])
+                        .chain(vec![
+                            face.iter()
+                                .map(|v| {
+                                    vertex(&extend![..face, *v], &new_ids)
+                                        .unwrap()
+                                })
+                                .collect::<Vec<_>>(),
+                        ])
                         .collect::<Vec<_>>()
                 } else {
                     vec![face.clone()]
@@ -541,7 +742,7 @@ impl Polyhedron {
                 let fp = index_as_positions(face, &self.positions);
                 (
                     face.as_slice(),
-                    centroid_ref(&fp).normalized()
+                    centroid_ref(&fp)
                         + average_normal_ref(&fp).unwrap()
                             * height.unwrap_or(0.),
                 )
@@ -1117,10 +1318,11 @@ impl Polyhedron {
             .par_iter()
             .map(|edge| {
                 let edge_positions = index_as_positions(edge, &self.positions);
-                (
-                    edge.to_vec(),
-                    height_ * (*edge_positions[0] + *edge_positions[1]),
-                )
+                let midpoint = (*edge_positions[0] + *edge_positions[1]) / 2.0;
+                // AIDEV-NOTE: Edge midpoints are not affected by height in
+                // quinto. Height only affects the face-edge
+                // interior points.
+                (edge.to_vec(), midpoint)
             })
             .collect();
 
@@ -1131,14 +1333,17 @@ impl Polyhedron {
                     let edge_positions =
                         index_as_positions(face, &self.positions);
                     let centroid = centroid_ref(&edge_positions);
+                    let normal = average_normal_ref(&edge_positions)
+                        .unwrap_or(Vector::zero());
                     (0..face.len())
                         .map(|i| {
+                            let base_point = (*edge_positions[i]
+                                + *edge_positions[(i + 1) % face.len()]
+                                + centroid)
+                                / 3.;
                             (
                                 extend![..face, i as VertexKey],
-                                (*edge_positions[i]
-                                    + *edge_positions[(i + 1) % face.len()]
-                                    + centroid)
-                                    / 3.,
+                                base_point + normal * height_,
                             )
                         })
                         .collect::<Vec<(Face, Point)>>()
@@ -1223,6 +1428,12 @@ impl Polyhedron {
 
     /// Applies a [snub](https://en.wikipedia.org/wiki/Snub_(geometry)) to the shape.
     ///
+    /// Uses dual-gyro-dual which is topologically equivalent to rotating
+    /// vertices around face centroids. This follows the Conway/Hart notation.
+    ///
+    /// AIDEV-NOTE: Direct vertex rotation (as in SCAD) would be more efficient
+    /// than dual-gyro-dual, but this compositional approach is standard.
+    ///
     /// # Arguments
     ///
     /// * `ratio` – The ratio at which the adjacent edges get split.
@@ -1283,8 +1494,11 @@ impl Polyhedron {
         self
     }
 
-    /// Cuts off the shape at its vertices but leaves a portion of the original
-    /// edges.
+    /// Creates faces at the vertices using dual-kis-dual operation.
+    ///
+    /// AIDEV-NOTE: This is not the classic truncate operation which cuts
+    /// vertices at a ratio. Instead it implements dual-kis-dual which creates
+    /// faces at vertices. Classic truncation would cut corners along edges.
     ///
     /// # Arguments
     ///
@@ -1712,21 +1926,248 @@ impl Polyhedron {
                     vec![face[1], face[2], face[4]],
                     vec![face[4], face[2], face[3]],
                 ],
-                // FIXME: a nicer way to triangulate n-gons.
+                // AIDEV-TODO: Implement ear-clipping algorithm for better
+                // handling of concave polygons.
+                // Current implementation uses fan triangulation which works for
+                // convex polygons.
                 _ => {
-                    let a = face[0];
-                    let mut bb = face[1];
-                    face.iter()
-                        .skip(2)
-                        .map(|c| {
-                            let b = bb;
-                            bb = *c;
-                            vec![a, b, *c]
-                        })
-                        .collect()
+                    if face.len() < 3 {
+                        vec![]
+                    } else {
+                        let a = face[0];
+                        let mut bb = face[1];
+                        face.iter()
+                            .skip(2)
+                            .map(|c| {
+                                let b = bb;
+                                bb = *c;
+                                vec![a, b, *c]
+                            })
+                            .collect()
+                    }
                 }
             })
             .collect();
+
+        self
+    }
+
+    /// Places the polyhedron on its largest face for stable orientation.
+    /// Useful for 3D printing preparation.
+    pub fn place(&mut self, face_index: Option<usize>) -> &mut Self {
+        use crate::helpers::{
+            average_normal_ref, centroid_ref, index_as_positions,
+        };
+
+        // Find the largest face if not specified
+        let target_face_idx = face_index.unwrap_or_else(|| {
+            self.face_index
+                .iter()
+                .enumerate()
+                .map(|(i, face)| {
+                    let positions = index_as_positions(face, &self.positions);
+                    let area = average_normal_ref(&positions)
+                        .map(|n| n.mag() / 2.0)
+                        .unwrap_or(0.0);
+                    (i, area)
+                })
+                .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
+                .map(|(i, _)| i)
+                .unwrap_or(0)
+        });
+
+        // Get the face normal and centroid
+        let face = &self.face_index[target_face_idx];
+        let face_positions = index_as_positions(face, &self.positions);
+
+        if let Some(normal) = average_normal_ref(&face_positions) {
+            let centroid = centroid_ref(&face_positions);
+
+            // Create rotation matrix to align face normal with -Z axis
+            let target_normal = Vector::new(0.0, 0.0, -1.0);
+            let rotation_axis = normal.cross(target_normal);
+
+            if rotation_axis.mag_sq() > 1e-6 {
+                let angle = normal.dot(target_normal).acos();
+                let rotation_axis = rotation_axis.normalized();
+
+                // Apply rotation using Rodrigues' rotation formula
+                self.positions = self
+                    .positions
+                    .par_iter()
+                    .map(|pos| {
+                        let v = *pos - centroid;
+                        let rotated = v * angle.cos()
+                            + rotation_axis.cross(v) * angle.sin()
+                            + rotation_axis
+                                * (rotation_axis.dot(v) * (1.0 - angle.cos()));
+                        rotated + centroid
+                    })
+                    .collect();
+            }
+
+            // Translate so the face centroid is at z=0
+            let new_face_positions = index_as_positions(face, &self.positions);
+            let new_centroid = centroid_ref(&new_face_positions);
+            let z_offset = new_centroid.z;
+
+            self.positions = self
+                .positions
+                .par_iter()
+                .map(|pos| Point::new(pos.x, pos.y, pos.z - z_offset))
+                .collect();
+        }
+
+        self
+    }
+
+    /// Modulates vertices using a spherical function.
+    /// The function `fmod` should be defined to modify spherical coordinates
+    /// (r, theta, phi).
+    pub fn modulate<F>(&mut self, modulation_fn: F) -> &mut Self
+    where
+        F: Fn(Float, Float, Float) -> (Float, Float, Float) + Sync,
+    {
+        use rayon::prelude::*;
+
+        self.positions = self
+            .positions
+            .par_iter()
+            .map(|pos| {
+                // Convert to spherical coordinates
+                let r = pos.mag();
+                let theta = if r > 0.0 { (pos.z / r).acos() } else { 0.0 };
+                let phi = pos.x.atan2(pos.y);
+
+                // Apply modulation
+                let (new_r, new_theta, new_phi) = modulation_fn(r, theta, phi);
+
+                // Convert back to Cartesian
+                Point::new(
+                    new_r * new_theta.sin() * new_phi.cos(),
+                    new_r * new_theta.sin() * new_phi.sin(),
+                    new_r * new_theta.cos(),
+                )
+            })
+            .collect();
+
+        // Reverse face winding after modulation
+        self.face_index = self
+            .face_index
+            .iter()
+            .map(|face| face.iter().rev().copied().collect())
+            .collect();
+
+        self
+    }
+
+    /// Creates a hollow shell by insetting faces and connecting inner and outer
+    /// surfaces.
+    ///
+    /// # Arguments
+    /// * `thickness` - Wall thickness
+    /// * `outer_inset_ratio` - How much to inset the outer faces (0.0 to 1.0)
+    pub fn shell(
+        &mut self,
+        thickness: Option<Float>,
+        outer_inset_ratio: Option<Float>,
+    ) -> &mut Self {
+        use crate::helpers::{
+            average_normal_ref, centroid_ref, index_as_positions, vertex_faces,
+        };
+
+        let thickness = thickness.unwrap_or(0.1);
+        let inset_ratio = outer_inset_ratio.unwrap_or(0.2);
+
+        // Calculate average normal for each vertex
+        let vertex_normals: Vec<Vector> = (0..self.positions.len())
+            .map(|v_idx| {
+                let faces = vertex_faces(v_idx as VertexKey, &self.face_index);
+                let normal_sum = faces
+                    .iter()
+                    .filter_map(|face| {
+                        let positions =
+                            index_as_positions(face, &self.positions);
+                        average_normal_ref(&positions)
+                    })
+                    .fold(Vector::zero(), |acc, n| acc + n);
+
+                if normal_sum.mag_sq() > 0.0 {
+                    -normal_sum.normalized()
+                } else {
+                    Vector::new(0.0, 0.0, 1.0)
+                }
+            })
+            .collect();
+
+        // Create inner vertices
+        let inner_vertices: Vec<Point> = self
+            .positions
+            .par_iter()
+            .zip(vertex_normals.par_iter())
+            .map(|(pos, normal)| *pos + *normal * thickness)
+            .collect();
+
+        let outer_offset = self.positions.len() as VertexKey;
+
+        // Create all shell faces using functional style.
+        let outer_faces: Vec<Face> = self
+            .face_index
+            .par_iter()
+            .map(|face| {
+                if inset_ratio > 0.0 {
+                    let face_positions =
+                        index_as_positions(face, &self.positions);
+                    let centroid = centroid_ref(&face_positions);
+
+                    // Create inset face
+                    face.iter()
+                        .map(|&v_idx| {
+                            let _pos = self.positions[v_idx as usize];
+                            let _inset_pos =
+                                _pos + (centroid - _pos) * inset_ratio;
+                            // AIDEV-TODO: Store inset_pos as new vertex (needs
+                            // vertex deduplication)
+                            v_idx
+                        })
+                        .collect()
+                } else {
+                    face.clone()
+                }
+            })
+            .collect();
+
+        // Add inner faces (reversed winding).
+        let inner_faces: Vec<Face> = self
+            .face_index
+            .par_iter()
+            .map(|face| face.iter().rev().map(|&v| v + outer_offset).collect())
+            .collect();
+
+        // Connect edges between inner and outer surfaces.
+        let edge_faces: Vec<Face> = self
+            .face_index
+            .par_iter()
+            .flat_map_iter(|face| {
+                (0..face.len()).map(move |i| {
+                    let v0 = face[i];
+                    let v1 = face[(i + 1) % face.len()];
+                    let v0_inner = v0 + outer_offset;
+                    let v1_inner = v1 + outer_offset;
+                    vec![v0, v1, v1_inner, v0_inner]
+                })
+            })
+            .collect();
+
+        // Combine all faces
+        self.face_index = outer_faces
+            .into_iter()
+            .chain(inner_faces)
+            .chain(edge_faces)
+            .collect();
+
+        // Update positions
+        self.positions.extend(inner_vertices);
 
         self
     }

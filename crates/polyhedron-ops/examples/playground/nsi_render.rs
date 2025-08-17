@@ -26,7 +26,9 @@ fn nsi_globals_and_camera(
         &[double_matrix!(
             "transformationmatrix",
             //camera_xform
-            &[1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 5., 1.,]
+            &[
+                1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 5., 1.,
+            ]
         )],
     );
 

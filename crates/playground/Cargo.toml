@@ -3,23 +3,23 @@ name = "playground"
 version = "0.1.0"
 edition = "2024"
 publish = false
-default-run = "playground"
+
+[lib]
+name = "playground"
+path = "src/lib.rs"
 
 [[bin]]
 name = "playground"
 path = "src/main.rs"
 
 [dependencies]
-polyhedron-ops = { workspace = true, features = ["bevy"] }
-bevy = { workspace = true, features = [
-    "bevy_pbr",
-    "bevy_asset",
-    "bevy_core_pipeline",
-    "bevy_render",
-    "bevy_winit",
-    "x11",
-    "wayland",
-    "multi_threaded",
-] }
-bevy_egui = { workspace = true }
-bevy_panorbit_camera = { workspace = true }
+polyhedron-ops = { workspace = true, features = ["bevy", "nsi", "obj"] }
+bevy = { version = "0.16", default-features = true, features = ["wayland"] }
+bevy_egui = { version = "0.35" }
+bevy_panorbit_camera = { version = "0.27" }
+nsi = { path = "../../../nsi-old", features = ["output"] }
+image = "0.25"
+rfd = "0.15"
+parking_lot = "0.12"
+crossbeam = "0.8"
+anyhow = "1.0"
