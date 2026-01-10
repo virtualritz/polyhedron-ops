@@ -6,6 +6,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use iterchunks::IterArrayChunks;
+
+#[allow(unstable_name_collisions)]
 impl Polyhedron {
     /// Write the polyhedron to a
     /// [Wavefront OBJ](https://en.wikipedia.org/wiki/Wavefront_.obj_file)
