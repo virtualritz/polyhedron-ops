@@ -1,8 +1,9 @@
 use crate::*;
-use bevy::render::{
-    mesh::{Indices, Mesh, PrimitiveTopology, VertexAttributeValues},
-    render_asset::RenderAssetUsages,
-};
+
+use bevy::asset::RenderAssetUsages;
+use bevy::mesh::{Indices, VertexAttributeValues};
+use bevy::prelude::Mesh;
+use bevy::render::render_resource::PrimitiveTopology;
 
 /// Conversion to a bevy [`Mesh`].
 impl From<Polyhedron> for Mesh {

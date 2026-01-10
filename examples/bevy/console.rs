@@ -1,5 +1,5 @@
 use crate::RootPolyhedron;
-use bevy::prelude::{error, info, Assets, Handle, Mesh, Query, ResMut, With};
+use bevy::prelude::*;
 use bevy_console::ConsoleCommand;
 use clap::Parser;
 use polyhedron_ops::Polyhedron;
@@ -24,14 +24,14 @@ pub struct RenderCommand {
 }
 
 pub fn render_command(
-    mesh_query: Query<&Handle<Mesh>, With<RootPolyhedron>>,
+    mesh_query: Query<&Mesh3d, With<RootPolyhedron>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut log: ConsoleCommand<RenderCommand>,
 ) {
     if let Some(Ok(RenderCommand { conway })) = log.take() {
         let update = || -> Result<String, Box<dyn Error>> {
             let polyhedron = render(conway)?;
-            let mesh_handle = mesh_query.get_single()?;
+            let mesh_handle = mesh_query.single()?;
             let mesh = meshes
                 .get_mut(mesh_handle)
                 .ok_or("Root polyhedron mesh not found")?;

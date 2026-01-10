@@ -24,11 +24,11 @@ console = ["bevy", "parser", "bevy_console", "clap"]
 
 [dependencies]
 # Add support to convert a Polyhedron into a bevy Mesh.
-bevy = { version = "0.14", default-features = false, features = [
+bevy = { version = "0.17", default-features = false, features = [
     "bevy_pbr",
 ], optional = true }
-bevy_console = { version = "0.12", optional = true }
-bevy_panorbit_camera = { version = "0.19", optional = true }
+bevy_console = { version = "0.16", optional = true }
+bevy_panorbit_camera = { version = "0.33", optional = true }
 bytemuck = { version = "1.14", features = [
     "extern_crate_alloc",
 ], optional = true }
@@ -44,7 +44,7 @@ tobj = { version = "4", optional = true }
 ultraviolet = { version = "0.9", features = ["f64"] }
 
 [dev-dependencies]
-kiss3d = { version = "0.35", features = ["vertex_index_u32"] }
+kiss3d = { version = "0.38", features = ["vertex_index_u32"] }
 bytemuck = "1.14.3"
 slice-of-array = "0.3"
 
