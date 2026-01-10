@@ -1,17 +1,4 @@
-use bevy::{
-    app::{App, Startup},
-    asset::Assets,
-    color::Color,
-    core_pipeline::core_3d::Camera3dBundle,
-    ecs::system::{Commands, ResMut},
-    math::Vec3,
-    pbr::{DirectionalLightBundle, PbrBundle, StandardMaterial},
-    prelude::Component,
-    render::{mesh::Mesh, view::Msaa},
-    transform::components::Transform,
-    utils::default,
-    DefaultPlugins,
-};
+use bevy::prelude::*;
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use polyhedron_ops::Polyhedron;
 
@@ -26,8 +13,7 @@ pub struct RootPolyhedron;
 fn main() {
     let mut app = App::new();
 
-    app.insert_resource(Msaa::Sample4)
-        .add_plugins(DefaultPlugins)
+    app.add_plugins(DefaultPlugins)
         .add_plugins(PanOrbitCameraPlugin)
         .add_systems(Startup, setup);
 
@@ -50,26 +36,21 @@ fn setup(
         .finalize();
 
     commands.spawn((
-        PbrBundle {
-            mesh: meshes.add(Mesh::from(polyhedron)),
-            material: materials.add(Color::srgb(0.4, 0.35, 0.3)),
-            ..Default::default()
-        },
+        Mesh3d(meshes.add(Mesh::from(polyhedron))),
+        MeshMaterial3d(materials.add(Color::srgb(0.4, 0.35, 0.3))),
         RootPolyhedron,
     ));
 
     // Light.
-    commands.spawn(DirectionalLightBundle {
-        transform: Transform::from_translation(Vec3::new(4.0, 8.0, 4.0)),
-        ..Default::default()
-    });
+    commands.spawn((
+        DirectionalLight::default(),
+        Transform::from_translation(Vec3::new(4.0, 8.0, 4.0)),
+    ));
 
     // Camera.
     commands.spawn((
-        Camera3dBundle {
-            transform: Transform::from_translation(Vec3::new(-3.0, 3.0, 5.0)),
-            ..default()
-        },
+        Transform::from_translation(Vec3::new(-3.0, 3.0, 5.0)),
         PanOrbitCamera::default(),
+        Msaa::Sample4,
     ));
 }
