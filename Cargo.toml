@@ -33,6 +33,7 @@ bytemuck = { version = "1.14", features = [
     "extern_crate_alloc",
 ], optional = true }
 clap = { version = "4.5", optional = true }
+iterchunks = "0.5.0"
 itertools = "0.13"
 # Add support to render polyhedra with NSI.
 nsi-core = { version = "0.8", optional = true }
