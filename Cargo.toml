@@ -28,7 +28,7 @@ bevy = { version = "0.17", default-features = false, features = [
     "bevy_pbr",
 ], optional = true }
 bevy_console = { version = "0.16", optional = true }
-bevy_panorbit_camera = { version = "0.33", optional = true }
+bevy_panorbit_camera = { version = "0.34", optional = true }
 bytemuck = { version = "1.14", features = [
     "extern_crate_alloc",
 ], optional = true }
