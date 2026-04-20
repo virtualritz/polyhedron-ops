@@ -42,7 +42,7 @@ pest = { version = "2.7", features = ["pretty-print"], optional = true }
 pest_derive = { version = "2.7", optional = true }
 rayon = "1"
 tobj = { version = "4", optional = true }
-ultraviolet = { version = "0.9", features = ["f64"] }
+ultraviolet = { version = "0.10", features = ["f64"] }
 
 [dev-dependencies]
 kiss3d = { version = "0.38", features = ["vertex_index_u32"] }
