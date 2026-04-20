@@ -24,7 +24,7 @@ console = ["bevy", "parser", "bevy_console", "clap"]
 
 [dependencies]
 # Add support to convert a Polyhedron into a bevy Mesh.
-bevy = { version = "0.17", default-features = false, features = [
+bevy = { version = "0.18", default-features = false, features = [
     "bevy_pbr",
 ], optional = true }
 bevy_console = { version = "0.16", optional = true }
